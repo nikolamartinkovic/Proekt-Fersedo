@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Pending Извози – Fersedo{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <h1 class="text-center mb-5 fw-bold" style="color: var(--primary);">Pending Извози</h1>
+
+    {% if pending_items %}
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Датум на извоз</th>
+                    <th>PN</th>
+                    <th>Име на артикл</th>
+                    <th class="text-center">Количина</th>
+                    <th>Тип</th>
+                    <th>Корисник</th>
+                    <th class="text-center">Акција</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in pending_items %}
+                <tr>
+                    <td>{{ item.datum_izvoz[:16] }}</td>
+                    <td class="fw-bold">{{ item.pn }}</td>
+                    <td>{{ item.ime or '—' }}</td>
+                    <td class="text-center fw-bold">{{ item.kolicina }}</td>
+                    <td>
+                        {% if item.tip == 'Платена' %}
+                            <span class="badge bg-success">{{ item.tip }}</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">{{ item.tip }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.username }}</td>
+                    <td class="text-center">
+                        <button class="btn btn-success btn-sm" onclick="odobriIzvoz({{ item.id }}, '{{ item.pn }}')">
+                            <i class="fas fa-check me-1"></i> Одобри
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center py-5 shadow-lg rounded-4">
+        <i class="fas fa-inbox fa-5x mb-3 text-muted"></i>
+        <h4>Нема pending извози</h4>
+        <p class="lead mb-0">Сите извози се веќе одобрени или нема извози во чекање.</p>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('zalihi.zalihi') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Залихи
+        </a>
+    </div>
+</div>
+
+<script>
+function odobriIzvoz(pendingId, pn) {
+    if (!confirm(`Сигурен си дека извозот за ${pn} е платен и готов за одобрување?`)) {
+        return;
+    }
+
+    fetch(`{{ url_for('zalihi.approve_izvoz', pending_id=0) }}`.replace('0', pendingId), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert(data.message || 'Грешка при одобрување');
+        }
+    })
+    .catch(error => {
+        console.error('Грешка:', error);
+        alert('Грешка при комуникација со серверот');
+    });
+}
+</script>
+
+{% endblock %}

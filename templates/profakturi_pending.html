@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Профактури на чекање – Fersedo{% endblock %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1300px; margin: 4rem auto; padding: 0 1rem;">
+
+    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+        <div>
+            <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2rem, 6vw, 3rem); margin-bottom: 0.3rem;">
+                <i class="fas fa-file-invoice me-3" style="color:#6366f1;"></i>Профактури на чекање
+            </h1>
+            <p style="font-size: 1.15rem; color: var(--text-secondary); margin: 0;">
+                Одобри или одбиј профактури – одобрената залиха оди во Платена
+            </p>
+        </div>
+        <a href="{{ url_for('zalihi.profakturi_nova') }}"
+           class="btn btn-lg fw-bold shadow px-4 py-2"
+           style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;">
+            <i class="fas fa-plus me-2"></i>Нова профактура
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show rounded-3">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if profakturi %}
+
+    <!-- Копче Одобри ги сите -->
+    <div class="text-end mb-4">
+        <button class="btn btn-success btn-lg px-5 fw-bold shadow"
+                onclick="odobriSite()">
+            <i class="fas fa-check-double me-2"></i>Одобри ги сите
+        </button>
+    </div>
+
+    <div class="d-flex flex-column gap-4">
+    {% for pf in profakturi %}
+    <div class="card shadow-lg border-0 rounded-4 overflow-hidden" id="card_{{ pf.id }}">
+
+        <!-- Хедер на картичката -->
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2 py-3 px-4"
+             style="background:linear-gradient(135deg,#ede9fe,#ddd6fe); border-bottom:2px solid #c4b5fd;">
+            <div>
+                <span class="fw-bold fs-5" style="color:#4c1d95;">
+                    <i class="fas fa-file-invoice me-2"></i>{{ pf.broj }}
+                </span>
+                <span class="ms-3 text-muted" style="font-size:.95rem;">
+                    <i class="fas fa-clock me-1"></i>{{ pf.datum }}
+                </span>
+                <span class="ms-3 text-muted" style="font-size:.95rem;">
+                    <i class="fas fa-user me-1"></i><strong>{{ pf.username }}</strong>
+                </span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="badge rounded-pill fs-6"
+                      style="background:#6366f1;color:#fff;padding:.4rem 1rem;">
+                    {{ pf.vkupno_kolicina }} единици / {{ pf.broj_stavki }} артикли
+                </span>
+                <span class="badge bg-secondary rounded-pill fs-6 px-3 py-2">
+                    <i class="fas fa-hourglass-half me-1"></i> Pending
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead style="background:#f5f3ff;">
+                        <tr>
+                            <th class="ps-4">Part Number</th>
+                            <th>Опис</th>
+                            <th class="text-center">Количина</th>
+                            <th class="text-center pe-4">Статус по одобрување</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in pf.stavki %}
+                        <tr>
+                            <td class="ps-4 fw-bold">{{ s.pn }}</td>
+                            <td class="text-muted">{{ s.ime or '—' }}</td>
+                            <td class="text-center">
+                                <span class="badge fs-6 rounded-pill"
+                                      style="background:#fef3c7;color:#92400e;padding:.35rem .8rem;">
+                                    {{ s.kolicina }}
+                                </span>
+                            </td>
+                            <td class="text-center pe-4">
+                                <span class="badge rounded-pill"
+                                      style="background:#d1fae5;color:#065f46;padding:.35rem .8rem;">
+                                    <i class="fas fa-arrow-right me-1"></i> Платена залиха
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% if pf.napomena and pf.napomena != '—' %}
+            <div class="px-4 py-2" style="background:#fefce8;border-top:1px solid #fde68a;">
+                <small class="text-muted">
+                    <i class="fas fa-sticky-note me-1 text-warning"></i>
+                    <strong>Напомена:</strong> {{ pf.napomena }}
+                </small>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Акции -->
+        <div class="card-footer d-flex justify-content-end gap-3 py-3 px-4"
+             style="background:#f9f9fc; border-top:1px solid #e0e0f0;">
+            <button class="btn btn-danger px-4 fw-bold"
+                    onclick="odbijProfaktura({{ pf.id }}, '{{ pf.broj }}')">
+                <i class="fas fa-times me-2"></i>Одбиј – врати во Неплатена
+            </button>
+            <button class="btn btn-success px-5 fw-bold shadow"
+                    onclick="odobriProfaktura({{ pf.id }}, '{{ pf.broj }}', {{ pf.vkupno_kolicina }})">
+                <i class="fas fa-check me-2"></i>Одобри – префрли во Платена
+            </button>
+        </div>
+
+    </div>
+    {% endfor %}
+    </div>
+
+    {% else %}
+    <div class="alert alert-info text-center py-5 rounded-4 shadow">
+        <i class="fas fa-file-invoice fa-3x mb-3 text-muted"></i>
+        <h4>Нема профактури на чекање</h4>
+        <p class="text-muted mb-4">Сите профактури се обработени.</p>
+        <a href="{{ url_for('zalihi.profakturi_nova') }}"
+           class="btn fw-bold px-5 py-2 me-2"
+           style="background:#6366f1;color:#fff;border:none;">
+            <i class="fas fa-plus me-2"></i>Креирај профактура
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('zalihi.zalihi') }}"
+           class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i>Назад на Залихи
+        </a>
+    </div>
+</div>
+
+<script>
+function odobriProfaktura(id, broj, kolicina) {
+    if (!confirm(`Одобри профактура ${broj}?\n\n${kolicina} единици ќе бидат префрлени во Платена залиха.`)) return;
+
+    fetch('/zalihi/profakturi/odobri', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            const card = document.getElementById(`card_${id}`);
+            if (card) {
+                card.style.transition = 'opacity .4s';
+                card.style.opacity    = '0';
+                setTimeout(() => card.remove(), 420);
+            }
+        } else {
+            alert('❌ ' + (data.message || 'Грешка при одобрување!'));
+        }
+    })
+    .catch(err => { alert('❌ Грешка при комуникација со серверот!'); console.error(err); });
+}
+
+function odbijProfaktura(id, broj) {
+    if (!confirm(`Одбиј профактура ${broj}?\n\nЗалихата ќе биде вратена назад во Неплатена.`)) return;
+
+    fetch('/zalihi/profakturi/odbij', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ id })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            const card = document.getElementById(`card_${id}`);
+            if (card) {
+                card.style.transition = 'opacity .4s';
+                card.style.opacity    = '0';
+                setTimeout(() => card.remove(), 420);
+            }
+        } else {
+            alert('❌ ' + (data.message || 'Грешка при одбивање!'));
+        }
+    })
+    .catch(err => { alert('❌ Грешка при комуникација со серверот!'); console.error(err); });
+}
+
+function odobriSite() {
+    const cards = document.querySelectorAll('[id^="card_"]');
+    if (!cards.length) { alert('Нема профактури за одобрување.'); return; }
+
+    if (!confirm(`Одобри ги СИТЕ ${cards.length} профактури?\n\nЦелата неплатена залиха ќе биде префрлена во Платена.`)) return;
+
+    const ids = Array.from(cards).map(c => parseInt(c.id.replace('card_', '')));
+
+    Promise.all(ids.map(id =>
+        fetch('/zalihi/profakturi/odobri', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ id })
+        }).then(r => r.json())
+    ))
+    .then(results => {
+        const ok     = results.filter(r => r.success).length;
+        const failed = results.filter(r => !r.success);
+        if (failed.length) {
+            alert(`✅ Одобрени: ${ok}\n❌ Неуспешни: ${failed.map(r => r.message).join('\n')}`);
+        } else {
+            alert(`✅ Сите ${ok} профактури се одобрени!`);
+        }
+        location.reload();
+    })
+    .catch(err => { alert('❌ Грешка!'); console.error(err); });
+}
+</script>
+
+{% endblock %}

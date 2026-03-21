@@ -1,0 +1,145 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 600px; margin: 5rem auto 4rem; padding: 0 1rem;">
+    <h1 style="margin-bottom: 2.5rem; font-weight: 700; color: var(--text); font-size: clamp(2rem, 7vw, 2.8rem); text-align: center;">
+        Додади нов камин
+    </h1>
+
+    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" id="addKaminForm" novalidate>
+                <div class="mb-4">
+                    <label for="ime" class="form-label fw-bold fs-5">Име на камин</label>
+                    <input type="text" id="ime" name="ime" class="form-control form-control-lg" 
+                           required placeholder="На пр. Elise, Elizabeth, Luca Cook..." 
+                           autocomplete="off" autofocus>
+                    <div class="invalid-feedback mt-2">
+                        Внесете име на камин (задолжително поле)
+                    </div>
+                </div>
+
+                <div class="d-grid gap-3 mt-5">
+                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg py-3 fw-bold shadow">
+                        <span id="btnText"><i class="fas fa-plus-circle me-2"></i> Додади камин</span>
+                        <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    </button>
+
+                    <a href="{{ url_for('main.select_kamin') }}" class="btn btn-outline-secondary btn-lg py-3">
+                        <i class="fas fa-arrow-left me-2"></i> Назад на избор на камин
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Инфо текст -->
+    <p class="text-center text-muted mt-4" style="font-size: clamp(0.95rem, 3.5vw, 1.05rem);">
+        Новото име на камин ќе биде достапно за сите записи и процесни чекори.
+    </p>
+</div>
+
+<!-- JavaScript -->
+<script>
+// Loader и валидација при submit
+document.getElementById('addKaminForm')?.addEventListener('submit', function(e) {
+    const form = this;
+    const btn = document.getElementById('submitBtn');
+    const text = document.getElementById('btnText');
+    const spinner = document.getElementById('loadingSpinner');
+
+    if (!form.checkValidity()) {
+        e.preventDefault();
+        form.classList.add('was-validated');
+        return;
+    }
+
+    // Показ на loader
+    text.classList.add('d-none');
+    spinner.classList.remove('d-none');
+    btn.disabled = true;
+});
+
+// Bootstrap валидација
+(function () {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+})();
+</script>
+
+<style>
+    .card {
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .form-control-lg {
+        font-size: clamp(1.05rem, 4vw, 1.25rem);
+        padding: 0.85rem 1.5rem;
+        border-radius: 10px;
+    }
+
+    .form-label {
+        font-size: clamp(1.1rem, 3.5vw, 1.25rem);
+    }
+
+    .btn-lg {
+        font-size: clamp(1.1rem, 4vw, 1.3rem);
+        padding: clamp(0.9rem, 4vw, 1.2rem) clamp(2rem, 6vw, 3rem);
+        min-height: 60px;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border: none;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-outline-secondary {
+        transition: all 0.3s ease;
+    }
+
+    .btn-outline-secondary:hover {
+        background: rgba(108, 117, 125, 0.1);
+        transform: translateY(-2px);
+    }
+
+    /* Tablet & Mobile responsive */
+    @media (max-width: 992px) {
+        .container { padding: 0 1.5rem; margin-top: 3rem; }
+        h1 { font-size: clamp(1.8rem, 7vw, 2.5rem); }
+        .d-grid { gap: 1.2rem !important; }
+        .btn-lg { width: 100%; }
+    }
+
+    @media (max-width: 576px) {
+        .card-body { padding: 1.5rem !important; }
+        .form-control-lg { font-size: 1.1rem; }
+        .btn-lg { font-size: 1.05rem; padding: 0.9rem 1.5rem; min-height: 54px; }
+        h1 { margin-bottom: 2rem; }
+    }
+</style>
+
+{% endblock %}

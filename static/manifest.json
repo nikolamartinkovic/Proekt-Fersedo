@@ -1,0 +1,25 @@
+{
+  "name": "Fersedo Sistem",
+  "short_name": "Fersedo",
+  "description": "Систем за производство, набавки, грешки и планирање",
+  "start_url": "https://192.168.0.20:5001/",
+  "scope": "https://192.168.0.20:5001/",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

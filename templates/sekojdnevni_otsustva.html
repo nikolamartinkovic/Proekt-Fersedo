@@ -1,0 +1,858 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    <div class="text-center mb-5 pb-4">
+        <h1 style="font-weight: 800; color: var(--danger); font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.5rem;">
+            Секојдневни отсуства
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
+            Управување со боледувања, доцнења, слободни денови и рано заминување
+        </p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show d-flex align-items-center shadow-sm" role="alert">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-3 fs-4"></i>
+                        <div class="flex-grow-1">{{ message }}</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ══ ФОРМА ЗА ДОДАВАЊЕ ══ -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden mb-5">
+        <div class="card-header text-white py-4 px-5 fw-bold" style="background: linear-gradient(135deg, #dc3545, #b71c1c);">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-user-times me-3 fs-4"></i>
+                Додади ново отсуство
+            </h4>
+        </div>
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" novalidate>
+                <input type="hidden" name="action" value="add">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold fs-5">Вработен *</label>
+                        <select class="form-select form-select-lg" name="vraboten_id" required>
+                            <option value="" disabled selected>-- Избери вработен --</option>
+                            {% for v in vraboteni %}
+                                <option value="{{ v.id }}">{{ v.prezime }} {{ v.ime }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold fs-5">Датум *</label>
+                        <input type="date" class="form-control form-control-lg" name="datum" required value="{{ today_str }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold fs-5">Тип на отсуство *</label>
+                        <select class="form-select form-select-lg" name="tip" required>
+                            <option value="боледување">Боледување</option>
+                            <option value="слободен ден">Слободен ден</option>
+                            <option value="доцнење">Доцнење</option>
+                            <option value="рано заминување">Рано заминување</option>
+                            <option value="втора смена">Втора смена</option>
+                            <option value="друго">Друго</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold fs-5">Часови *</label>
+                        <input type="number" step="0.5" min="0" max="24"
+                               class="form-control form-control-lg text-center fw-bold"
+                               name="casovi" value="8.0" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold fs-5">Платено?</label>
+                        <div class="form-check mt-3">
+                            <input class="form-check-input" type="checkbox" name="plateno" id="plateno" checked>
+                            <label class="form-check-label fw-medium" for="plateno">Платено (чекни ако е платено)</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold fs-5">Забелешка</label>
+                        <textarea class="form-control form-control-lg" name="zabeleska" rows="3"
+                                  placeholder="На пр. 'Лекарско уверение приложено'"></textarea>
+                    </div>
+                    <div class="col-12 text-end mt-4">
+                        <button type="submit" class="btn btn-danger btn-lg px-5 py-3 fw-bold shadow">
+                            <i class="fas fa-plus me-2"></i> Додади отсуство
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══ ДНЕВЕН ИЗВЕШТАЈ ══ -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden mb-5">
+        <div class="card-header text-white py-4 px-5 fw-bold"
+             style="background: linear-gradient(135deg, #17a2b8, #138496);">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-calendar-day me-3 fs-4"></i>
+                Дневен извештај — {{ today }}
+            </h4>
+        </div>
+        <div class="card-body p-0">
+
+            {# ── Отсуства за денес (без втора смена) ── #}
+            {% set otsustva_denes = izvestaj | rejectattr('tip', 'equalto', 'втора смена') | list %}
+            <div class="px-4 pt-4 pb-2">
+                <p class="text-uppercase fw-bold text-muted small mb-2" style="letter-spacing:1px;">
+                    <i class="fas fa-user-times me-1"></i> Отсуства
+                    {% if otsustva_denes %}
+                        <span class="badge bg-secondary ms-2">{{ otsustva_denes | length }}</span>
+                    {% endif %}
+                </p>
+            </div>
+            {% if otsustva_denes %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Вработен</th>
+                                <th>Датум</th>
+                                <th>Тип</th>
+                                <th>Забелешка</th>
+                                {% if session.get('is_admin') %}<th class="text-center">Акција</th>{% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in otsustva_denes %}
+                            <tr>
+                                <td class="fw-bold">{{ i.prezime }} {{ i.ime }}</td>
+                                <td>{{ i.datum }}</td>
+                                <td>{{ i.tip }}</td>
+                                <td>{{ i.zabeleska or '—' }}</td>
+                                {% if session.get('is_admin') %}
+                                <td class="text-center">
+                                    <form method="POST" class="d-inline">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="otsustvo_id" value="{{ i.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm px-3 py-1"
+                                                onclick="return confirm('Дали сте сигурни дека сакате да го избришете ова отсуство?');">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted border-bottom">
+                    <i class="fas fa-calendar-check fa-3x mb-2 opacity-40"></i>
+                    <p class="mb-0 fw-light">Денес нема запишани отсуства</p>
+                </div>
+            {% endif %}
+
+            {# ── Втора смена денес ── #}
+            {% set vtora_smena_denes = izvestaj | selectattr('tip', 'equalto', 'втора смена') | list %}
+            <div class="px-4 pt-4 pb-2" style="border-top: 2px solid #ede9fe; margin-top: 8px;">
+                <p class="text-uppercase fw-bold small mb-2" style="letter-spacing:1px; color:#4c1d95;">
+                    <i class="fas fa-moon me-1" style="color:#7c3aed;"></i> Втора смена денес
+                    {% if vtora_smena_denes %}
+                        <span class="badge ms-2" style="background:#7c3aed;">{{ vtora_smena_denes | length }}</span>
+                    {% endif %}
+                </p>
+            </div>
+            {% if vtora_smena_denes %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead style="background:#7c3aed;">
+                            <tr>
+                                <td style="padding:9px 14px; font-size:11px; font-weight:bold; color:#ffffff; font-family:Arial,Helvetica,sans-serif;">
+                                    Вработен
+                                </td>
+                                <td style="padding:9px 14px; font-size:11px; font-weight:bold; color:#ffffff; font-family:Arial,Helvetica,sans-serif; text-align:right;">
+                                    Статус ({{ vtora_smena_denes | length }})
+                                </td>
+                                {% if session.get('is_admin') %}
+                                <td style="padding:9px 14px; font-size:11px; font-weight:bold; color:#ffffff; font-family:Arial,Helvetica,sans-serif; text-align:center; width:80px;">
+                                    Акција
+                                </td>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in vtora_smena_denes %}
+                            <tr style="background:{% if loop.index is odd %}#f5f3ff{% else %}#ffffff{% endif %};">
+                                <td style="padding:11px 14px; vertical-align:top; border-bottom:1px solid #ede9fe;">
+                                    <p style="margin:0 0 4px 0; font-weight:bold; font-size:14px; color:#1e293b;">
+                                        {{ i.prezime }} {{ i.ime }}
+                                    </p>
+                                    <p style="margin:0; font-size:12px; font-weight:bold; color:#7c3aed;">
+                                        {{ i.casovi }}ч
+                                        &nbsp;&middot;&nbsp;
+                                        <span style="font-weight:normal; color:#64748b;">{{ i.datum }}</span>
+                                    </p>
+                                    {% if i.zabeleska %}
+                                    <p style="margin:4px 0 0 0; font-size:12px; color:#94a3b8;">
+                                        <strong style="color:#94a3b8;">Забелешка:</strong> {{ i.zabeleska }}
+                                    </p>
+                                    {% endif %}
+                                </td>
+                                <td style="padding:11px 14px; vertical-align:middle; text-align:right; border-bottom:1px solid #ede9fe;">
+                                    <span class="badge" style="background:#7c3aed; font-size:0.8rem; padding:5px 12px;">
+                                        <i class="fas fa-moon me-1"></i> Втора смена
+                                    </span>
+                                </td>
+                                {% if session.get('is_admin') %}
+                                <td style="padding:11px 14px; vertical-align:middle; text-align:center; border-bottom:1px solid #ede9fe;">
+                                    <form method="POST" class="d-inline">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="otsustvo_id" value="{{ i.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm px-3 py-1"
+                                                onclick="return confirm('Дали сте сигурни дека сакате да го избришете ова отсуство?');">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted" style="background:#f5f3ff; border-top:1px solid #ede9fe;">
+                    <i class="fas fa-moon fa-2x mb-2 opacity-30" style="color:#7c3aed;"></i>
+                    <p class="mb-0 fw-light small">Денес нема вработени на втора смена</p>
+                </div>
+            {% endif %}
+
+            {# ── Одобрени одмори за денес ── #}
+            <div class="px-4 pt-4 pb-2" style="border-top: 2px solid #d1fae5; margin-top: 8px;">
+                <p class="text-uppercase fw-bold small mb-2" style="letter-spacing:1px; color:#065f46;">
+                    <i class="fas fa-umbrella-beach me-1"></i> Одобрени одмори денес
+                    {% if odmori_denes %}
+                        <span class="badge ms-2" style="background:#10b981;">{{ odmori_denes | length }}</span>
+                    {% endif %}
+                </p>
+            </div>
+            {% if odmori_denes %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead style="background:#d1fae5;">
+                            <tr>
+                                <th style="color:#065f46;">Вработен</th>
+                                <th style="color:#065f46;">Период (од – до)</th>
+                                <th style="color:#065f46;" class="text-center">Раб. денови</th>
+                                <th style="color:#065f46;">Забелешка</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for o in odmori_denes %}
+                            <tr style="background:{% if loop.index is odd %}#f0fdf4{% else %}#ffffff{% endif %};">
+                                <td class="fw-bold">{{ o.prezime }} {{ o.ime }}</td>
+                                <td>
+                                    <span class="badge" style="background:#10b981; font-size:0.85rem; padding:5px 10px;">
+                                        {{ o.datum_od | replace('-', '.') | reverse | replace('.', '-', 2) }}
+                                        –
+                                        {{ o.datum_do | replace('-', '.') | reverse | replace('.', '-', 2) }}
+                                    </span>
+                                </td>
+                                <td class="text-center fw-bold" style="color:#10b981;">{{ o.working_days }}</td>
+                                <td class="text-muted small">{{ o.zabeleska or '—' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4 text-muted" style="background:#f0fdf4; border-top:1px solid #d1fae5;">
+                    <i class="fas fa-umbrella-beach fa-2x mb-2 opacity-30" style="color:#10b981;"></i>
+                    <p class="mb-0 fw-light small">Денес нема одобрени одмори</p>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- ══ НЕДЕЛЕН ИЗВЕШТАЈ ══ -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden mb-5">
+        <div class="card-header text-white py-4 px-5 fw-bold"
+             style="background: linear-gradient(135deg, #6f42c1, #4b2b9e);">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <h4 class="mb-0 d-flex align-items-center">
+                    <i class="fas fa-calendar-week me-3 fs-4"></i>
+                    Неделен извештај
+                </h4>
+                <span class="badge bg-white text-dark fs-6 px-3 py-2 fw-semibold">
+                    <i class="fas fa-calendar-alt me-1" style="color:#6f42c1;"></i>
+                    {{ week_start }} – {{ week_end }}
+                </span>
+            </div>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+
+            {% if nedelen_raw or odmori_nedela %}
+
+            {# ── Резиме картички ── #}
+            <div class="row g-3 mb-5">
+                <div class="col-6 col-md-3">
+                    <div class="stat-card text-center p-3 rounded-3" style="background:#f5f3ff; border:1px solid #ddd6fe;">
+                        <div class="fs-1 fw-bold" style="color:#6f42c1;">{{ nedelen_raw|length }}</div>
+                        <div class="small text-muted mt-1">Вкупно записи</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card text-center p-3 rounded-3" style="background:#fef3c7; border:1px solid #fde68a;">
+                        <div class="fs-1 fw-bold" style="color:#d97706;">{{ nedelen_po_vraboten|length }}</div>
+                        <div class="small text-muted mt-1">Вработени</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    {% set total_h = namespace(val=0) %}
+                    {% for r in nedelen_raw %}{% set total_h.val = total_h.val + r.casovi %}{% endfor %}
+                    <div class="stat-card text-center p-3 rounded-3" style="background:#fce7f3; border:1px solid #fbcfe8;">
+                        <div class="fs-1 fw-bold" style="color:#db2777;">{{ total_h.val | int }}</div>
+                        <div class="small text-muted mt-1">Вкупно часови</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card text-center p-3 rounded-3" style="background:#d1fae5; border:1px solid #6ee7b7;">
+                        <div class="fs-1 fw-bold" style="color:#065f46;">{{ odmori_nedela | length }}</div>
+                        <div class="small text-muted mt-1">На одмор</div>
+                    </div>
+                </div>
+            </div>
+
+            {# ── Резиме по тип ── #}
+            {% if tip_summary %}
+            <div class="mb-5">
+                <h6 class="fw-bold text-muted mb-3">
+                    <i class="fas fa-tags me-2"></i>Отсуства по тип оваа недела
+                </h6>
+                <div class="row g-2">
+                    {% set tip_colors = {
+                        'боледување':      ('#fef2f2','#ef4444'),
+                        'слободен ден':    ('#f0fdf4','#16a34a'),
+                        'доцнење':         ('#fefce8','#ca8a04'),
+                        'рано заминување': ('#fff7ed','#ea580c'),
+                        'втора смена':     ('#f5f3ff','#7c3aed'),
+                        'друго':           ('#f8fafc','#64748b'),
+                    } %}
+                    {% for tip, data in tip_summary.items() %}
+                    {% set bg, clr = tip_colors.get(tip, ('#f8fafc','#64748b')) %}
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="p-3 rounded-3 text-center" style="background:{{ bg }}; border:1px solid {{ clr }}22;">
+                            <div class="fw-bold fs-4" style="color:{{ clr }};">{{ data.count }}</div>
+                            <div class="small fw-semibold" style="color:{{ clr }};">{{ tip | capitalize }}</div>
+                            <div class="small text-muted">{{ data.casovi | int }} ч.</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {# ── Временска лента по ден ── #}
+            <div class="mb-5">
+                <h6 class="fw-bold text-muted mb-3">
+                    <i class="fas fa-chart-bar me-2"></i>Активност по ден
+                </h6>
+                <div class="row g-2">
+                    {% for wd in week_days_list %}
+                    {% set day_records  = nedelen_raw | selectattr('datum','equalto', wd.datum) | list %}
+                    {% set day_odmori   = odmori_nedela | selectattr('datum_od', 'le', wd.datum) | selectattr('datum_do', 'ge', wd.datum) | list %}
+                    {% set day_count    = day_records | length %}
+                    {% set odmor_count  = day_odmori | length %}
+                    {% set vtora_count  = day_records | selectattr('tip','equalto','втора смена') | list | length %}
+                    <div class="col">
+                        <div class="text-center p-2 rounded-3 day-cell
+                            {% if wd.is_today %}day-today
+                            {% elif wd.is_weekend %}day-weekend
+                            {% elif day_count > 0 or odmor_count > 0 %}day-active
+                            {% else %}day-empty{% endif %}">
+                            <div class="small fw-bold">{{ wd.label }}</div>
+                            {% if day_count > 0 %}
+                                <div class="fs-5 fw-bold mt-1">{{ day_count }}</div>
+                                <div class="small opacity-75">
+                                    {% set day_h = namespace(val=0) %}
+                                    {% for r in day_records %}{% set day_h.val = day_h.val + r.casovi %}{% endfor %}
+                                    {{ day_h.val | int }}ч
+                                </div>
+                            {% else %}
+                                <div class="fs-5 mt-1 opacity-30">—</div>
+                            {% endif %}
+                            {% if vtora_count > 0 and not wd.is_weekend %}
+                                <div class="mt-1">
+                                    <span class="badge" style="background:#7c3aed; font-size:0.68rem; padding:2px 6px;">
+                                        🌙 {{ vtora_count }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                            {% if odmor_count > 0 and not wd.is_weekend %}
+                                <div class="mt-1">
+                                    <span class="badge" style="background:#10b981; font-size:0.68rem; padding:2px 6px;">
+                                        🏖 {{ odmor_count }}
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# ── Детален преглед по ден ── #}
+            <h6 class="fw-bold text-muted mb-4">
+                <i class="fas fa-calendar-alt me-2"></i>Детален преглед по ден
+            </h6>
+
+            {% set mk_day_names = ['Понеделник','Вторник','Среда','Четврток','Петок'] %}
+            {% for wd in week_days_list %}
+            {% if not wd.is_weekend %}
+            {% set day_records = nedelen_raw | selectattr('datum','equalto', wd.datum) | list %}
+            {% set day_odmori  = odmori_nedela | selectattr('datum_od', 'le', wd.datum) | selectattr('datum_do', 'ge', wd.datum) | list %}
+            {% set day_vtora   = day_records | selectattr('tip','equalto','втора смена') | list %}
+            {% set day_ostanati = day_records | rejectattr('tip','equalto','втора смена') | list %}
+            {% set has_anything = day_records | length > 0 or day_odmori | length > 0 %}
+
+            <div class="mb-4 rounded-3 overflow-hidden" style="border:1px solid #e5e7eb;">
+                <div class="d-flex align-items-center justify-content-between px-4 py-2 fw-bold"
+                     style="background:{% if wd.is_today %}#4c1d95{% else %}#374151{% endif %}; color:#fff;">
+                    <span>
+                        <i class="fas fa-calendar-day me-2"></i>
+                        {{ mk_day_names[loop.index0] }} — {{ wd.datum | replace('-','.') }}
+                        {% if wd.is_today %}<span class="badge bg-white text-dark ms-2 fs-7">Денес</span>{% endif %}
+                    </span>
+                    <span class="d-flex gap-2">
+                        {% if day_ostanati | length > 0 %}
+                        <span class="badge bg-danger">{{ day_ostanati | length }} отсуства</span>
+                        {% endif %}
+                        {% if day_vtora | length > 0 %}
+                        <span class="badge" style="background:#7c3aed;">🌙 {{ day_vtora | length }} втора смена</span>
+                        {% endif %}
+                        {% if day_odmori | length > 0 %}
+                        <span class="badge" style="background:#10b981;">🏖 {{ day_odmori | length }} одмори</span>
+                        {% endif %}
+                    </span>
+                </div>
+
+                {% if has_anything %}
+                <table class="table table-sm mb-0 align-middle">
+                    <thead style="background:#f9fafb;">
+                        <tr>
+                            <th class="px-3 py-2">Вработен</th>
+                            <th class="px-3 py-2">Тип</th>
+                            <th class="px-3 py-2 text-center">Часови / Период</th>
+                            <th class="px-3 py-2 text-center">Статус</th>
+                            <th class="px-3 py-2">Забелешка</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {# Отсуства (без втора смена) #}
+                        {% for r in day_ostanati %}
+                        {% set tip_cls = {
+                            'боледување':      'badge bg-danger',
+                            'слободен ден':    'badge bg-success',
+                            'доцнење':         'badge bg-warning text-dark',
+                            'рано заминување': 'badge bg-orange-custom',
+                            'друго':           'badge bg-secondary',
+                        } %}
+                        <tr>
+                            <td class="px-3 fw-medium">{{ r.prezime }} {{ r.ime }}</td>
+                            <td class="px-3">
+                                <span class="{{ tip_cls.get(r.tip, 'badge bg-secondary') }}">{{ r.tip }}</span>
+                            </td>
+                            <td class="px-3 text-center fw-bold">{{ r.casovi }}ч</td>
+                            <td class="px-3 text-center">
+                                {% if r.plateno %}
+                                    <span class="badge bg-success">Платено</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Неплатено</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-3 text-muted small">{{ r.zabeleska or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+
+                        {# Втора смена #}
+                        {% for r in day_vtora %}
+                        <tr style="background:#f5f3ff;">
+                            <td class="px-3 fw-medium" style="color:#4c1d95;">
+                                <i class="fas fa-moon me-1" style="color:#7c3aed;"></i>
+                                {{ r.prezime }} {{ r.ime }}
+                            </td>
+                            <td class="px-3">
+                                <span class="badge" style="background:#7c3aed;">Втора смена</span>
+                            </td>
+                            <td class="px-3 text-center fw-bold" style="color:#7c3aed;">{{ r.casovi }}ч</td>
+                            <td class="px-3 text-center">
+                                {% if r.plateno %}
+                                    <span class="badge bg-success">Платено</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Неплатено</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-3 text-muted small">{{ r.zabeleska or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+
+                        {# Одмори #}
+                        {% for o in day_odmori %}
+                        <tr style="background:#f0fdf4;">
+                            <td class="px-3 fw-medium" style="color:#065f46;">
+                                <i class="fas fa-umbrella-beach me-1" style="color:#10b981;"></i>
+                                {{ o.prezime }} {{ o.ime }}
+                            </td>
+                            <td class="px-3">
+                                <span class="badge" style="background:#10b981;">Одмор</span>
+                            </td>
+                            <td class="px-3 text-center small" style="color:#065f46;">
+                                {{ o.datum_od | replace('-','.') }} – {{ o.datum_do | replace('-','.') }}
+                                <br>
+                                <span class="text-muted">({{ o.working_days }} раб. дена)</span>
+                            </td>
+                            <td class="px-3 text-center">
+                                <span class="badge" style="background:#d1fae5; color:#065f46; border:1px solid #10b981;">Одобрен</span>
+                            </td>
+                            <td class="px-3 text-muted small">{{ o.zabeleska or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="text-center py-3 text-muted" style="background:#fafafa;">
+                    <small><i class="fas fa-check me-1"></i>Нема отсуства или одмори</small>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% endfor %}
+
+            {# ── Детална картичка по вработен ── #}
+            {% if nedelen_po_vraboten %}
+            <h6 class="fw-bold text-muted mb-3 mt-4">
+                <i class="fas fa-users me-2"></i>Детали по вработен
+            </h6>
+            <div class="row g-3 mb-5">
+                {% for vid, info in nedelen_po_vraboten.items() %}
+                <div class="col-md-6 col-xl-4">
+                    <div class="employee-week-card p-3 rounded-3 h-100"
+                         style="background:#fafafa; border:1px solid #e5e7eb;">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar-circle me-3">
+                                {{ info.ime[0] }}{{ info.prezime[0] }}
+                            </div>
+                            <div>
+                                <div class="fw-bold">{{ info.prezime }} {{ info.ime }}</div>
+                                <div class="small text-muted">
+                                    {{ info.dena|length }} отсуство{% if info.dena|length != 1 %}а{% endif %} •
+                                    {{ info.vkupno_casovi | int }} часа
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% set tip_badge = {
+                                'боледување':      'bg-danger',
+                                'слободен ден':    'bg-success',
+                                'доцнење':         'bg-warning text-dark',
+                                'рано заминување': 'bg-orange',
+                                'втора смена':     'bg-vtora',
+                                'друго':           'bg-secondary',
+                            } %}
+                            {% for den in info.dena %}
+                            <span class="badge {{ tip_badge.get(den.tip, 'bg-secondary') }} px-2 py-1"
+                                  style="font-size:0.75rem;{% if den.tip == 'втора смена' %}background:#7c3aed!important;{% endif %}"
+                                  title="{{ den.tip }} — {{ den.casovi }}ч{% if not den.plateno %} (неплатено){% endif %}">
+                                {{ den.dan }}: {{ den.tip[:6] }}{% if not den.plateno %}*{% endif %}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {# ── Сите записи за неделата ── #}
+            {% if nedelen_raw %}
+            <h6 class="fw-bold text-muted mb-3">
+                <i class="fas fa-table me-2"></i>Сите записи за неделата
+            </h6>
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0 align-middle" style="min-width:700px;">
+                    <thead style="background:#6f42c1; color:#fff;">
+                        <tr>
+                            <th class="px-3 py-2">Вработен</th>
+                            <th class="px-3 py-2">Ден / Датум</th>
+                            <th class="px-3 py-2">Тип</th>
+                            <th class="px-3 py-2 text-center">Часови</th>
+                            <th class="px-3 py-2 text-center">Платено</th>
+                            <th class="px-3 py-2">Забелешка</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set tip_cls_map = {
+                            'боледување':      'badge bg-danger',
+                            'слободен ден':    'badge bg-success',
+                            'доцнење':         'badge bg-warning text-dark',
+                            'рано заминување': 'badge bg-orange-custom',
+                            'втора смена':     'badge bg-vtora-custom',
+                            'друго':           'badge bg-secondary',
+                        } %}
+                        {% for r in nedelen_raw %}
+                        <tr {% if r.tip == 'втора смена' %}style="background:#faf5ff;"{% endif %}>
+                            <td class="px-3 fw-medium">{{ r.prezime }} {{ r.ime }}</td>
+                            <td class="px-3">
+                                <span class="badge bg-light text-dark border me-1" style="font-size:0.78rem;">
+                                    {{ r.datum }}
+                                </span>
+                            </td>
+                            <td class="px-3">
+                                <span class="{{ tip_cls_map.get(r.tip, 'badge bg-secondary') }}"
+                                      {% if r.tip == 'втора смена' %}style="background:#7c3aed!important;"{% endif %}>
+                                    {{ r.tip }}
+                                </span>
+                            </td>
+                            <td class="px-3 text-center fw-bold">{{ r.casovi }}</td>
+                            <td class="px-3 text-center">
+                                {% if r.plateno %}
+                                    <span class="badge bg-success">Да</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Не</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-3 text-muted small">{{ r.zabeleska or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% else %}
+            {# Празна недела #}
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-calendar-week fa-4x mb-3 opacity-30"></i>
+                <h5 class="fw-light mb-2">Нема отсуства или одмори оваа недела</h5>
+                <p class="small">{{ week_start }} – {{ week_end }}</p>
+                <div class="row g-2 mt-3 justify-content-center" style="max-width:600px; margin:0 auto;">
+                    {% for wd in week_days_list %}
+                    <div class="col">
+                        <div class="text-center p-2 rounded-3
+                            {% if wd.is_today %}day-today{% elif wd.is_weekend %}day-weekend{% else %}day-empty{% endif %}">
+                            <div class="small fw-bold">{{ wd.label }}</div>
+                            <div class="fs-5 mt-1 opacity-30">—</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ══ ТАБЕЛА СО СИ ТЕ ОТСУСТВА + EDIT MODALI ══ -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden mb-5">
+        <div class="card-header text-white py-4 px-5 fw-bold"
+             style="background: linear-gradient(135deg, #6c757d, #495057);">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-list-ul me-3 fs-4"></i>
+                Сите секојдневни отсуства
+            </h4>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                <table class="table table-hover table-striped mb-0 align-middle" style="width:100%; min-width:900px;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Вработен</th>
+                            <th>Датум</th>
+                            <th>Тип</th>
+                            <th class="text-center">Часови</th>
+                            <th class="text-center">Платено</th>
+                            <th>Забелешка</th>
+                            <th class="text-center">Акции</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if otsustva %}
+                            {% for o in otsustva %}
+                            <tr {% if o.tip == 'втора смена' %}style="background:#faf5ff;"{% endif %}>
+                                <td class="fw-medium">{{ o.prezime }} {{ o.ime }}</td>
+                                <td>{{ o.datum }}</td>
+                                <td>
+                                    {% if o.tip == 'втора смена' %}
+                                        <span class="badge" style="background:#7c3aed;">
+                                            <i class="fas fa-moon me-1"></i>{{ o.tip }}
+                                        </span>
+                                    {% else %}
+                                        {{ o.tip }}
+                                    {% endif %}
+                                </td>
+                                <td class="text-center fw-bold">{{ o.casovi }}</td>
+                                <td class="text-center">
+                                    {% if o.plateno %}
+                                        <span class="badge bg-success px-3 py-2">Да</span>
+                                    {% else %}
+                                        <span class="badge bg-danger px-3 py-2">Не</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ o.zabeleska or '—' }}</td>
+                                <td class="text-center">
+                                    <button class="btn btn-warning btn-sm px-3 py-2 me-1"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editModal{{ o.id }}">
+                                        <i class="fas fa-edit"></i> Измени
+                                    </button>
+                                    <form method="POST" class="d-inline">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="otsustvo_id" value="{{ o.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm px-3 py-2"
+                                                onclick="return confirm('Дали сте сигурни?');">
+                                            <i class="fas fa-trash-alt"></i> Избриши
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+
+                            <!-- Edit Modal -->
+                            <div class="modal fade" id="editModal{{ o.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content rounded-4">
+                                        <div class="modal-header text-white py-4 px-5"
+                                             style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+                                            <h5 class="modal-title fs-4 mb-0">
+                                                <i class="fas fa-edit me-2"></i> Измени отсуство
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white"
+                                                    data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-5">
+                                            <form method="POST">
+                                                <input type="hidden" name="action" value="edit">
+                                                <input type="hidden" name="otsustvo_id" value="{{ o.id }}">
+                                                <div class="mb-4">
+                                                    <label class="form-label fw-bold">Вработен</label>
+                                                    <select class="form-select form-select-lg" name="vraboten_id_edit" required>
+                                                        {% for v in vraboteni %}
+                                                            <option value="{{ v.id }}"
+                                                                {% if v.id == o.vraboten_id %}selected{% endif %}>
+                                                                {{ v.prezime }} {{ v.ime }}
+                                                            </option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="mb-4">
+                                                    <label class="form-label fw-bold">Датум</label>
+                                                    <input type="date" class="form-control form-control-lg"
+                                                           name="datum_edit" value="{{ o.datum }}" required>
+                                                </div>
+                                                <div class="mb-4">
+                                                    <label class="form-label fw-bold">Тип</label>
+                                                    <select class="form-select form-select-lg" name="tip_edit" required>
+                                                        <option value="боледување"       {% if o.tip == 'боледување' %}selected{% endif %}>Боледување</option>
+                                                        <option value="слободен ден"     {% if o.tip == 'слободен ден' %}selected{% endif %}>Слободен ден</option>
+                                                        <option value="доцнење"          {% if o.tip == 'доцнење' %}selected{% endif %}>Доцнење</option>
+                                                        <option value="рано заминување"  {% if o.tip == 'рано заминување' %}selected{% endif %}>Рано заминување</option>
+                                                        <option value="втора смена"      {% if o.tip == 'втора смена' %}selected{% endif %}>Втора смена</option>
+                                                        <option value="друго"            {% if o.tip == 'друго' %}selected{% endif %}>Друго</option>
+                                                    </select>
+                                                </div>
+                                                <div class="mb-4">
+                                                    <label class="form-label fw-bold">Часови</label>
+                                                    <input type="number" step="0.5" min="0" max="24"
+                                                           class="form-control form-control-lg text-center fw-bold"
+                                                           name="casovi_edit" value="{{ o.casovi }}" required>
+                                                </div>
+                                                <div class="mb-4 form-check">
+                                                    <input class="form-check-input" type="checkbox"
+                                                           name="plateno_edit" id="plateno_{{ o.id }}"
+                                                           {% if o.plateno %}checked{% endif %}>
+                                                    <label class="form-check-label fw-medium"
+                                                           for="plateno_{{ o.id }}">Платено</label>
+                                                </div>
+                                                <div class="mb-4">
+                                                    <label class="form-label fw-bold">Забелешка</label>
+                                                    <textarea class="form-control form-control-lg"
+                                                              name="zabeleska_edit" rows="3">{{ o.zabeleska or '' }}</textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold">
+                                                    <i class="fas fa-save me-2"></i> Зачувај измени
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-5">
+                                    <i class="fas fa-inbox fa-4x mb-3 opacity-50"></i><br>
+                                    Сè уште нема записани секојдневни отсуства.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('main.odmori') }}"
+           class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Одмори
+        </a>
+    </div>
+</div>
+
+<style>
+    .card { border-radius: var(--radius, 12px); overflow: hidden; transition: box-shadow 0.3s ease; }
+    .card:hover { box-shadow: 0 16px 36px rgba(0,0,0,0.13) !important; }
+    body.modal-open .card,
+    body.modal-open .card:hover { box-shadow: none !important; transition: none !important; }
+
+    .day-cell     { transition: transform 0.15s; border: 1px solid #e5e7eb; min-width: 60px; }
+    .day-today    { background: #ede9fe; border-color: #7c3aed !important; color: #4c1d95; }
+    .day-weekend  { background: #f1f5f9; border-color: #cbd5e1 !important; color: #94a3b8; }
+    .day-active   { background: #fef9c3; border-color: #fde047 !important; color: #713f12; }
+    .day-empty    { background: #f9fafb; border-color: #e5e7eb !important; color: #9ca3af; }
+
+    .avatar-circle {
+        width: 42px; height: 42px; border-radius: 50%;
+        background: linear-gradient(135deg, #6f42c1, #4b2b9e);
+        color: #fff; display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .employee-week-card { transition: box-shadow 0.2s; }
+    .employee-week-card:hover { box-shadow: 0 4px 16px rgba(111,66,193,0.12); }
+    .bg-orange-custom { background: #f97316 !important; color: #fff; }
+    .bg-vtora-custom  { background: #7c3aed !important; color: #fff; }
+    .stat-card { transition: box-shadow 0.2s; }
+    .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .table-hover tbody tr:hover { background-color: rgba(220,38,38,0.06); }
+    .btn-lg { font-size: clamp(1.1rem, 4vw, 1.3rem); padding: clamp(0.9rem,4vw,1.2rem) clamp(2rem,6vw,3rem); min-height: 60px; }
+    .fs-7 { font-size: 0.75rem !important; }
+
+    @media (max-width: 992px) {
+        .container { padding: 0 1.5rem; }
+        .table-responsive { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+        table { min-width: 800px !important; }
+        th, td { white-space: nowrap !important; padding: 0.7rem 0.6rem; font-size: 0.9rem; }
+        .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+        .day-cell { min-width: 50px; font-size: 0.78rem; }
+    }
+    @media (max-width: 576px) {
+        .container { padding: 0 1rem; margin-top: 3rem; }
+        table { min-width: 700px !important; }
+        .btn-outline-secondary { width: 100%; padding: 0.8rem; font-size: 0.95rem; }
+        .day-cell { min-width: 40px; font-size: 0.72rem; padding: 0.4rem !important; }
+    }
+</style>
+
+{% endblock %}

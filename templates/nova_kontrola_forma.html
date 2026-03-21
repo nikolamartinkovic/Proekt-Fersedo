@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Нова контрола{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5" style="max-width: 1200px;">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0 fw-bold text-primary">Нова контрола</h2>
+ <a href="{{ url_for('kvalitet.kvalitet_arhiva') }}" class="btn btn-outline-secondary">
+    <i class="fas fa-arrow-left me-2"></i>Назад кон архива
+</a>
+    </div>
+
+    <!-- 1️⃣ ИЗБОР НА КАМИН -->
+    <div class="card shadow-lg border-0 rounded-4 mb-5">
+        <div class="card-body p-4 p-md-5">
+            <form method="GET">
+                <div class="row g-4 align-items-end">
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold fs-5">Избери камин</label>
+                        <select name="kamin" class="form-select form-select-lg" onchange="this.form.submit()">
+                            <option value="">-- Избери камин --</option>
+                            {% for k in kamini %}
+                                <option value="{{ k }}" {% if k == selected_kamin %}selected{% endif %}>
+                                    {{ k }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if selected_kamin %}
+    <!-- 2️⃣ ФОРМА ЗА ЗАЧУВУВАЊЕ -->
+    <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="kamin" value="{{ selected_kamin }}">
+
+        <div class="card shadow-lg border-0 rounded-4 mb-5">
+            <div class="card-header bg-primary text-white py-4 px-5 fw-bold">
+                <h4 class="mb-0">Детали за контролата</h4>
+            </div>
+            <div class="card-body p-5">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Камин</label>
+                        <input type="text" class="form-control form-control-lg" value="{{ selected_kamin }}" disabled>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Сериски број <span class="text-danger">*</span></label>
+                        <input type="text" name="seriski_broj" class="form-control form-control-lg" required placeholder="Внеси сериски број...">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3️⃣ ЧЕКОРИ -->
+        <div class="card shadow-lg border-0 rounded-4">
+            <div class="card-header bg-gradient-primary text-white py-4 px-5 fw-bold">
+                <h4 class="mb-0">Чекори за проверка</h4>
+            </div>
+            <div class="card-body p-5">
+                {% if cekori %}
+                    {% for cekor in cekori %}
+                    <div class="card mb-5 border-0 shadow-sm rounded-4">
+                        <div class="card-header bg-light fw-bold fs-5 py-3">
+                            {{ cekor.naslov }}
+                        </div>
+                        <div class="card-body">
+                            {% for pod in cekor.podcekori %}
+                            <div class="row align-items-start mb-4 pb-4 border-bottom">
+                                <!-- Опис -->
+                                <div class="col-md-5 pt-2">
+                                    <strong>{{ pod.opis }}</strong>
+                                </div>
+
+                                <!-- Checkbox OK -->
+                                <div class="col-md-2 text-center pt-2">
+                                    <div class="form-check form-check-lg d-flex justify-content-center">
+                                        <input class="form-check-input" type="checkbox" name="pod_{{ pod.id }}" value="1" id="ok_{{ pod.id }}"
+                                               onchange="toggleNok({{ pod.id }}, this)">
+                                        <label class="form-check-label ms-2 fw-semibold" for="ok_{{ pod.id }}">
+                                            ПОМИНАЛ
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- NOK дел -->
+                                <div class="col-md-5 d-none" id="nok_{{ pod.id }}">
+                                    <label class="form-label fw-bold mt-1">Забелешка (ако не поминал)</label>
+                                    <textarea name="zabeleska_{{ pod.id }}" class="form-control mb-3" rows="2" placeholder="Внеси забелешка..."></textarea>
+
+                                    <label class="form-label fw-bold">Приложи слика (опционално)</label>
+                                    <input type="file" name="slika_{{ pod.id }}" class="form-control mb-2" accept="image/*" id="slika_{{ pod.id }}">
+
+                                    <!-- Preview на сликата -->
+                                    <div id="preview_{{ pod.id }}" class="mt-3 text-center" style="max-height: 180px; overflow: hidden;">
+                                        <small class="text-muted">Ќе се прикаже preview по избор</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-warning text-center py-5">
+                        <i class="fas fa-exclamation-triangle me-2 fs-4"></i>
+                        Нема дефинирани чекори за овој камин.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="text-end mt-5 mb-5">
+            <button type="submit" class="btn btn-success btn-lg px-5 py-3 shadow-lg">
+                <i class="fas fa-save me-2"></i> Зачувај контрола
+            </button>
+        </div>
+    </form>
+    {% endif %}
+
+</div>
+
+<script>
+function toggleNok(id, checkbox) {
+    const nokDiv = document.getElementById("nok_" + id);
+    if (!checkbox.checked) {
+        nokDiv.classList.remove("d-none");
+    } else {
+        nokDiv.classList.add("d-none");
+        // Исчисти preview ако се скрие NOK
+        document.getElementById("preview_" + id).innerHTML = '<small class="text-muted">Ќе се прикаже preview по избор</small>';
+    }
+}
+
+// Preview на слика за секое поле
+document.querySelectorAll('input[type="file"]').forEach(input => {
+    input.addEventListener('change', function() {
+        const previewId = "preview_" + this.name.split('_')[1];
+        const previewDiv = document.getElementById(previewId);
+        previewDiv.innerHTML = '';
+
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '180px';
+                img.style.borderRadius = '8px';
+                img.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                previewDiv.appendChild(img);
+            }
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+});
+</script>
+
+{% endblock %}

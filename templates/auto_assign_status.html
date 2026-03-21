@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Статус на Авто-Доделување</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        .status { padding: 10px; border-radius: 5px; margin: 10px 0; }
+        .active { background: #d4edda; border: 1px solid #c3e6cb; }
+        .inactive { background: #f8d7da; border: 1px solid #f5c6cb; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .alert { padding: 15px; background-color: #fff3cd; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Статус на Авто-Доделување на Набавки</h1>
+    
+    <div class="status {% if thread_active %}active{% else %}inactive{% endif %}">
+        <strong>Тред статус:</strong> 
+        {% if thread_active %}✅ АКТИВЕН{% else %}❌ НЕАКТИВЕН{% endif %}
+    </div>
+    
+    <div class="alert">
+        <strong>Време на проверка:</strong> {{ current_time }}<br>
+        Системот проверува на секои 10-30 секунди случајно.
+    </div>
+    
+    <h2>📊 Статистики</h2>
+    <p><strong>Слободни барања чекаат доделување:</strong> {{ free_requests }}</p>
+    
+    <h3>Корисници во Nabavki ({{ nabavki_users|length }})</h3>
+    <table>
+        <tr>
+            <th>Корисник</th>
+            <th>Доделени барања</th>
+        </tr>
+        {% for user in nabavki_users %}
+        <tr>
+            <td>{{ user.username }}</td>
+            <td>{{ user.assigned }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    
+    {% if last_assignments %}
+    <h3>Последни доделувања</h3>
+    <table>
+        <tr>
+            <th>ID на барање</th>
+            <th>Доделено на</th>
+            <th>Време</th>
+        </tr>
+        {% for log in last_assignments %}
+        <tr>
+            <td>{{ log.request_id }}</td>
+            <td>{{ log.assigned_to }}</td>
+            <td>{{ log.assigned_at }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+    
+    <h3>Рачни акции</h3>
+    <form action="{{ url_for('test_single_assign') }}" method="POST" style="margin: 10px 0;">
+        <button type="submit" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px;">
+            🔄 Рачно додели ЕДНО барање
+        </button>
+    </form>
+    
+    <a href="{{ url_for('nabavki') }}">← Назад до набавки</a>
+</body>
+</html>

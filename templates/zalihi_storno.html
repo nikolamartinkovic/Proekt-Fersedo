@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 900px; margin: 3rem auto; padding: 0 1rem;">
+
+    <!-- Наслов -->
+    <div class="text-center mb-5">
+        <div class="d-inline-flex align-items-center justify-content-center mb-3"
+             style="width: 72px; height: 72px; border-radius: 50%; background: rgba(239,68,68,0.12);">
+            <i class="fas fa-undo-alt fa-2x" style="color: #ef4444;"></i>
+        </div>
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(1.8rem, 5vw, 2.6rem); margin-bottom: 0.3rem;">
+            Сторно на залиха
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 1.1rem; margin: 0;">
+            Избери артикл, количина и внеси задолжителна забелешка
+        </p>
+    </div>
+
+    <!-- Alert zone -->
+    <div id="alertZone" class="mb-4"></div>
+
+    <!-- Форма -->
+    <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5" style="background: var(--surface);">
+
+        <!-- Чекор 1: PN -->
+        <div class="mb-4">
+            <label class="form-label fw-bold" style="font-size: 1.05rem;">
+                <i class="fas fa-barcode me-2" style="color: #ef4444;"></i>Part Number (PN)
+            </label>
+            <div class="input-group input-group-lg">
+                <input type="text" id="pnInput" class="form-control rounded-3"
+                       placeholder="Внеси или скенирај PN..."
+                       autocomplete="off" autocapitalize="characters"
+                       style="font-size: 1.1rem; letter-spacing: 0.05em;">
+                <button class="btn btn-outline-secondary rounded-3 ms-2" type="button" id="btnSearch">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            <!-- Preview на артикл -->
+            <div id="artiklPreview" class="mt-3 p-3 rounded-3 d-none"
+                 style="background: rgba(239,68,68,0.07); border: 1.5px solid rgba(239,68,68,0.25);">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="fas fa-box fa-lg" style="color: #ef4444;"></i>
+                    <div>
+                        <div class="fw-bold" id="previewPN" style="font-size: 1.1rem;"></div>
+                        <div class="text-muted" id="previewIme" style="font-size: 0.95rem;"></div>
+                    </div>
+                </div>
+                <!-- Залихи -->
+                <div class="row g-3 mt-2">
+                    <div class="col-6">
+                        <div class="p-3 rounded-3 text-center"
+                             style="background: rgba(22,163,74,0.1); border: 1px solid rgba(22,163,74,0.25);">
+                            <div style="font-size: 0.8rem; color: #16a34a; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Платена залиха</div>
+                            <div id="previewPlatena" style="font-size: 2rem; font-weight: 800; color: #16a34a;">—</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 rounded-3 text-center"
+                             style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25);">
+                            <div style="font-size: 0.8rem; color: #f59e0b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Неплатена залиха</div>
+                            <div id="previewNeplatena" style="font-size: 2rem; font-weight: 800; color: #f59e0b;">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="artiklNotFound" class="mt-2 text-danger d-none" style="font-size: 0.95rem;">
+                <i class="fas fa-exclamation-circle me-1"></i> Артиклот не е пронајден.
+            </div>
+        </div>
+
+        <!-- Скриен artikl_id -->
+        <input type="hidden" id="artiklId" value="">
+
+        <!-- Чекор 2: Тип на залиха -->
+        <div class="mb-4" id="tipSection" style="display:none;">
+            <label class="form-label fw-bold" style="font-size: 1.05rem;">
+                <i class="fas fa-layer-group me-2" style="color: #ef4444;"></i>Тип на залиха за сторно
+            </label>
+            <div class="d-flex gap-3 flex-wrap">
+                <div class="form-check form-check-inline flex-grow-1">
+                    <input class="form-check-input" type="radio" name="tipZaliha" id="tipPlatena" value="platena">
+                    <label class="form-check-label p-3 rounded-3 w-100 d-flex align-items-center gap-2"
+                           for="tipPlatena"
+                           style="background: rgba(22,163,74,0.08); border: 2px solid rgba(22,163,74,0.2); cursor: pointer; font-weight: 600; color: #16a34a; transition: all 0.2s;">
+                        <i class="fas fa-check-circle"></i> Платена залиха
+                    </label>
+                </div>
+                <div class="form-check form-check-inline flex-grow-1">
+                    <input class="form-check-input" type="radio" name="tipZaliha" id="tipNeplatena" value="neplatena">
+                    <label class="form-check-label p-3 rounded-3 w-100 d-flex align-items-center gap-2"
+                           for="tipNeplatena"
+                           style="background: rgba(245,158,11,0.08); border: 2px solid rgba(245,158,11,0.2); cursor: pointer; font-weight: 600; color: #d97706; transition: all 0.2s;">
+                        <i class="fas fa-clock"></i> Неплатена залиха
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Чекор 3: Количина -->
+        <div class="mb-4" id="kolicinaSec" style="display:none;">
+            <label class="form-label fw-bold" style="font-size: 1.05rem;">
+                <i class="fas fa-sort-numeric-up me-2" style="color: #ef4444;"></i>Количина за сторно
+            </label>
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-outline-danger rounded-circle fw-bold"
+                        style="width:46px; height:46px; font-size:1.4rem; line-height:1;"
+                        type="button" id="btnMinus">−</button>
+                <input type="number" id="kolicina" class="form-control form-control-lg text-center"
+                       min="1" value="1"
+                       style="max-width: 130px; font-size: 1.5rem; font-weight: 700;">
+                <button class="btn btn-outline-danger rounded-circle fw-bold"
+                        style="width:46px; height:46px; font-size:1.4rem; line-height:1;"
+                        type="button" id="btnPlus">+</button>
+                <span id="maxInfo" class="text-muted" style="font-size: 0.9rem;"></span>
+            </div>
+        </div>
+
+        <!-- Чекор 4: Забелешка (задолжителна) -->
+        <div class="mb-5" id="zabeleskaSec" style="display:none;">
+            <label class="form-label fw-bold" style="font-size: 1.05rem;">
+                <i class="fas fa-comment-alt me-2" style="color: #ef4444;"></i>
+                Забелешка <span class="badge rounded-pill ms-1" style="background:#ef4444; font-size:0.75rem;">задолжително</span>
+            </label>
+            <textarea id="zabeleska" class="form-control" rows="3"
+                      placeholder="Причина за сторно (пр. Грешен внес, Оштетен артикл, Вишок залиха...)"
+                      style="font-size: 1rem; resize: vertical; min-height: 90px;"></textarea>
+            <div id="zabeleskaWarn" class="text-danger mt-1 d-none" style="font-size: 0.9rem;">
+                <i class="fas fa-exclamation-triangle me-1"></i> Забелешката е задолжителна!
+            </div>
+        </div>
+
+        <!-- Копчиња -->
+        <div class="d-flex gap-3 flex-wrap" id="btnSec" style="display:none !important;">
+            <button type="button" id="btnStorno"
+                    class="btn btn-lg fw-bold px-5 py-3 rounded-3 shadow flex-grow-1"
+                    style="background: #ef4444; color: #fff; font-size: 1.1rem; border: none;">
+                <i class="fas fa-undo-alt me-2"></i> Потврди Сторно
+            </button>
+            <a href="{{ url_for('zalihi.zalihi') }}"
+               class="btn btn-outline-secondary btn-lg fw-bold px-4 py-3 rounded-3">
+                <i class="fas fa-times me-1"></i> Откажи
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Историја на сторна -->
+    {% if storna %}
+    <div class="mt-5">
+        <h4 class="fw-bold mb-3" style="color: var(--primary);">
+            <i class="fas fa-history me-2" style="color: #ef4444;"></i>Последни сторна
+        </h4>
+        <div class="table-responsive rounded-4 shadow-sm">
+            <table class="table table-hover align-middle mb-0" style="background: var(--surface);">
+                <thead style="background: rgba(239,68,68,0.1);">
+                    <tr>
+                        <th class="py-3 ps-4">Датум</th>
+                        <th>PN</th>
+                        <th>Назив</th>
+                        <th class="text-center">Кол.</th>
+                        <th>Тип</th>
+                        <th>Корисник</th>
+                        <th>Забелешка</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in storna %}
+                    <tr>
+                        <td class="ps-4 text-muted" style="font-size:0.9rem; white-space:nowrap;">{{ s.datum[:16] }}</td>
+                        <td class="fw-bold">{{ s.pn }}</td>
+                        <td class="text-muted" style="font-size:0.9rem;">{{ s.ime }}</td>
+                        <td class="text-center">
+                            <span class="badge rounded-pill px-3 py-2"
+                                  style="background: rgba(239,68,68,0.15); color: #ef4444; font-size: 0.95rem; font-weight: 700;">
+                                −{{ s.kolicina }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if 'Платена' in s.tip %}
+                                <span class="badge rounded-pill px-3 py-2" style="background: rgba(22,163,74,0.15); color: #16a34a;">Платена</span>
+                            {% else %}
+                                <span class="badge rounded-pill px-3 py-2" style="background: rgba(245,158,11,0.15); color: #d97706;">Неплатена</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:0.9rem;">{{ s.username }}</td>
+                        <td class="text-muted" style="font-size:0.9rem; max-width:220px; word-break:break-word;">{{ s.zabeleska or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('zalihi.zalihi') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Залихи
+        </a>
+    </div>
+</div>
+
+<style>
+.form-check-input { display: none; }
+.form-check-input:checked + label {
+    border-color: currentColor !important;
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.15);
+    transform: scale(1.02);
+}
+.form-control:focus { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.15); }
+#btnStorno:hover { background: #dc2626 !important; transform: translateY(-1px); }
+#btnStorno:active { transform: translateY(0); }
+</style>
+
+<script>
+let artiklData = null;  // { id, pn, ime, platena, neplatena }
+
+// ── Пребарување по PN ──────────────────────────────────────
+async function searchPN() {
+    const pn = document.getElementById('pnInput').value.trim().toUpperCase();
+    if (!pn) return;
+
+    document.getElementById('artiklPreview').classList.add('d-none');
+    document.getElementById('artiklNotFound').classList.add('d-none');
+    hideSteps();
+
+    try {
+        const res = await fetch(`/zalihi/get_artikal/${encodeURIComponent(pn)}`);
+        if (!res.ok) throw new Error();
+        const art = await res.json();
+        if (!art.success) throw new Error();
+
+        // Земи ги залихите
+        const stockRes = await fetch(`/zalihi/storno/zaliha/${art.id}`);
+        const stock = await stockRes.json();
+
+        artiklData = {
+            id: art.id,
+            pn: art.pn,
+            ime: art.ime,
+            platena: stock.platena || 0,
+            neplatena: stock.neplatena || 0
+        };
+
+        document.getElementById('artiklId').value = art.id;
+        document.getElementById('previewPN').textContent = art.pn;
+        document.getElementById('previewIme').textContent = art.ime;
+        document.getElementById('previewPlatena').textContent = stock.platena || 0;
+        document.getElementById('previewNeplatena').textContent = stock.neplatena || 0;
+        document.getElementById('artiklPreview').classList.remove('d-none');
+
+        showStep('tipSection');
+
+    } catch {
+        document.getElementById('artiklNotFound').classList.remove('d-none');
+        artiklData = null;
+    }
+}
+
+document.getElementById('btnSearch').addEventListener('click', searchPN);
+document.getElementById('pnInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') searchPN();
+});
+// Auto-search после 600ms пауза
+let debounceTimer;
+document.getElementById('pnInput').addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(searchPN, 600);
+});
+
+// ── Промена на тип ─────────────────────────────────────────
+document.querySelectorAll('input[name="tipZaliha"]').forEach(r => {
+    r.addEventListener('change', () => {
+        if (!artiklData) return;
+        const tip = r.value;
+        const max = tip === 'platena' ? artiklData.platena : artiklData.neplatena;
+        document.getElementById('maxInfo').textContent = `Расположливо: ${max}`;
+        document.getElementById('kolicina').max = max;
+        document.getElementById('kolicina').value = Math.min(1, max);
+        showStep('kolicinaSec');
+        showStep('zabeleskaSec');
+        document.getElementById('btnSec').style.display = 'flex';
+    });
+});
+
+// ── +/- копчиња ────────────────────────────────────────────
+document.getElementById('btnMinus').addEventListener('click', () => {
+    const inp = document.getElementById('kolicina');
+    if (parseInt(inp.value) > 1) inp.value = parseInt(inp.value) - 1;
+});
+document.getElementById('btnPlus').addEventListener('click', () => {
+    const inp = document.getElementById('kolicina');
+    const max = parseInt(inp.max) || 9999;
+    if (parseInt(inp.value) < max) inp.value = parseInt(inp.value) + 1;
+});
+
+// ── Потврди Сторно ─────────────────────────────────────────
+document.getElementById('btnStorno').addEventListener('click', async () => {
+    const zabeleska = document.getElementById('zabeleska').value.trim();
+    const kolicina  = parseInt(document.getElementById('kolicina').value);
+    const tipRadio  = document.querySelector('input[name="tipZaliha"]:checked');
+
+    // Валидација
+    if (!artiklData) return showAlert('Прво пребарај артикл!', 'danger');
+    if (!tipRadio)   return showAlert('Избери тип на залиха!', 'danger');
+    if (kolicina < 1) return showAlert('Внеси валидна количина!', 'danger');
+
+    if (!zabeleska) {
+        document.getElementById('zabeleskaWarn').classList.remove('d-none');
+        document.getElementById('zabeleska').focus();
+        return;
+    }
+    document.getElementById('zabeleskaWarn').classList.add('d-none');
+
+    const plateno = tipRadio.value === 'platena' ? 1 : 0;
+    const max     = plateno ? artiklData.platena : artiklData.neplatena;
+    if (kolicina > max) return showAlert(`Немате доволно залиха! Расположливо: ${max}`, 'danger');
+
+    // Потврда
+    if (!confirm(`Сигурно сакаш да направиш сторно на ${kolicina} ед. од ${artiklData.pn}?\n\nЗабелешка: ${zabeleska}`)) return;
+
+    const btn = document.getElementById('btnStorno');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Се обработува...';
+
+    try {
+        const res = await fetch('/zalihi/storno', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                artikl_id: artiklData.id,
+                pn:        artiklData.pn,
+                kolicina:  kolicina,
+                plateno:   plateno,
+                zabeleska: zabeleska
+            })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showAlert(data.message, 'success');
+            // Reset формата
+            document.getElementById('pnInput').value = '';
+            document.getElementById('artiklPreview').classList.add('d-none');
+            hideSteps();
+            artiklData = null;
+            setTimeout(() => location.reload(), 1800);
+        } else {
+            showAlert(data.message || 'Грешка при сторно!', 'danger');
+        }
+    } catch {
+        showAlert('Мрежна грешка. Обиди се повторно.', 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-undo-alt me-2"></i> Потврди Сторно';
+    }
+});
+
+// ── Помошни функции ────────────────────────────────────────
+function showStep(id) {
+    document.getElementById(id).style.display = 'block';
+}
+function hideSteps() {
+    ['tipSection','kolicinaSec','zabeleskaSec'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+    });
+    document.getElementById('btnSec').style.display = 'none';
+    document.querySelectorAll('input[name="tipZaliha"]').forEach(r => r.checked = false);
+    document.getElementById('zabeleska').value = '';
+    document.getElementById('kolicina').value = 1;
+}
+function showAlert(msg, type) {
+    const colors = {
+        success: { bg: 'rgba(22,163,74,0.1)', border: '#16a34a', color: '#15803d', icon: 'fa-check-circle' },
+        danger:  { bg: 'rgba(239,68,68,0.1)',  border: '#ef4444', color: '#dc2626', icon: 'fa-exclamation-circle' },
+    };
+    const c = colors[type] || colors.danger;
+    document.getElementById('alertZone').innerHTML = `
+        <div class="p-4 rounded-3 d-flex align-items-center gap-3"
+             style="background:${c.bg}; border:1.5px solid ${c.border}; color:${c.color};">
+            <i class="fas ${c.icon} fa-lg"></i>
+            <span class="fw-semibold">${msg}</span>
+        </div>`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+
+{% endblock %}

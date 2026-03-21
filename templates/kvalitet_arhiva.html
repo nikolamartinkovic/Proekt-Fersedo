@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Архива - Контроли на квалитет{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Архива на контроли на квалитет</h2>
+        <a href="{{ url_for('kvalitet.nova_kontrola') }}" class="btn btn-success">
+            <i class="fas fa-plus me-2"></i>Нова контрола
+        </a>
+    </div>
+
+    <!-- Live Search bar -->
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <div class="input-group input-group-lg">
+                <span class="input-group-text bg-white border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                </span>
+                <input type="text" id="searchInput" class="form-control"
+                       placeholder="Пребарај по сериски број, камин или датум...">
+                <button id="clearSearch" class="btn btn-outline-secondary d-none" type="button">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0" id="arhivaTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Камин</th>
+                            <th>Сериски број</th>
+                            <th>Датум и време</th>
+                            <th>Тековен PDF</th>
+                            <th>Претходни верзии</th>
+                            <th>Акција</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        {% for k in kontroli %}
+                        <tr>
+                            <td><strong>{{ k.id }}</strong></td>
+                            <td>{{ k.kamin }}</td>
+                            <td>{{ k.seriski_broj or '—' }}</td>
+                            <td>
+                                {% if k.datum %}
+                                    {{ k.datum | datetimeformat("%d.%m.%Y %H:%M") }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+
+                            <!-- Тековен PDF -->
+                            <td>
+                                {% if k.pdf_file %}
+                                    <a href="{{ url_for('static', filename='kvalitet_pdf/' ~ k.pdf_file) }}"
+                                       class="btn btn-sm btn-primary"
+                                       target="_blank"
+                                       title="Тековен PDF">
+                                        <i class="fas fa-file-pdf me-1"></i> PDF
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Нема PDF</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Претходни верзии -->
+                            <td>
+                                {% if k.pdf_verzii %}
+                                    <div class="d-flex flex-column gap-1">
+                                        {% for v in k.pdf_verzii %}
+                                        <a href="{{ url_for('static', filename='kvalitet_pdf/' ~ v.pdf_file) }}"
+                                           target="_blank"
+                                           class="btn btn-outline-secondary btn-sm"
+                                           title="Зачувано: {{ v.datum }}">
+                                            <i class="fas fa-file-pdf me-1"></i> Верзија {{ v.verzija }}
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted small">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Акција -->
+                            <td>
+                                <a href="{{ url_for('kvalitet.uredi_kontrola', kontrola_id=k.id) }}"
+                                   class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i> Уреди
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4 text-muted small">
+        Вкупно контроли: <strong id="totalCount">{{ kontroli | length }}</strong>
+    </div>
+</div>
+
+<script>
+const searchInput = document.getElementById('searchInput');
+const clearBtn = document.getElementById('clearSearch');
+const tableBody = document.getElementById('tableBody');
+const totalCount = document.getElementById('totalCount');
+
+const originalRows = Array.from(tableBody.querySelectorAll('tr'));
+
+function filterTable() {
+    const query = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
+
+    originalRows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 4) return;
+
+        const id     = cells[0].textContent.toLowerCase();
+        const kamin  = cells[1].textContent.toLowerCase();
+        const seriski = cells[2].textContent.toLowerCase();
+        const datum  = cells[3].textContent.toLowerCase();
+
+        const match = id.includes(query) ||
+                      kamin.includes(query) ||
+                      seriski.includes(query) ||
+                      datum.includes(query);
+
+        row.style.display = match ? '' : 'none';
+        if (match) visibleCount++;
+    });
+
+    totalCount.textContent = visibleCount;
+    clearBtn.classList.toggle('d-none', searchInput.value === '');
+}
+
+let debounceTimer;
+searchInput.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(filterTable, 300);
+});
+
+clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    filterTable();
+});
+</script>
+
+{% endblock %}

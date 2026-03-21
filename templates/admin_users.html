@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1200px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    <div class="text-center mb-5">
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3rem); margin-bottom: 0.5rem;">
+            Управување со корисници
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
+            Креирај, уреди или избриши корисници и нивните дозволи
+        </p>
+    </div>
+
+    <!-- Форма за креирање нов корисник -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden mb-5">
+        <div class="card-header text-white py-4 px-5" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-user-plus me-3 fs-4"></i>
+                Креирај нов корисник
+            </h4>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" id="createUserForm" novalidate>
+                <input type="hidden" name="action" value="create">
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label for="username" class="form-label fw-bold fs-5">Корисничко име</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" id="username" name="username" class="form-control" required
+                                   placeholder="Внеси корисничко ime" autocomplete="off">
+                            <div class="invalid-feedback">Задолжително поле</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="password" class="form-label fw-bold fs-5">Лозинка</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" id="password" name="password" class="form-control" required
+                                   placeholder="Внеси лозинка">
+                            <div class="invalid-feedback">Задолжително поле</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="email" class="form-label fw-bold fs-5">
+                            Email адреса
+                            <small class="text-muted fw-normal">(за нотификации)</small>
+                        </label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            <input type="email" id="email" name="email" class="form-control"
+                                   placeholder="korisnik@fersedo.com.mk">
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="is_admin" class="form-label fw-bold fs-5">Админ права</label>
+                        <select id="is_admin" name="is_admin" class="form-select form-select-lg">
+                            <option value="0">Не (обичен корисник)</option>
+                            <option value="1">Да (администратор)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="user_group" class="form-label fw-bold fs-5">Група</label>
+                        <select name="user_group" id="user_group" class="form-select form-select-lg">
+                            <option value="">— Без група —</option>
+                            <option value="Administracija">Administracija</option>
+                            <option value="Nabavki">Nabavki</option>
+                            <option value="Proizvodstvo">Proizvodstvo</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12 mt-4 text-end">
+                        <button type="submit" id="createBtn" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow">
+                            <span id="createText"><i class="fas fa-user-plus me-2"></i> Креирај корисник</span>
+                            <span id="createSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ══ ДОЗВОЛЕНИ МОДУЛИ ══ -->
+                <div class="mt-5">
+                    <label class="form-label fw-bold fs-4 mb-3 d-block">Дозволени модули (за не-администратори)</label>
+
+                    <!-- Основни модули -->
+                    <h6 class="fw-bold text-primary mb-3">Основни модули</h6>
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+                        {% for mod in modules.basic %}
+                        <div class="col">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="allowed_modules"
+                                       value="{{ mod.value }}" id="create_{{ mod.value }}">
+                                <label class="form-check-label" for="create_{{ mod.value }}">{{ mod.label }}</label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Одмори -->
+                    <h6 class="fw-bold text-primary mb-3">Модули за одмори</h6>
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+                        {% for mod in modules.odmori %}
+                        <div class="col">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="allowed_modules"
+                                       value="{{ mod.value }}" id="create_{{ mod.value }}">
+                                <label class="form-check-label" for="create_{{ mod.value }}">{{ mod.label }}</label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Залихи -->
+                    <h6 class="fw-bold text-primary mb-3">Залихи</h6>
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+                        {% for mod in modules.zalihi %}
+                        <div class="col">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="allowed_modules"
+                                       value="{{ mod.value }}" id="create_{{ mod.value }}">
+                                <label class="form-check-label" for="create_{{ mod.value }}">{{ mod.label }}</label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Квалитет -->
+                    <h6 class="fw-bold text-primary mb-3">Квалитет</h6>
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+                        {% for mod in modules.kvalitet %}
+                        <div class="col">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="allowed_modules"
+                                       value="{{ mod.value }}" id="create_{{ mod.value }}">
+                                <label class="form-check-label" for="create_{{ mod.value }}">{{ mod.label }}</label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Листа на корисници -->
+    {% if users %}
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden">
+        <div class="card-header text-white py-4 px-5" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-users me-3 fs-4"></i>
+                Сите корисници ({{ users|length }})
+            </h4>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Корисничко ime</th>
+                            <th>Email</th>
+                            <th>Админ</th>
+                            <th>Група</th>
+                            <th>Модули</th>
+                            <th>Акции</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        {% set user_idx = loop.index %}
+                        {% set allowed = (user.allowed_modules or '').split(',') | map('trim') | list %}
+
+                        <tr>
+                            <td class="fw-bold">{{ user.username }}</td>
+                            <td>
+                                {% if user.email %}
+                                    <span class="text-success">
+                                        <i class="fas fa-check-circle me-1"></i>{{ user.email }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">
+                                        <i class="fas fa-times-circle me-1"></i>Нема
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if user.is_admin %}
+                                    <span class="badge bg-success fs-6 px-3 py-2">Да</span>
+                                {% else %}
+                                    <span class="badge bg-secondary fs-6 px-3 py-2">Не</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ user.user_group or '—' }}</td>
+                            <td>
+                                {% if user.allowed_modules %}
+                                    <span class="badge bg-info fs-6 px-3 py-2">
+                                        {{ user.allowed_modules.split(',')|length }} модули
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary fs-6 px-3 py-2">Нема</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-warning btn-sm px-3 py-2 me-2"
+                                        data-bs-toggle="modal" data-bs-target="#editModal{{ user_idx }}">
+                                    <i class="fas fa-edit me-1"></i> Измени
+                                </button>
+
+                                {% if user.username != current_user %}
+                                <form method="POST" class="d-inline">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="username" value="{{ user.username }}">
+                                    <button type="submit" class="btn btn-danger btn-sm px-3 py-2"
+                                            onclick="return confirm('Дали сте сигурни дека сакате да го избришете {{ user.username }}?');">
+                                        <i class="fas fa-trash-alt me-1"></i> Избриши
+                                    </button>
+                                </form>
+                                {% else %}
+                                    <span class="text-muted small">Не може да се избрише</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- Edit Modal -->
+                        <div class="modal fade" id="editModal{{ user_idx }}" tabindex="-1">
+                            <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                                <div class="modal-content rounded-4 shadow-2xl">
+                                    <div class="modal-header bg-gradient text-white py-4 px-5">
+                                        <h5 class="modal-title fs-4">
+                                            <i class="fas fa-user-edit me-2"></i>
+                                            Измени корисник: <strong>{{ user.username }}</strong>
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+
+                                    <div class="modal-body p-5">
+                                        <form method="POST">
+                                            <input type="hidden" name="action" value="edit">
+                                            <input type="hidden" name="username" value="{{ user.username }}">
+
+                                            <div class="row g-4">
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold fs-5">Админ права</label>
+                                                    <select name="is_admin" class="form-select form-select-lg">
+                                                        <option value="0" {% if not user.is_admin %}selected{% endif %}>Не</option>
+                                                        <option value="1" {% if user.is_admin %}selected{% endif %}>Да</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold fs-5">Група</label>
+                                                    <select name="user_group" class="form-select form-select-lg">
+                                                        <option value="">— Без група —</option>
+                                                        <option value="Administracija" {% if user.user_group == 'Administracija' %}selected{% endif %}>Administracija</option>
+                                                        <option value="Nabavki" {% if user.user_group == 'Nabavki' %}selected{% endif %}>Nabavki</option>
+                                                        <option value="Proizvodstvo" {% if user.user_group == 'Proizvodstvo' %}selected{% endif %}>Proizvodstvo</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="col-md-4">
+                                                    <label class="form-label fw-bold fs-5">Нова лозинка</label>
+                                                    <input type="password" name="new_password" class="form-control form-control-lg"
+                                                           placeholder="Остави празно ако не менуваш">
+                                                </div>
+
+                                                <div class="col-12">
+                                                    <label class="form-label fw-bold fs-5">
+                                                        Email адреса
+                                                        <small class="text-muted fw-normal">(за нотификации)</small>
+                                                    </label>
+                                                    <div class="input-group input-group-lg">
+                                                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                                        <input type="email" name="email" class="form-control"
+                                                               placeholder="korisnik@fersedo.com.mk"
+                                                               value="{{ user.email or '' }}">
+                                                    </div>
+                                                </div>
+
+                                                <!-- ══ ДОЗВОЛЕНИ МОДУЛИ (Edit) ══ -->
+                                                <div class="col-12 mt-4">
+                                                    <label class="form-label fw-bold fs-4 mb-3">Дозволени модули</label>
+
+                                                    <!-- Основни -->
+                                                    <h6 class="fw-bold text-primary mb-3">Основни модули</h6>
+                                                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+                                                        {% for mod in modules.basic %}
+                                                        <div class="col">
+                                                            <div class="form-check form-switch">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                       name="allowed_modules" value="{{ mod.value }}"
+                                                                       id="edit_{{ mod.value }}_{{ user_idx }}"
+                                                                       {% if mod.value in allowed %}checked{% endif %}>
+                                                                <label class="form-check-label" for="edit_{{ mod.value }}_{{ user_idx }}">{{ mod.label }}</label>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+
+                                                    <!-- Одмори -->
+                                                    <h6 class="fw-bold text-primary mb-3">Модули за одмори</h6>
+                                                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+                                                        {% for mod in modules.odmori %}
+                                                        <div class="col">
+                                                            <div class="form-check form-switch">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                       name="allowed_modules" value="{{ mod.value }}"
+                                                                       id="edit_{{ mod.value }}_{{ user_idx }}"
+                                                                       {% if mod.value in allowed %}checked{% endif %}>
+                                                                <label class="form-check-label" for="edit_{{ mod.value }}_{{ user_idx }}">{{ mod.label }}</label>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+
+                                                    <!-- Залихи -->
+                                                    <h6 class="fw-bold text-primary mb-3">Залихи</h6>
+                                                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+                                                        {% for mod in modules.zalihi %}
+                                                        <div class="col">
+                                                            <div class="form-check form-switch">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                       name="allowed_modules" value="{{ mod.value }}"
+                                                                       id="edit_{{ mod.value }}_{{ user_idx }}"
+                                                                       {% if mod.value in allowed %}checked{% endif %}>
+                                                                <label class="form-check-label" for="edit_{{ mod.value }}_{{ user_idx }}">{{ mod.label }}</label>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+
+                                                    <!-- Квалитет -->
+                                                    <h6 class="fw-bold text-primary mb-3">Квалитет</h6>
+                                                    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3 mb-4">
+                                                        {% for mod in modules.kvalitet %}
+                                                        <div class="col">
+                                                            <div class="form-check form-switch">
+                                                                <input class="form-check-input" type="checkbox"
+                                                                       name="allowed_modules" value="{{ mod.value }}"
+                                                                       id="edit_{{ mod.value }}_{{ user_idx }}"
+                                                                       {% if mod.value in allowed %}checked{% endif %}>
+                                                                <label class="form-check-label" for="edit_{{ mod.value }}_{{ user_idx }}">{{ mod.label }}</label>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+
+                                                </div>
+
+                                                <div class="col-12 mt-4 text-end">
+                                                    <button type="submit" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow">
+                                                        <i class="fas fa-save me-2"></i> Зачувај промени
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center py-5 shadow-lg rounded-4">
+        <i class="fas fa-users-slash fa-4x mb-4 text-info opacity-75"></i>
+        <h4 class="fw-light">Сè уште нема креирани корисници</h4>
+        <p class="lead">Користете ја формата погоре за да додадете прв корисник.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.getElementById('createUserForm')?.addEventListener('submit', function(e) {
+    if (!this.checkValidity()) {
+        e.preventDefault();
+        this.classList.add('was-validated');
+        return;
+    }
+    const btn = document.getElementById('createBtn');
+    document.getElementById('createText').classList.add('d-none');
+    document.getElementById('createSpinner').classList.remove('d-none');
+    btn.disabled = true;
+});
+</script>
+
+{% endblock %}

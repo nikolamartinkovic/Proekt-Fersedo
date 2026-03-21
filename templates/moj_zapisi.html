@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    <div class="text-center mb-5 pb-4">
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.5rem;">
+            Мои записи
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
+            Преглед на твоите внесени готови и полуготов производи
+        </p>
+    </div>
+
+    <!-- Live search -->
+    <div class="mb-5" style="max-width: 500px; margin-left: auto; margin-right: auto;">
+        <div class="input-group input-group-lg">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" id="searchInput" class="form-control" placeholder="Пребарувај по камин...">
+        </div>
+    </div>
+
+    <!-- Готови производи -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden mb-5">
+        <div class="card-header text-white py-4 px-5 fw-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-check-circle me-3"></i>
+                Готови производи ({{ gotovi|length }})
+            </h4>
+        </div>
+
+        {% if gotovi %}
+        <div class="card-body p-0">
+            <form method="POST" id="deleteGotoviForm">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="tip" value="gotov">
+                <div class="table-responsive">
+                    <table id="gotoviTable" class="table table-hover table-striped mb-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-center" style="width: 60px;">
+                                    <input type="checkbox" id="selectAllGotovi" onclick="toggleSelectAll('gotovi')">
+                                </th>
+                                <th>Датум</th>
+                                <th>Време</th>
+                                <th>Камин</th>
+                                <th class="text-end">Произведени</th>
+                                <th class="text-center">Part Number</th>
+                                <th>Забелешка</th>
+                            </tr>
+                        </thead>
+                        <tbody id="gotoviTableBody">
+                            {% for r in gotovi %}
+                            <tr>
+                                <td class="text-center">
+                                    <input type="checkbox" name="selected_ids" value="{{ r['id'] }}">
+                                </td>
+                                <td>{{ r['datum'] }}</td>
+                                <td>{{ r['timestamp'] }}</td>
+                                <td>{{ r['kamin'] or '-' }}</td>
+                                <td class="text-end fw-bold">{{ r['proizvedeni'] or '0' }}</td>
+                                <td class="text-center">{{ r['part_number'] or '-' }}</td>
+                                <td>{{ r['zabeleska'] or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-light py-4 px-5 text-center">
+                    <button type="submit" id="deleteGotoviBtn" class="btn btn-danger btn-lg px-5 py-3 fw-bold shadow" disabled onclick="return confirm('Сигурно сакаш да ги избришеш избраните записи за готови производи? Ова е неповратно!');">
+                        <i class="fas fa-trash-alt me-2"></i> Избриши избрани
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="card-body py-5 text-center text-muted">
+            <i class="fas fa-check-circle fa-5x mb-4 opacity-50" style="color: #16a34a;"></i>
+            <h4 class="fw-light mb-3">Нема записи за готови производи</h4>
+            <p>Започни со додавање нов запис</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Полуготов производи -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden">
+        <div class="card-header text-white py-4 px-5 fw-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-industry me-3"></i>
+                Полуготов производи ({{ polugotovi|length }})
+            </h4>
+        </div>
+
+        {% if polugotovi %}
+        <div class="card-body p-0">
+            <form method="POST" id="deletePolugotoviForm">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="tip" value="polugotov">
+                <div class="table-responsive">
+                    <table id="polugotoviTable" class="table table-hover table-striped mb-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-center" style="width: 60px;">
+                                    <input type="checkbox" id="selectAllPolugotovi" onclick="toggleSelectAll('polugotovi')">
+                                </th>
+                                <th>Датум</th>
+                                <th>Време</th>
+                                <th>Камин</th>
+                                <th class="text-end">Произведени</th>
+                                <th class="text-center">Грешки</th>
+                                <th class="text-center">Part Number</th>
+                            </tr>
+                        </thead>
+                        <tbody id="polugotoviTableBody">
+                            {% for r in polugotovi %}
+                            <tr>
+                                <td class="text-center">
+                                    <input type="checkbox" name="selected_ids" value="{{ r['id'] }}">
+                                </td>
+                                <td>{{ r['datum'] }}</td>
+                                <td>{{ r['timestamp'] }}</td>
+                                <td>{{ r['kamin'] or '-' }}</td>
+                                <td class="text-end fw-bold">{{ r['proizvedeni'] or '0' }}</td>
+                                <td class="text-center fw-bold" style="color: {% if r['greski'] >= 5 %}#dc2626{% elif r['greski'] >= 2 %}#eab308{% else %}#16a34a{% endif %};">
+                                    {{ r['greski'] or '0' }}
+                                </td>
+                                <td class="text-center">{{ r['part_number'] or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card-footer bg-light py-4 px-5 text-center">
+                    <button type="submit" id="deletePolugotoviBtn" class="btn btn-danger btn-lg px-5 py-3 fw-bold shadow" disabled onclick="return confirm('Сигурно сакаш да ги избришеш избраните записи за полуготов производи? Ова е неповратно!');">
+                        <i class="fas fa-trash-alt me-2"></i> Избриши избрани
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="card-body py-5 text-center text-muted">
+            <i class="fas fa-industry fa-5x mb-4 opacity-50" style="color: var(--primary);"></i>
+            <h4 class="fw-light mb-3">Нема записи за полуготов производи</h4>
+            <p>Започни со додавање нов запис</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Назад копче -->
+    <div class="text-center mt-5">
+        <a href="{{ url_for('main.select_kamin') }}" class="btn btn-outline-secondary btn-lg px-5 py-3">
+            <i class="fas fa-arrow-left me-2"></i> Назад на избор на камин
+        </a>
+    </div>
+</div>
+
+<script>
+document.getElementById('searchInput')?.addEventListener('keyup', function() {
+    const filter = this.value.toLowerCase().trim();
+    ['gotoviTableBody', 'polugotoviTableBody'].forEach(tableId => {
+        const rows = document.querySelectorAll(`#${tableId} tr`);
+        rows.forEach(row => {
+            const kaminCell = row.querySelector('td:nth-child(4)');
+            const kaminText = kaminCell ? kaminCell.textContent.toLowerCase() : '';
+            row.style.display = kaminText.includes(filter) ? '' : 'none';
+        });
+    });
+});
+
+function toggleSelectAll(tableType) {
+    const selectAll = document.getElementById(`selectAll${tableType.charAt(0).toUpperCase() + tableType.slice(1)}`);
+    const checkboxes = document.querySelectorAll(`#${tableType}TableBody input[name="selected_ids"]`);
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    const deleteBtn = document.getElementById(`delete${tableType.charAt(0).toUpperCase() + tableType.slice(1)}Btn`);
+    if (deleteBtn) {
+        const checked = document.querySelectorAll(`#${tableType}TableBody input[name="selected_ids"]:checked`).length;
+        deleteBtn.disabled = checked === 0;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    ['deleteGotoviBtn', 'deletePolugotoviBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = true;
+    });
+
+    document.querySelectorAll('input[name="selected_ids"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const tableBody = cb.closest('tbody');
+            const tableId = tableBody.id;
+            const type = tableId.includes('gotovi') ? 'Gotovi' : 'Polugotovi';
+            const deleteBtn = document.getElementById(`delete${type}Btn`);
+            const checked = tableBody.querySelectorAll('input[name="selected_ids"]:checked').length;
+            deleteBtn.disabled = checked === 0;
+        });
+    });
+});
+</script>
+
+<style>
+    .card-header { font-size: 1.4rem; }
+    .table-hover tbody tr:hover { background-color: rgba(102,126,234,0.08); }
+    .btn-lg {
+        font-size: clamp(1.1rem, 4vw, 1.3rem);
+        padding: clamp(0.9rem, 4vw, 1.2rem) clamp(2rem, 6vw, 3rem);
+        min-height: 60px;
+    }
+    table th, table td { vertical-align: middle; padding: 1rem; }
+    @media (max-width: 992px) {
+        .container { padding: 0 1.5rem; }
+        .table { font-size: 0.95rem; }
+        .btn-lg { width: 100%; margin-bottom: 1rem; }
+    }
+    @media (max-width: 576px) {
+        .card-body { padding: 1.5rem !important; }
+        .table th, .table td { padding: 0.75rem; }
+    }
+</style>
+
+{% endblock %}

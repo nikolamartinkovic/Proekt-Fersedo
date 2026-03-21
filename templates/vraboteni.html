@@ -1,0 +1,554 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    <div class="text-center mb-5 pb-4">
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.5rem;">
+            Управување со вработени
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
+            Додавање, уредување и преглед на листа на вработени
+        </p>
+    </div>
+
+    <!-- Flash пораки -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else ('warning' if category == 'warning' else 'danger') }} alert-dismissible fade show d-flex align-items-center shadow-sm" role="alert">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-exclamation-circle{% endif %} me-3 fs-4"></i>
+                        <div class="flex-grow-1">{{ message }}</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ===== САЛДО КАРТИЧКИ (резиме) ===== -->
+    {% if vraboteni %}
+    <div class="row g-3 mb-5">
+        {% set total_vkupno = namespace(val=0) %}
+        {% set total_isk    = namespace(val=0) %}
+        {% set total_preos  = namespace(val=0) %}
+        {% for v in vraboteni %}
+            {% if v.id in saldo_map %}
+                {% set total_vkupno.val = total_vkupno.val + saldo_map[v.id].vkupno %}
+                {% set total_isk.val    = total_isk.val    + saldo_map[v.id].iskoristeni %}
+                {% set total_preos.val  = total_preos.val  + saldo_map[v.id].preostanati %}
+            {% endif %}
+        {% endfor %}
+
+        <div class="col-sm-4">
+            <div class="card border-0 shadow text-center py-4 px-3" style="background: linear-gradient(135deg,#667eea,#764ba2); color:#fff; border-radius:16px;">
+                <div class="fs-1 fw-bold">{{ total_vkupno.val }}</div>
+                <div class="mt-1 opacity-90">Вкупно одобрени денови ({{ godina }})</div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="card border-0 shadow text-center py-4 px-3" style="background: linear-gradient(135deg,#f59e0b,#d97706); color:#fff; border-radius:16px;">
+                <div class="fs-1 fw-bold">{{ total_isk.val }}</div>
+                <div class="mt-1 opacity-90">Искористени денови ({{ godina }})</div>
+            </div>
+        </div>
+        <div class="col-sm-4">
+            <div class="card border-0 shadow text-center py-4 px-3" style="background: linear-gradient(135deg,#10b981,#059669); color:#fff; border-radius:16px;">
+                <div class="fs-1 fw-bold">{{ total_preos.val }}</div>
+                <div class="mt-1 opacity-90">Преостанати денови ({{ godina }})</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ===== EXCEL ИМПОРТ ===== -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden mb-5" id="importCard">
+        <div class="card-header text-white py-4 px-5 fw-bold d-flex align-items-center justify-content-between"
+             style="background: linear-gradient(135deg, #15803d, #166534); cursor: pointer;"
+             data-bs-toggle="collapse" data-bs-target="#importBody" aria-expanded="false">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-file-excel me-3 fs-4"></i>
+                Увоз на вработени преку Excel
+            </h4>
+            <i class="fas fa-chevron-down fs-5 transition-icon"></i>
+        </div>
+
+        <div class="collapse" id="importBody">
+            <div class="card-body p-4 p-md-5">
+                <div class="row g-4 align-items-start">
+                    <div class="col-md-6">
+                        <div class="p-4 rounded-3" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                            <h5 class="fw-bold mb-3" style="color: #15803d;">
+                                <i class="fas fa-info-circle me-2"></i> Чекори за увоз
+                            </h5>
+                            <ol class="mb-0" style="line-height: 2;">
+                                <li>Преземи го <strong>Excel темплатот</strong> подолу</li>
+                                <li>Пополни ги податоците за вработените (почнувај од ред 2)</li>
+                                <li>Зачувај го фајлот и прикачи го преку формата</li>
+                                <li>Притисни <strong>„Увези"</strong></li>
+                            </ol>
+                            <div class="mt-4">
+                                <a href="{{ url_for('odmori.odmori_download_template') }}"
+                                   class="btn btn-success btn-lg fw-bold px-4 py-3 shadow-sm w-100">
+                                    <i class="fas fa-download me-2"></i> Преземи Excel темплат
+                                </a>
+                            </div>
+                            <div class="mt-3 p-3 rounded-3" style="background: #fefce8; border: 1px solid #fde047; font-size: 0.9rem;">
+                                <i class="fas fa-exclamation-triangle me-2" style="color: #ca8a04;"></i>
+                                <strong>Важно:</strong> Не менувај ги имињата на колоните!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <form method="POST" action="{{ url_for('odmori.odmori_import_vraboteni') }}"
+                              enctype="multipart/form-data" id="importForm">
+                            <label class="form-label fw-bold fs-5">Прикачи Excel датотека (.xlsx)</label>
+                            <div class="upload-zone rounded-3 p-4 text-center mb-3" id="uploadZone"
+                                 style="border: 2px dashed #16a34a; background: #f0fdf4; cursor: pointer; transition: all 0.2s;">
+                                <i class="fas fa-cloud-upload-alt fa-3x mb-3" style="color: #16a34a; opacity: 0.7;"></i>
+                                <p class="mb-1 fw-medium" style="color: #15803d;">Влечи и пушти датотека тука</p>
+                                <p class="text-muted small mb-3">или</p>
+                                <label for="excel_file" class="btn btn-outline-success px-4">
+                                    <i class="fas fa-folder-open me-2"></i> Избери датотека
+                                </label>
+                                <input type="file" id="excel_file" name="excel_file" accept=".xlsx,.xls" class="d-none" required>
+                                <p id="fileName" class="mt-3 mb-0 text-muted small">Нема избрана датотека</p>
+                            </div>
+                            <div id="filePreview" class="d-none mb-3 p-3 rounded-3" style="background: #dcfce7; border: 1px solid #86efac;">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-file-excel me-3 fs-3" style="color: #16a34a;"></i>
+                                    <div>
+                                        <div class="fw-bold" id="previewName"></div>
+                                        <div class="text-muted small" id="previewSize"></div>
+                                    </div>
+                                    <button type="button" class="btn-close ms-auto" id="clearFile"></button>
+                                </div>
+                            </div>
+                            <button type="submit" id="importBtn" class="btn btn-success btn-lg w-100 py-3 fw-bold shadow">
+                                <span id="importText"><i class="fas fa-file-import me-2"></i> Увези вработени</span>
+                                <span id="importSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Форма за додавање нов вработен -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden mb-5">
+        <div class="card-header text-white py-4 px-5 fw-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-user-plus me-3 fs-4"></i>
+                Додади нов вработен
+            </h4>
+        </div>
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" novalidate>
+                <input type="hidden" name="action" value="add">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label for="ime" class="form-label fw-bold fs-5">Име *</label>
+                        <input type="text" class="form-control form-control-lg" id="ime" name="ime" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="prezime" class="form-label fw-bold fs-5">Презиме *</label>
+                        <input type="text" class="form-control form-control-lg" id="prezime" name="prezime" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="maticen_broj" class="form-label fw-bold fs-5">Матичен број *</label>
+                        <input type="text" class="form-control form-control-lg" id="maticen_broj" name="maticen_broj" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="email" class="form-label fw-bold fs-5">Email</label>
+                        <input type="email" class="form-control form-control-lg" id="email" name="email">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="pozicija" class="form-label fw-bold fs-5">Позиција / работно место</label>
+                        <input type="text" class="form-control form-control-lg" id="pozicija" name="pozicija">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="datum_vrabotuvanje" class="form-label fw-bold fs-5">Датум на вработување</label>
+                        <input type="date" class="form-control form-control-lg" id="datum_vrabotuvanje" name="datum_vrabotuvanje">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="oddel" class="form-label fw-bold fs-5">Оддел</label>
+                        <input type="text" class="form-control form-control-lg" id="oddel" name="oddel">
+                    </div>
+                    <div class="col-12">
+                        <div class="form-check form-switch mt-3">
+                            <input class="form-check-input" type="checkbox" id="prekin_staz" name="prekin_staz">
+                            <label class="form-check-label fw-medium" for="prekin_staz">Има прекин во стаж</label>
+                        </div>
+                    </div>
+                    <div class="col-12 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-lg">
+                            <i class="fas fa-user-plus me-2"></i> Додади вработен
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Табела со сите вработени -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden">
+        <div class="card-header text-white py-4 px-5 fw-bold d-flex align-items-center justify-content-between"
+             style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-users me-3 fs-4"></i>
+                Сите вработени ({{ vraboteni|length }})
+            </h4>
+            <span class="badge bg-light text-dark fs-6 px-3 py-2">
+                <i class="fas fa-calendar-alt me-1"></i> {{ godina }}
+            </span>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                <table class="table table-hover table-striped mb-0 align-middle" style="width: 100%; min-width: 1100px;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Име и Презиме</th>
+                            <th>Матичен број</th>
+                            <th>Email</th>
+                            <th>Позиција</th>
+                            <th>Датум на вработување</th>
+                            <th>Оддел</th>
+                            <th>Прекин стаж</th>
+                            <th class="text-center" style="background:#1e3a5f; min-width:200px;">
+                                <i class="fas fa-umbrella-beach me-1"></i> Одмор {{ godina }}
+                            </th>
+                            <th>Акции</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if vraboteni %}
+                            {% for v in vraboteni %}
+                            {% set sd = saldo_map.get(v.id, {'vkupno': 20, 'iskoristeni': 0, 'preostanati': 20}) %}
+                            {% set pct = ((sd.iskoristeni / sd.vkupno) * 100) | int if sd.vkupno > 0 else 0 %}
+                            <tr class="align-middle">
+                                <td class="fw-medium">{{ v.prezime }} {{ v.ime }}</td>
+                                <td>{{ v.maticen_broj }}</td>
+                                <td>{{ v.email or '—' }}</td>
+                                <td>{{ v.pozicija or '—' }}</td>
+                                <td>{{ v.datum_vrabotuvanje or '—' }}</td>
+                                <td>{{ v.oddel or '—' }}</td>
+                                <td class="text-center">
+                                    {% if v.prekin_staz %}
+                                        <span class="badge bg-danger px-3 py-2">Да</span>
+                                    {% else %}
+                                        <span class="badge bg-success px-3 py-2">Не</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- КОЛОНА: ДЕНОВИ ОДМОР -->
+                                <td style="min-width:200px;">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <small class="text-muted">
+                                            {{ sd.iskoristeni }}/{{ sd.vkupno }} ден.
+                                        </small>
+                                        <span class="badge fs-6 px-2 py-1
+                                            {% if sd.preostanati == 0 %}bg-danger
+                                            {% elif sd.preostanati <= 5 %}bg-warning text-dark
+                                            {% else %}bg-success{% endif %}">
+                                            {{ sd.preostanati }} преост.
+                                        </span>
+                                    </div>
+                                    <!-- Progress bar -->
+                                    <div class="progress" style="height:8px; border-radius:4px;">
+                                        <div class="progress-bar
+                                            {% if pct >= 100 %}bg-danger
+                                            {% elif pct >= 75 %}bg-warning
+                                            {% else %}bg-success{% endif %}"
+                                             role="progressbar"
+                                             style="width: {{ [pct, 100] | min }}%"
+                                             aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <!-- Копче за измена на салдо -->
+                                    <div class="text-end mt-1">
+                                        <button class="btn btn-link btn-sm p-0 text-muted" style="font-size:0.75rem;"
+                                                data-bs-toggle="modal" data-bs-target="#saldoModal{{ v.id }}">
+                                            <i class="fas fa-sliders-h me-1"></i>Измени лимит
+                                        </button>
+                                    </div>
+                                </td>
+
+                                <td class="text-center">
+                                    <button class="btn btn-warning btn-sm px-3 py-2 me-1"
+                                            data-bs-toggle="modal" data-bs-target="#editModal{{ v.id }}">
+                                        <i class="fas fa-edit"></i> Измени
+                                    </button>
+                                    <form method="POST" class="d-inline">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="vraboten_id" value="{{ v.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm px-3 py-2"
+                                                onclick="return confirm('Дали сте сигурни дека сакате да го избришете {{ v.ime }} {{ v.prezime }}?');">
+                                            <i class="fas fa-trash-alt"></i> Избриши
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+
+                            <!-- ── Edit Modal (постоечки) ── -->
+                            <div class="modal fade" id="editModal{{ v.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content rounded-4 shadow-2xl">
+                                        <div class="modal-header text-white py-4 px-5"
+                                             style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+                                            <h5 class="modal-title fs-4 mb-0">
+                                                <i class="fas fa-edit me-2"></i> Измени: {{ v.ime }} {{ v.prezime }}
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-5">
+                                            <form method="POST">
+                                                <input type="hidden" name="action" value="edit">
+                                                <input type="hidden" name="vraboten_id" value="{{ v.id }}">
+                                                <div class="row g-3">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Име</label>
+                                                        <input type="text" class="form-control form-control-lg" name="ime_edit" value="{{ v.ime }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Презиме</label>
+                                                        <input type="text" class="form-control form-control-lg" name="prezime_edit" value="{{ v.prezime }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Матичен број</label>
+                                                        <input type="text" class="form-control form-control-lg" name="maticen_broj_edit" value="{{ v.maticen_broj }}" required>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Email</label>
+                                                        <input type="email" class="form-control form-control-lg" name="email_edit" value="{{ v.email or '' }}">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Позиција</label>
+                                                        <input type="text" class="form-control form-control-lg" name="pozicija_edit" value="{{ v.pozicija or '' }}">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Датум на вработување</label>
+                                                        <input type="date" class="form-control form-control-lg" name="datum_vrabotuvanje_edit" value="{{ v.datum_vrabotuvanje or '' }}">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Оддел</label>
+                                                        <input type="text" class="form-control form-control-lg" name="oddel_edit" value="{{ v.oddel or '' }}">
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <div class="form-check form-switch mt-3">
+                                                            <input class="form-check-input" type="checkbox"
+                                                                   name="prekin_staz_edit" id="prekin_staz_{{ v.id }}"
+                                                                   {% if v.prekin_staz %}checked{% endif %}>
+                                                            <label class="form-check-label fw-medium" for="prekin_staz_{{ v.id }}">Има прекин во стаж</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary btn-lg w-100 mt-4 py-3 fw-bold shadow">
+                                                    <i class="fas fa-save me-2"></i> Зачувај измени
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ── Сaldо Modal (НОВ) ── -->
+                            <div class="modal fade" id="saldoModal{{ v.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content rounded-4 shadow-2xl">
+                                        <div class="modal-header text-white py-4 px-5"
+                                             style="background: linear-gradient(135deg,#0ea5e9,#0284c7);">
+                                            <h5 class="modal-title fs-4 mb-0">
+                                                <i class="fas fa-umbrella-beach me-2"></i>
+                                                Денови одмор – {{ v.prezime }} {{ v.ime }}
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body p-5">
+
+                                            <!-- Приказ на тековно салдо -->
+                                            <div class="row g-3 mb-4 text-center">
+                                                <div class="col-4">
+                                                    <div class="p-3 rounded-3" style="background:#f0f9ff;">
+                                                        <div class="fw-bold fs-3" style="color:#0ea5e9;">{{ sd.vkupno }}</div>
+                                                        <small class="text-muted">Вкупно</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="p-3 rounded-3" style="background:#fef3c7;">
+                                                        <div class="fw-bold fs-3" style="color:#d97706;">{{ sd.iskoristeni }}</div>
+                                                        <small class="text-muted">Искористено</small>
+                                                    </div>
+                                                </div>
+                                                <div class="col-4">
+                                                    <div class="p-3 rounded-3" style="background:#f0fdf4;">
+                                                        <div class="fw-bold fs-3" style="color:#16a34a;">{{ sd.preostanati }}</div>
+                                                        <small class="text-muted">Преостанати</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Форма за измена на лимит -->
+                                            <form method="POST">
+                                                <input type="hidden" name="action" value="edit_saldo">
+                                                <input type="hidden" name="vraboten_id" value="{{ v.id }}">
+
+                                                <div class="mb-3">
+                                                    <label class="form-label fw-bold">Година</label>
+                                                    <input type="number" class="form-control form-control-lg text-center fw-bold"
+                                                           name="godina_saldo" value="{{ godina }}" min="2020" max="2099">
+                                                </div>
+                                                <div class="mb-4">
+                                                    <label class="form-label fw-bold">
+                                                        Вкупно денови одмор за {{ godina }}
+                                                    </label>
+                                                    <div class="input-group input-group-lg">
+                                                        <button type="button" class="btn btn-outline-secondary"
+                                                                onclick="adjustDays('days_{{ v.id }}', -1)">
+                                                            <i class="fas fa-minus"></i>
+                                                        </button>
+                                                        <input type="number" id="days_{{ v.id }}"
+                                                               class="form-control text-center fw-bold fs-4"
+                                                               name="vkupno_dena"
+                                                               value="{{ sd.vkupno }}" min="0" max="365">
+                                                        <button type="button" class="btn btn-outline-secondary"
+                                                                onclick="adjustDays('days_{{ v.id }}', 1)">
+                                                            <i class="fas fa-plus"></i>
+                                                        </button>
+                                                    </div>
+                                                    <div class="form-text text-center mt-2">
+                                                        Стандардно: 20 работни денови
+                                                    </div>
+                                                </div>
+
+                                                <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold">
+                                                    <i class="fas fa-save me-2"></i> Зачувај салдо
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-5">
+                                    <i class="fas fa-users-slash fa-4x mb-3 opacity-50"></i><br>
+                                    Сè уште нема вработени.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('main.odmori') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Одмори
+        </a>
+    </div>
+</div>
+
+<style>
+    /*
+     * ВАЖНО: НЕ користи transform на .card:hover — предизвикува трепкање на модалите
+     * бидејќи Bootstrap модалите остануваат во DOM на card-от.
+     * Наместо тоа, само го менуваме box-shadow.
+     */
+    .card { border-radius: var(--radius); overflow: hidden; transition: box-shadow 0.3s ease; }
+    .card:hover { box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important; }
+
+    /* Кога модалот е отворен — целосно исклучи hover ефект на card */
+    body.modal-open .card,
+    body.modal-open .card:hover { box-shadow: none !important; transition: none !important; }
+
+    .table-hover tbody tr:hover { background-color: rgba(220,38,38,0.06); }
+    .btn-lg { font-size: clamp(1rem, 3.5vw, 1.2rem); min-height: 54px; }
+    .upload-zone.drag-over { background: #dcfce7 !important; border-color: #15803d !important; transform: scale(1.02); }
+    [data-bs-toggle="collapse"] .transition-icon { transition: transform 0.3s ease; }
+    [data-bs-toggle="collapse"][aria-expanded="true"] .transition-icon { transform: rotate(180deg); }
+    .progress { background: #e5e7eb; }
+
+    @media (max-width: 992px) {
+        .table-responsive { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+        table { min-width: 1100px !important; }
+        th, td { white-space: nowrap !important; padding: 0.7rem 0.6rem; font-size: 0.9rem; }
+        .btn-sm { padding: 0.4rem 0.7rem; font-size: 0.82rem; }
+    }
+    @media (max-width: 576px) {
+        .container { padding: 0 1rem; margin-top: 3rem; }
+        table { min-width: 900px !important; }
+        .btn-outline-secondary { width: 100%; padding: 0.8rem; }
+    }
+</style>
+
+<script>
+    // +/- копчиња за денови
+    function adjustDays(inputId, delta) {
+        const inp = document.getElementById(inputId);
+        const val = parseInt(inp.value) || 0;
+        inp.value = Math.max(0, val + delta);
+    }
+
+    // File input preview
+    const fileInput  = document.getElementById('excel_file');
+    const filePreview = document.getElementById('filePreview');
+    const fileName   = document.getElementById('fileName');
+    const previewName = document.getElementById('previewName');
+    const previewSize = document.getElementById('previewSize');
+    const clearFile  = document.getElementById('clearFile');
+    const uploadZone = document.getElementById('uploadZone');
+
+    function formatBytes(b) {
+        if (b < 1024) return b + ' B';
+        if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+        return (b/1048576).toFixed(1) + ' MB';
+    }
+    function showFilePreview(file) {
+        previewName.textContent = file.name;
+        previewSize.textContent = formatBytes(file.size);
+        filePreview.classList.remove('d-none');
+        fileName.textContent = file.name;
+    }
+    fileInput.addEventListener('change', function () { if (this.files[0]) showFilePreview(this.files[0]); });
+    clearFile.addEventListener('click', function () {
+        fileInput.value = '';
+        filePreview.classList.add('d-none');
+        fileName.textContent = 'Нема избрана датотека';
+    });
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+    uploadZone.addEventListener('drop', e => {
+        e.preventDefault();
+        uploadZone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+            const dt = new DataTransfer(); dt.items.add(file); fileInput.files = dt.files;
+            showFilePreview(file);
+        } else { alert('Ве молиме прикачете .xlsx датотека!'); }
+    });
+
+    document.getElementById('importForm').addEventListener('submit', function () {
+        document.getElementById('importText').classList.add('d-none');
+        document.getElementById('importSpinner').classList.remove('d-none');
+    });
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            const msgs = {{ messages | map(attribute=1) | list | tojson }};
+            const importKW = ['Увезени', 'увезен', 'темплат', 'хедери', 'Excel'];
+            if (msgs.some(m => importKW.some(kw => m.includes(kw)))) {
+                new bootstrap.Collapse(document.getElementById('importBody'), { show: true });
+                document.querySelector('[data-bs-target="#importBody"]').setAttribute('aria-expanded', 'true');
+            }
+        {% endif %}
+    {% endwith %}
+</script>
+
+{% endblock %}

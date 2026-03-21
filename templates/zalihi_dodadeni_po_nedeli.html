@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto; padding: 0 1rem;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <h1 style="font-weight: 800; color: var(--primary);">
+            Преглед на додадени залихи по недели
+        </h1>
+        
+        <div class="d-flex gap-3">
+            <a href="{{ url_for('zalihi.dodadeni_po_nedeli_export') }}" 
+               class="btn btn-success btn-lg d-flex align-items-center gap-2 shadow">
+                <i class="fas fa-file-excel"></i> Export во Excel
+            </a>
+            <a href="{{ url_for('zalihi.dodadi') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i> Додади нова залиха
+            </a>
+        </div>
+    </div>
+
+    {% if sorted_weeks %}
+        {% for nedela, artikli in sorted_weeks %}
+        <div class="mb-5">
+            <!-- Заглавие на неделата -->
+            <div class="bg-primary text-white p-3 rounded-top d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    {{ nedela }}
+                </h4>
+                <span class="badge bg-light text-dark fs-6">
+                    {{ artikli|length }} артикли
+                </span>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Датум</th>
+                            <th>PN</th>
+                            <th>Ime на артикл</th>
+                            <th>Корисник</th>
+                            <th class="text-end">Вкупна количина</th>
+                            <th>Забелешка</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for art in artikli %}
+                        <tr>
+                            <td>{{ art.datum[:16] }}</td>
+                            <td class="fw-bold">{{ art.pn }}</td>
+                            <td>{{ art.ime }}</td>
+                            <td>{{ art.korisnici }}</td>
+                            <td class="text-end fw-bold text-primary fs-5">{{ art.vkupna_kolicina }}</td>
+                            <td>{{ art.zabeleska or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <!-- Вкупно за неделата -->
+                    <tfoot class="table-success">
+                        <tr>
+                            <td colspan="4" class="text-end fw-bold">Вкупно за {{ nedela }}:</td>
+                            <td class="text-end fw-bold fs-5">{{ week_totals[nedela] }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="alert alert-info text-center py-5">
+        <i class="fas fa-inbox fa-3x mb-3 text-muted"></i>
+        <h4>Сè уште нема додадени залихи</h4>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('zalihi.zalihi') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Залихи
+        </a>
+    </div>
+
+</div>
+
+{% endblock %}

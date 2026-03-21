@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    <div class="text-center mb-5 pb-4">
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.5rem, 8vw, 3.5rem); margin-bottom: 0.5rem;">
+            План за производство (КН 52)
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
+            Преглед и додавање на планови за производство
+        </p>
+    </div>
+
+    <!-- Live search -->
+    <div class="mb-5" style="max-width: 500px; margin-left: auto; margin-right: auto;">
+        <div class="input-group input-group-lg">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" id="searchInput" class="form-control" placeholder="Пребарувај по камин...">
+        </div>
+    </div>
+
+    <!-- Форма за додавање нов план -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden mb-5">
+        <div class="card-header text-white py-4 px-5 fw-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-plus-circle me-3 fs-4"></i>
+                Додади нов план
+            </h4>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" id="addPlanForm" novalidate>
+                <input type="hidden" name="action" value="add">
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold fs-5">Камин</label>
+                        <select name="kamin" class="form-select form-select-lg" required>
+                            <option value="" disabled selected>Избери камин...</option>
+                            {% for k in kamini %}
+                                <option>{{ k }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="invalid-feedback mt-2">
+                            Изберете камин
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold fs-5">План к-во</label>
+                        <input type="number" name="plan_kolicina" min="1" required class="form-control form-control-lg text-center fw-bold" placeholder="Број на парчиња">
+                        <div class="invalid-feedback mt-2">
+                            Внесете количина ≥ 1
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold fs-5">Од датум</label>
+                        <input type="date" name="datum_od" required class="form-control form-control-lg">
+                        <div class="invalid-feedback mt-2">
+                            Изберете почеток
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold fs-5">До датум</label>
+                        <input type="date" name="datum_do" required class="form-control form-control-lg">
+                        <div class="invalid-feedback mt-2">
+                            Изберете крај
+                        </div>
+                    </div>
+
+                    <div class="col-12 mt-4">
+                        <button type="submit" id="addPlanBtn" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow">
+                            <span id="addPlanText"><i class="fas fa-plus-circle me-2"></i> Зачувај план</span>
+                            <span id="addPlanSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Табела со планови -->
+    {% if planovi %}
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden">
+        <div class="card-header text-white py-4 px-5 fw-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <span><i class="fas fa-list-check me-3"></i> Планови ({{ planovi|length }})</span>
+                <div>
+                    <button type="button" class="btn btn-outline-light btn-lg px-4 py-2" data-bs-toggle="modal" data-bs-target="#addPlanModal">
+                        <i class="fas fa-plus me-2"></i> Додади нов
+                    </button>
+                </div>
+            </h4>
+        </div>
+
+        <div class="card-body p-0">
+            <form method="POST" id="deleteForm">
+                <input type="hidden" name="action" value="delete">
+
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th class="text-center" style="width: 60px;">
+                                    <input type="checkbox" id="selectAll" onclick="toggleSelectAll()">
+                                </th>
+                                <th>Камин</th>
+                                <th class="text-center">План к-во</th>
+                                <th class="text-center">Од датум</th>
+                                <th class="text-center">До датум</th>
+                                <th class="text-center">Произведени</th>
+                                <th class="text-center">Разлика</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in planovi %}
+                            <tr>
+                                <td class="text-center">
+                                    <input type="checkbox" name="selected_ids" value="{{ plan.id }}">
+                                </td>
+                                <td class="fw-bold">{{ plan.kamin }}</td>
+                                <td class="text-center fw-bold">{{ plan.plan_kolicina }}</td>
+                                <td class="text-center">{{ plan.datum_od }}</td>
+                                <td class="text-center">{{ plan.datum_do }}</td>
+                                <td class="text-center fw-bold">{{ plan.proizvedeni or '0' }}</td>
+                                <td class="text-center fw-bold" style="color: {% if plan.razlika >= 0 %}#16a34a{% else %}#dc2626{% endif %};">
+                                    {{ plan.razlika }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card-footer bg-light py-4 px-5 text-center">
+                    <button type="submit" id="deleteBtn" class="btn btn-danger btn-lg px-5 py-3 fw-bold shadow" disabled onclick="return confirm('Сигурно сакаш да ги избришеш избраните планови? Ова е неповратно!');">
+                        <i class="fas fa-trash-alt me-2"></i> Избриши избрани
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-light text-center py-5 shadow-lg rounded-4">
+        <i class="fas fa-calendar-xmark fa-5x mb-4 text-primary opacity-50"></i>
+        <h4 class="fw-light mb-3">Нема планови</h4>
+        <p class="lead text-muted">
+            Додајте нов план преку формата погоре
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Live search по камин
+document.getElementById('searchInput')?.addEventListener('keyup', function() {
+    const filter = this.value.toLowerCase().trim();
+    const rows = document.querySelectorAll('#deleteForm tbody tr');
+    rows.forEach(row => {
+        const kaminCell = row.querySelector('td:nth-child(2)'); // 2-ра колона = Камин
+        const kaminText = kaminCell ? kaminCell.textContent.toLowerCase() : '';
+        row.style.display = kaminText.includes(filter) ? '' : 'none';
+    });
+});
+
+// Bulk select all
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('input[name="selected_ids"]');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateDeleteButton();
+}
+
+// Ажурирај delete копче
+function updateDeleteButton() {
+    const checked = document.querySelectorAll('input[name="selected_ids"]:checked').length;
+    document.getElementById('deleteBtn').disabled = checked === 0;
+}
+
+// Loader при submit
+document.getElementById('deleteForm')?.addEventListener('submit', function(e) {
+    if (!confirm('Сигурно сакаш да ги избришеш избраните планови? Ова е неповратно!')) {
+        e.preventDefault();
+        return;
+    }
+
+    const btn = document.getElementById('deleteBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Бришење...';
+});
+
+// Иницијална проверка
+document.addEventListener('DOMContentLoaded', updateDeleteButton);
+</script>
+
+<style>
+    .card {
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-6px);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(102,126,234,0.08);
+    }
+
+    .btn-lg {
+        font-size: clamp(1.1rem, 4vw, 1.3rem);
+        padding: clamp(0.9rem, 4vw, 1.2rem) clamp(2rem, 6vw, 3rem);
+        min-height: 60px;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        max-height: 500px;
+        overflow-y: auto;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+    }
+
+    table th, table td {
+        vertical-align: middle;
+        padding: 1rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .container { padding: 0 1.5rem; }
+        .row.g-4 { row-gap: 1.5rem; }
+        .btn-lg { width: 100%; margin-bottom: 1rem; }
+    }
+
+    @media (max-width: 576px) {
+        .card-body { padding: 1.5rem !important; }
+        .table th, .table td { padding: 0.75rem; font-size: 0.95rem; }
+    }
+</style>
+
+{% endblock %}

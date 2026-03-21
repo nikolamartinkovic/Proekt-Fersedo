@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Импорт артикли – Fersedo{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <h1 class="text-center mb-5 fw-bold" style="color: var(--primary);">Импорт артикли од Excel</h1>
+
+    <p class="text-center lead mb-5" style="color: var(--text-secondary);">
+        Upload-ни Excel (.xlsx) со колони: <strong>Part number</strong>, <strong>Kamin</strong>, <strong>Slika</strong> (опционално).<br>
+        + Upload-ни слики (multi-file) – имињата треба да се Part number + ext (на пр. 734566.jpg)
+    </p>
+
+    <div class="card shadow-lg border-0 rounded-4 mx-auto" style="max-width: 600px;">
+        <div class="card-body p-5">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="mb-4">
+                    <label for="excel_file" class="form-label fw-bold fs-5">Excel фајл (.xlsx) *</label>
+                    <input type="file" id="excel_file" name="excel_file" accept=".xlsx" required class="form-control form-control-lg">
+                </div>
+
+                <div class="mb-4">
+                    <label for="images" class="form-label fw-bold fs-5">Слики (повеќе фајлови)</label>
+                    <input type="file" id="images" name="images" accept="image/*" multiple class="form-control form-control-lg">
+                    <small class="form-text text-muted mt-2 d-block">
+                        Имињата на сликите треба да се исти како Part number (без екстензија)
+                    </small>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg w-100 py-3 fw-bold shadow">
+                    <i class="fas fa-file-import me-2"></i> Импортирај
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('artikli.artikli') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Артикли
+        </a>
+    </div>
+</div>
+
+{% endblock %}

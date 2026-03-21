@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Email Примачи — Fersedo{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-3 py-4" style="max-width:860px; margin:0 auto;">
+
+    <!-- Наслов -->
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div style="width:52px;height:52px;border-radius:14px;background:rgba(102,126,234,0.12);
+                    display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:var(--primary);">
+            <i class="fas fa-envelope-open-text"></i>
+        </div>
+        <div>
+            <h4 class="mb-0 fw-800">Email Примачи</h4>
+            <small class="text-secondary">Управување со примачи на неделниот извештај за залиха</small>
+        </div>
+        <a href="{{ url_for('admin.test_zaliha_email') }}" class="btn btn-outline-primary ms-auto">
+            <i class="fas fa-paper-plane me-1"></i> Испрати тест
+        </a>
+    </div>
+
+    <!-- Форма за додавање -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
+        <div class="card-body p-4">
+            <h6 class="fw-bold mb-3"><i class="fas fa-plus-circle text-primary me-2"></i>Додај нов примач</h6>
+            <form method="POST" action="{{ url_for('admin.email_recipients') }}">
+                <input type="hidden" name="action" value="add">
+                <div class="row g-2 align-items-end">
+                    <div class="col-12 col-sm-6">
+                        <label class="form-label small fw-600 text-secondary">Email адреса</label>
+                        <input type="email" name="email" class="form-control" placeholder="primer@fersedo.com" required>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <label class="form-label small fw-600 text-secondary">Тип</label>
+                        <select name="tip" class="form-select">
+                            <option value="to">To (главен)</option>
+                            <option value="cc">Cc (копија)</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-1"></i> Додај
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Листа на примачи -->
+    <div class="card border-0 shadow-sm" style="border-radius:16px;">
+        <div class="card-body p-0">
+            {% if recipients %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead style="background:rgba(102,126,234,0.07);">
+                            <tr>
+                                <th class="ps-4 py-3 text-secondary fw-600" style="font-size:.85rem;">EMAIL</th>
+                                <th class="py-3 text-secondary fw-600" style="font-size:.85rem;">ТИП</th>
+                                <th class="py-3 text-secondary fw-600" style="font-size:.85rem;">СТАТУС</th>
+                                <th class="py-3 text-secondary fw-600" style="font-size:.85rem;">ДОДАДЕН ОД</th>
+                                <th class="pe-4 py-3 text-secondary fw-600 text-end" style="font-size:.85rem;">АКЦИИ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in recipients %}
+                            <tr style="{% if not r.aktiven %}opacity:.5;{% endif %}">
+                                <td class="ps-4 py-3">
+                                    <i class="fas fa-envelope text-primary me-2"></i>
+                                    <strong>{{ r.email }}</strong>
+                                </td>
+
+                                <!-- Промена на тип преку dropdown -->
+                                <td class="py-3">
+                                    <form method="POST" action="{{ url_for('admin.email_recipients') }}">
+                                        <input type="hidden" name="action" value="change_tip">
+                                        <input type="hidden" name="rec_id" value="{{ r.id }}">
+                                        <select name="nov_tip" class="form-select form-select-sm w-auto"
+                                                style="min-width:90px;" onchange="this.form.submit()">
+                                            <option value="to" {% if r.tip == 'to' %}selected{% endif %}>
+                                                📨 To
+                                            </option>
+                                            <option value="cc" {% if r.tip == 'cc' %}selected{% endif %}>
+                                                📋 Cc
+                                            </option>
+                                        </select>
+                                    </form>
+                                </td>
+
+                                <!-- Toggle активен/неактивен -->
+                                <td class="py-3">
+                                    <form method="POST" action="{{ url_for('admin.email_recipients') }}">
+                                        <input type="hidden" name="action" value="toggle">
+                                        <input type="hidden" name="rec_id" value="{{ r.id }}">
+                                        <button type="submit" class="btn btn-sm {% if r.aktiven %}btn-success{% else %}btn-secondary{% endif %}"
+                                                style="min-width:100px;">
+                                            {% if r.aktiven %}
+                                                <i class="fas fa-check me-1"></i> Активен
+                                            {% else %}
+                                                <i class="fas fa-pause me-1"></i> Неактивен
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </td>
+
+                                <td class="py-3 text-secondary" style="font-size:.88rem;">
+                                    {{ r.dodaden_od or '—' }}
+                                </td>
+
+                                <!-- Бришење -->
+                                <td class="pe-4 py-3 text-end">
+                                    <form method="POST" action="{{ url_for('admin.email_recipients') }}"
+                                          onsubmit="return confirm('Сигурно сакаш да го избришеш {{ r.email }}?')">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="rec_id" value="{{ r.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-secondary">
+                    <i class="fas fa-inbox fa-3x mb-3 opacity-25"></i>
+                    <p class="mb-0">Нема додадени примачи.</p>
+                    <small>Додај email адреси погоре за да почнеш да испраќаш извештаи.</small>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Инфо белешка -->
+    <div class="alert alert-info mt-4 border-0" style="border-radius:12px; background:rgba(13,202,240,0.1);">
+        <i class="fas fa-info-circle me-2 text-info"></i>
+        <strong>Кога се испраќа?</strong> Автоматски <strong>секоја среда во 08:00</strong>.
+        Примачите со тип <strong>To</strong> ќе го примат главниот email,
+        а <strong>Cc</strong> само копија.
+    </div>
+
+</div>
+{% endblock %}

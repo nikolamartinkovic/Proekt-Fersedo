@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 5rem auto 6rem; padding: 0 1rem;">
+    <div class="text-center mb-5 pb-4">
+        <h1 style="font-weight: 900; background: linear-gradient(90deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: clamp(2.8rem, 9vw, 4rem); margin-bottom: 0.75rem; letter-spacing: -1px;">
+            Одмори
+        </h1>
+        <p class="lead text-muted" style="max-width: 800px; margin: 0 auto; font-size: clamp(1.2rem, 4vw, 1.4rem);">
+            Управување со годишен одмор, слободни денови и отсуства
+        </p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+
+    {% set allowed = session.get('allowed_modules', '').split(',') %}
+
+    {% if session.get('is_admin') or 'odmori_vraboteni' in allowed %}
+    <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('odmori.odmori_vraboteni') }}" class="card h-100 border-0 shadow-lg overflow-hidden hover-lift text-decoration-none">
+            <div class="card-body text-center p-5 bg-gradient-primary text-white d-flex flex-column justify-content-center">
+                <i class="fas fa-users fa-6x mb-4 opacity-80"></i>
+                <h4 class="card-title fw-bold mb-3 fs-3">Вработени</h4>
+                <p class="card-text mb-4 opacity-90 fs-5">Додавање, уредување и преглед на листа на вработени</p>
+                <div class="btn btn-light btn-lg fw-bold mt-auto stretched-link">
+                    <i class="fas fa-users me-2"></i> Отвори
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if session.get('is_admin') or 'baranje_odmor' in allowed %}
+    <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('main.baranje_odmor') }}" class="card h-100 border-0 shadow-lg overflow-hidden hover-lift text-decoration-none">
+            <div class="card-body text-center p-5 bg-gradient-success text-white d-flex flex-column justify-content-center">
+                <i class="fas fa-calendar-plus fa-6x mb-4 opacity-80"></i>
+                <h4 class="card-title fw-bold mb-3 fs-3">Барање за одмор</h4>
+                <p class="card-text mb-4 opacity-90 fs-5">Поднеси барање за годишен одмор, слободен ден или боледување</p>
+                <div class="btn btn-light btn-lg fw-bold mt-auto stretched-link">
+                    <i class="fas fa-plus me-2"></i> Поднеси барање
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if session.get('is_admin') or 'odmori_pregled_odmori' in allowed %}
+    <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('odmori.odmori_pregled_odmori') }}" class="card h-100 border-0 shadow-lg overflow-hidden hover-lift text-decoration-none">
+            <div class="card-body text-center p-5 bg-gradient-info text-white d-flex flex-column justify-content-center">
+                <i class="fas fa-list-check fa-6x mb-4 opacity-80"></i>
+                <h4 class="card-title fw-bold mb-3 fs-3">Преглед на одмори</h4>
+                <p class="card-text mb-4 opacity-90 fs-5">Сите барања, статуси и одобрени одмори</p>
+                <div class="btn btn-light btn-lg fw-bold mt-auto stretched-link">
+                    <i class="fas fa-eye me-2"></i> Прегледај
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if session.get('is_admin') or 'odmori_kalendar' in allowed %}
+    <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('odmori.odmori_kalendar') }}" class="card h-100 border-0 shadow-lg overflow-hidden hover-lift text-decoration-none">
+            <div class="card-body text-center p-5 bg-gradient-warning text-white d-flex flex-column justify-content-center">
+                <i class="fas fa-calendar-alt fa-6x mb-4 opacity-80"></i>
+                <h4 class="card-title fw-bold mb-3 fs-3">Календар</h4>
+                <p class="card-text mb-4 opacity-90 fs-5">Визуелен преглед на одобрени одмори и празници</p>
+                <div class="btn btn-light btn-lg fw-bold mt-auto stretched-link">
+                    <i class="fas fa-calendar me-2"></i> Отвори календар
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+    {% if session.get('is_admin') or 'odmori_sekojdnevni_otsustva' in allowed %}
+    <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('odmori.odmori_sekojdnevni_otsustva') }}" class="card h-100 border-0 shadow-lg overflow-hidden hover-lift text-decoration-none">
+            <div class="card-body text-center p-5 bg-gradient-danger text-white d-flex flex-column justify-content-center">
+                <i class="fas fa-user-times fa-6x mb-4 opacity-80"></i>
+                <h4 class="card-title fw-bold mb-3 fs-3">Секојдневни отсуства</h4>
+                <p class="card-text mb-4 opacity-90 fs-5">Боледувања, доцнења, слободни денови, рано заминување...</p>
+                <div class="btn btn-light btn-lg fw-bold mt-auto stretched-link">
+                    <i class="fas fa-clock me-2"></i> Отвори
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .hover-lift { transition: all 0.3s ease; }
+    .hover-lift:hover { transform: translateY(-12px); box-shadow: 0 25px 50px rgba(0,0,0,0.18) !important; }
+    .card { border-radius: 16px; overflow: hidden; transition: all 0.3s ease; }
+    .bg-gradient-primary { background: linear-gradient(135deg, #667eea, #764ba2); }
+    .bg-gradient-success  { background: linear-gradient(135deg, #28a745, #218838); }
+    .bg-gradient-info     { background: linear-gradient(135deg, #17a2b8, #138496); }
+    .bg-gradient-warning  { background: linear-gradient(135deg, #ffc107, #e0a800); }
+    .bg-gradient-danger   { background: linear-gradient(135deg, #dc3545, #c82333); }
+</style>
+
+{% endblock %}

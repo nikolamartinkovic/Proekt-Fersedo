@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    <div class="text-center mb-5 pb-4">
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.5rem, 8vw, 3.5rem); margin-bottom: 0.75rem;">
+            Избери камин
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary); max-width: 700px; margin: 0 auto;">
+            Кликни на каминот за кој сакаш да внесеш записи
+        </p>
+    </div>
+
+    <!-- Копчиња за додади/избриши -->
+    <div class="d-flex flex-wrap gap-3 justify-content-center mb-5">
+        <a href="{{ url_for('main.add_kamin') }}" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow-lg">
+            <i class="fas fa-plus me-2"></i> Додади камин
+        </a>
+        <a href="{{ url_for('main.delete_kamin') }}" class="btn btn-danger btn-lg px-5 py-3 fw-bold shadow-lg">
+            <i class="fas fa-trash-alt me-2"></i> Избриши камин
+        </a>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        {% for kamin in kamini %}
+        <div class="col-lg-3 col-md-4 col-sm-6">
+            <a href="{{ url_for('main.select_kamin_type', kamin=kamin) }}" 
+               class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all" 
+               style="background: var(--surface); transition: transform 0.4s ease, box-shadow 0.4s ease;">
+                <div class="card-body text-center p-4 d-flex flex-column justify-content-center align-items-center" style="min-height: 260px;">
+                    <img src="{{ url_for('main.kamin_static', filename=kamin ~ '.png') }}" 
+                         alt="{{ kamin }}" 
+                         onerror="this.onerror=null; this.src='{{ url_for('main.kamin_static', filename='default-kamin.png') }}'; this.style.objectFit='contain';"
+                         style="width: 100%; height: clamp(140px, 30vw, 180px); object-fit: cover; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: transform 0.4s;">
+
+                    <h3 style="margin: 0.5rem 0; font-size: clamp(1.2rem, 4vw, 1.35rem); font-weight: 600; color: var(--text);">
+                        {{ kamin }}
+                    </h3>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.95rem;">
+                    </p>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.transition-all').forEach(card => {
+    card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-12px)';
+        card.style.boxShadow = '0 25px 60px rgba(0,0,0,0.18)';
+    });
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0)';
+        card.style.boxShadow = 'var(--shadow)';
+    });
+});
+</script>
+
+<style>
+    .transition-all {
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+        background: var(--surface);
+        border-radius: var(--radius);
+        overflow: hidden;
+    }
+
+    .btn-lg {
+        font-size: clamp(1.1rem, 4vw, 1.3rem);
+        padding: clamp(0.9rem, 4vw, 1.2rem) clamp(2rem, 6vw, 3rem);
+        min-height: 60px;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-lg:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+    }
+
+    @media (max-width: 992px) {
+        .row.g-4 { row-gap: 1.5rem; }
+        .transition-all { min-height: 280px; }
+    }
+
+    @media (max-width: 768px) {
+        .container { padding: 0 0.8rem; margin-top: 3rem; }
+        .grid-container { gap: 1.25rem; }
+        .transition-all img { height: 160px; }
+        .btn-lg { width: 100%; margin-bottom: 1rem; padding: 0.9rem 1.5rem; font-size: 1rem; }
+    }
+
+    @media (max-width: 480px) {
+        .container { padding: 0 0.6rem; }
+        h1 { font-size: clamp(1.8rem, 7vw, 2.5rem); }
+        .transition-all { min-height: 240px; }
+        .transition-all img { height: 140px; }
+        .btn-lg { font-size: 0.95rem; padding: 0.8rem 1.2rem; min-height: 50px; }
+    }
+</style>
+
+{% endblock %}

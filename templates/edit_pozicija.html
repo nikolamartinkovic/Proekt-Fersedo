@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 900px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    <div class="text-center mb-5">
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2rem, 7vw, 2.8rem); margin-bottom: 0.5rem;">
+            Уреди позиција
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
+            за камин: <strong style="color: var(--text);">{{ kamin }}</strong>
+        </p>
+    </div>
+
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden" style="background: var(--surface);">
+        <div class="card-header text-white py-4 px-5" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-edit me-3 fs-4"></i>
+                Позиција бр. {{ pozicija.pozicija_broj }}
+            </h4>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" enctype="multipart/form-data" id="editPozicijaForm" novalidate>
+                <!-- Број на позиција -->
+                <div class="mb-4">
+                    <label for="pozicija_broj" class="form-label fw-bold fs-5">Број на позиција *</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text"><i class="fas fa-hashtag"></i></span>
+                        <input type="number" id="pozicija_broj" name="pozicija_broj" class="form-control" 
+                               value="{{ pozicija.pozicija_broj }}" min="1" required>
+                    </div>
+                    <div class="invalid-feedback mt-2">
+                        Внесете број ≥ 1
+                    </div>
+                </div>
+
+                <!-- Part Number -->
+                <div class="mb-4">
+                    <label for="part_number" class="form-label fw-bold fs-5">Part Number (опционално)</label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text"><i class="fas fa-barcode"></i></span>
+                        <input type="text" id="part_number" name="part_number" class="form-control" 
+                               value="{{ pozicija.part_number or '' }}" placeholder="Остави празно ако нема артикл">
+                    </div>
+                    <div id="part_preview" class="mt-3 text-center" style="min-height: 160px;"></div>
+                </div>
+
+                <!-- Тековна слика -->
+                <div class="mb-5">
+                    <label class="form-label fw-bold fs-5">Тековна слика</label>
+                    <div class="text-center position-relative">
+                        {% if pozicija.slika %}
+                        <img src="{{ url_for('pozicii_static', filename=pozicija.slika) }}" alt="Тековна слика" 
+                             class="rounded shadow-sm zoomable-img" 
+                             style="max-width: 280px; max-height: 280px; object-fit: contain;" 
+                             data-full="{{ url_for('pozicii_static', filename=pozicija.slika) }}">
+                        {% else %}
+                        <div class="bg-light rounded p-5 d-inline-block">
+                            <i class="fas fa-image fa-5x text-muted"></i>
+                            <p class="mt-3 text-muted">Нема слика</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Нова слика -->
+                <div class="mb-5">
+                    <label for="slika" class="form-label fw-bold fs-5">Нова слика (ќе ја замени старата)</label>
+                    <input type="file" id="slika" name="slika" accept="image/*" class="form-control form-control-lg">
+                    <small class="form-text text-muted mt-2 d-block">
+                        JPG, PNG, GIF (макс. 5MB)
+                    </small>
+                </div>
+
+                <!-- Акции -->
+                <div class="d-grid gap-3 d-md-flex justify-content-md-center mt-5">
+                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow">
+                        <span id="btnText"><i class="fas fa-save me-2"></i> Зачувај измени</span>
+                        <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+
+                    <a href="{{ url_for('pozicii_kamin', kamin=kamin) }}" class="btn btn-outline-secondary btn-lg px-5 py-3">
+                        <i class="fas fa-arrow-left me-2"></i> Откажи
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+// Loader + валидација
+document.getElementById('editPozicijaForm')?.addEventListener('submit', function(e) {
+    const btn = document.getElementById('submitBtn');
+    const text = document.getElementById('btnText');
+    const spinner = document.getElementById('loadingSpinner');
+
+    if (!this.checkValidity()) {
+        e.preventDefault();
+        this.classList.add('was-validated');
+        return;
+    }
+
+    text.classList.add('d-none');
+    spinner.classList.remove('d-none');
+    btn.disabled = true;
+});
+
+// Bootstrap валидација
+(function () {
+    'use strict';
+    const form = document.getElementById('editPozicijaForm');
+    if (form) {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    }
+})();
+
+// Part Number preview (опционално, ако внесуваш нов)
+document.getElementById('part_number')?.addEventListener('input', function() {
+    const val = this.value.trim();
+    const preview = document.getElementById('part_preview');
+    preview.innerHTML = '';
+
+    if (val.length < 3) return;
+
+    fetch(`/api/part_info?part_number=${encodeURIComponent(val)}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.slika) {
+                const img = document.createElement('img');
+                img.src = data.slika;
+                img.alt = data.ime || 'Слика на артикл';
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = 'clamp(180px, 45vw, 280px)';
+                img.style.borderRadius = '16px';
+                img.style.boxShadow = 'var(--shadow)';
+                img.style.cursor = 'pointer';
+                img.classList.add('zoomable-img');
+                img.dataset.full = data.slika;
+                preview.appendChild(img);
+            } else {
+                preview.innerHTML = '<p class="text-danger mt-3 fw-bold">Не е пронајден</p>';
+            }
+        })
+        .catch(() => preview.innerHTML = '<p class="text-danger mt-3 fw-bold">Грешка</p>');
+});
+</script>
+
+<style>
+    .card {
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .form-control-lg, .form-select-lg {
+        font-size: clamp(1.05rem, 3.5vw, 1.25rem);
+        padding: 0.85rem 1.5rem;
+        border-radius: 12px;
+    }
+
+    .form-label {
+        font-size: clamp(1.1rem, 3.5vw, 1.25rem);
+    }
+
+    .btn-lg {
+        font-size: clamp(1.1rem, 4vw, 1.3rem);
+        padding: clamp(0.9rem, 4vw, 1.2rem) clamp(2rem, 6vw, 3rem);
+        min-height: 60px;
+        border-radius: 12px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border: none;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(102,126,234,0.4);
+    }
+
+    .zoomable-img {
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .zoomable-img:hover {
+        transform: scale(1.05);
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .container { padding: 0 1.5rem; margin-top: 3rem; }
+        h1 { font-size: clamp(2rem, 8vw, 2.8rem); }
+        .d-grid.gap-3 { gap: 1.2rem !important; }
+        .btn-lg { width: 100%; margin-bottom: 1rem; }
+    }
+
+    @media (max-width: 576px) {
+        .card-body { padding: 1.5rem !important; }
+        .form-control-lg, .form-select-lg { font-size: 1.1rem; }
+        .btn-lg { font-size: 1.05rem; padding: 0.9rem 1.5rem; min-height: 56px; }
+        img { max-width: 220px !important; max-height: 220px !important; }
+    }
+</style>
+
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto; padding: 0 1rem;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.3rem;">
+                Извоз на залиха
+            </h1>
+            <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary); margin: 0;">
+                Одземање од залиха
+            </p>
+        </div>
+        <div class="d-flex gap-3">
+            <a href="{{ url_for('zalihi.istorija') }}" 
+               class="btn btn-outline-primary btn-lg d-flex align-items-center gap-2">
+                <i class="fas fa-history"></i>
+                Историја на извози
+            </a>
+        </div>
+    </div>
+
+    {% if artikli %}
+    <div class="mb-4" style="max-width: 500px; margin-left: auto; margin-right: auto;">
+        <div class="input-group input-group-lg">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" id="searchInput" class="form-control" placeholder="Пребарувај по PN или ime...">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-striped mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>PN</th>
+                    <th>Ime на артикл</th>
+                    <th class="text-center">Залиха Платена</th>
+                    <th class="text-center">Залиха Неплатена</th>
+                    <th class="text-center"
+                        style="background:#4c1d95;color:#fff;white-space:nowrap;">
+                        <i class="fas fa-file-invoice me-1"></i>Профактура
+                    </th>
+                    <th class="text-center">Вкупна залиха</th>
+                    <th class="text-center">Извоз Платена</th>
+                    <th class="text-center">Извоз Неплатена</th>
+                </tr>
+            </thead>
+            <tbody id="izvozTableBody">
+                {% for art in artikli %}
+                <tr data-id="{{ art.id }}" data-pn="{{ art.part_number }}">
+                    <td class="fw-bold">{{ art.part_number }}</td>
+                    <td>{{ art.ime or '—' }}</td>
+
+                    <!-- Платена -->
+                    <td class="text-center fw-bold platena-zaliha"
+                        data-max="{{ art.kolicina_platena }}"
+                        style="color: {{ '#16a34a' if art.kolicina_platena > 0 else '#6b7280' }};">
+                        {{ art.kolicina_platena }}
+                    </td>
+
+                    <!-- Неплатена -->
+                    <td class="text-center fw-bold neplatena-zaliha"
+                        data-max="{{ art.kolicina_neplatena }}"
+                        style="color: {{ '#f59e0b' if art.kolicina_neplatena > 0 else '#6b7280' }};">
+                        {{ art.kolicina_neplatena }}
+                    </td>
+
+                    <!-- Профактура (read-only) -->
+                    <td class="text-center">
+                        {% if art.kolicina_profaktura > 0 %}
+                        <span class="badge rounded-pill fw-bold"
+                              style="background:#ede9fe;color:#4c1d95;font-size:.9rem;padding:.3rem .75rem;">
+                            <i class="fas fa-lock me-1" style="font-size:.65rem;"></i>
+                            {{ art.kolicina_profaktura }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Вкупна залиха -->
+                    <td class="text-center fw-bold vkupna-zaliha"
+                        style="color: {{ '#2563eb' if (art.kolicina_platena + art.kolicina_neplatena) > 0 else '#6b7280' }};">
+                        {{ art.kolicina_platena + art.kolicina_neplatena }}
+                    </td>
+
+                    <!-- Извоз Платена -->
+                    <td class="text-center">
+                        <input type="number"
+                               class="form-control text-center mx-auto izvoz-input-platena"
+                               min="0" max="{{ art.kolicina_platena }}" step="1" value="0"
+                               style="max-width: 140px;"
+                               {% if art.kolicina_platena == 0 %}disabled{% endif %}>
+                    </td>
+
+                    <!-- Извоз Неплатена -->
+                    <td class="text-center">
+                        <input type="number"
+                               class="form-control text-center mx-auto izvoz-input-neplatena"
+                               min="0" max="{{ art.kolicina_neplatena }}" step="1" value="0"
+                               style="max-width: 140px;"
+                               {% if art.kolicina_neplatena == 0 %}disabled{% endif %}>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Легенда за профактура колоната -->
+    <div class="mt-3 text-muted small text-end">
+        <i class="fas fa-lock me-1" style="color:#6366f1;"></i>
+        <span style="color:#4c1d95;font-weight:600;">Профактура</span> – резервирана залиха на чекање одобрување
+        <a href="{{ url_for('zalihi.profakturi_pending') }}" class="ms-2 fw-bold"
+           style="color:#6366f1;">
+            Одобри →
+        </a>
+    </div>
+
+    <div class="text-center mt-5">
+        <button type="button" id="izvozBtn" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow-lg">
+            <span id="izvozText"><i class="fas fa-truck-loading me-2"></i> Изврши извоз</span>
+            <span id="izvozSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
+        </button>
+    </div>
+
+    {% else %}
+    <div class="alert alert-info text-center py-5 shadow-lg rounded-4">
+        <i class="fas fa-box-open fa-5x mb-4 text-info opacity-75"></i>
+        <h4 class="fw-bold mb-3">Нема залиха за извоз</h4>
+        <p class="lead mb-4">Прво додај залиха преку копчето „Додади залиха".</p>
+        <a href="{{ url_for('zalihi.dodadi') }}" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-plus-circle me-2"></i> Додади залиха сега
+        </a>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('zalihi.zalihi') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Залихи
+        </a>
+    </div>
+</div>
+
+<script>
+// Live search
+document.getElementById('searchInput')?.addEventListener('keyup', function() {
+    const filter = this.value.toLowerCase().trim();
+    document.querySelectorAll('#izvozTableBody tr').forEach(row => {
+        const pn  = row.querySelector('td:nth-child(1)')?.textContent.toLowerCase() || '';
+        const ime = row.querySelector('td:nth-child(2)')?.textContent.toLowerCase() || '';
+        row.style.display = (pn.includes(filter) || ime.includes(filter)) ? '' : 'none';
+    });
+});
+
+// Ажурирање на вкупна залиха при внес
+document.querySelectorAll('.izvoz-input-platena, .izvoz-input-neplatena').forEach(input => {
+    input.addEventListener('input', function() {
+        const row = this.closest('tr');
+        const platenaInput   = row.querySelector('.izvoz-input-platena');
+        const neplatenaInput = row.querySelector('.izvoz-input-neplatena');
+        let platenaIzvoz   = parseInt(platenaInput.value)   || 0;
+        let neplatenaIzvoz = parseInt(neplatenaInput.value) || 0;
+        const platenaMax   = parseInt(row.querySelector('.platena-zaliha').dataset.max)   || 0;
+        const neplatenaMax = parseInt(row.querySelector('.neplatena-zaliha').dataset.max) || 0;
+
+        if (platenaIzvoz > platenaMax) {
+            platenaInput.value = platenaMax;
+            platenaIzvoz = platenaMax;
+            platenaInput.style.borderColor = '#dc2626';
+        } else {
+            platenaInput.style.borderColor = '';
+        }
+        if (neplatenaIzvoz > neplatenaMax) {
+            neplatenaInput.value = neplatenaMax;
+            neplatenaIzvoz = neplatenaMax;
+            neplatenaInput.style.borderColor = '#dc2626';
+        } else {
+            neplatenaInput.style.borderColor = '';
+        }
+
+        const novaZaliha = (platenaMax - platenaIzvoz) + (neplatenaMax - neplatenaIzvoz);
+        row.querySelector('.vkupna-zaliha').textContent  = novaZaliha;
+        row.querySelector('.vkupna-zaliha').style.color  = novaZaliha > 0 ? '#2563eb' : '#dc2626';
+    });
+});
+
+// Извоз
+document.getElementById('izvozBtn')?.addEventListener('click', function(e) {
+    e.preventDefault();
+    let artiklIzvezeni = [];
+    let totalIzvez = 0;
+
+    document.querySelectorAll('#izvozTableBody tr').forEach(row => {
+        const artId        = row.dataset.id;
+        const pn           = row.dataset.pn;
+        const platenaIzvoz   = parseInt(row.querySelector('.izvoz-input-platena')?.value)   || 0;
+        const neplatenaIzvoz = parseInt(row.querySelector('.izvoz-input-neplatena')?.value) || 0;
+        const platenaMax   = parseInt(row.querySelector('.platena-zaliha').dataset.max)   || 0;
+        const neplatenaMax = parseInt(row.querySelector('.neplatena-zaliha').dataset.max) || 0;
+
+        if (platenaIzvoz > platenaMax)   { alert(`❌ Грешка за ${pn} – преголема количина платена!`);   return; }
+        if (neplatenaIzvoz > neplatenaMax) { alert(`❌ Грешка за ${pn} – преголема количина неплатена!`); return; }
+
+        if (platenaIzvoz > 0 || neplatenaIzvoz > 0) {
+            totalIzvez += platenaIzvoz + neplatenaIzvoz;
+            artiklIzvezeni.push({ id: parseInt(artId), pn, platena: platenaIzvoz, neplatena: neplatenaIzvoz });
+        }
+    });
+
+    if (totalIzvez === 0) { alert('❌ Внеси барем една количина за извоз!'); return; }
+
+    document.getElementById('izvozText').classList.add('d-none');
+    document.getElementById('izvozSpinner').classList.remove('d-none');
+    document.getElementById('izvozBtn').disabled = true;
+
+    fetch('{{ url_for("zalihi.izvoz") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artikli: artiklIzvezeni })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            alert('❌ ' + (data.message || 'Непозната грешка'));
+            document.getElementById('izvozText').classList.remove('d-none');
+            document.getElementById('izvozSpinner').classList.add('d-none');
+            document.getElementById('izvozBtn').disabled = false;
+        }
+    })
+    .catch(err => {
+        alert('❌ Грешка при извоз: ' + err.message);
+        document.getElementById('izvozText').classList.remove('d-none');
+        document.getElementById('izvozSpinner').classList.add('d-none');
+        document.getElementById('izvozBtn').disabled = false;
+    });
+});
+</script>
+
+{% endblock %}

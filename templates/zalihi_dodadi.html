@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 900px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    
+    <!-- Наслов + Копче за преглед по недели -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2rem, 7vw, 3rem); margin-bottom: 0.3rem;">
+                Додади залиха
+            </h1>
+            <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary); margin: 0;">
+                Внеси нов артикл или додади количина на постоечки
+            </p>
+        </div>
+        
+        <a href="{{ url_for('zalihi.dodadeni_po_nedeli') }}" 
+           class="btn btn-outline-primary btn-lg d-flex align-items-center gap-2 shadow">
+            <i class="fas fa-calendar-week"></i>
+            Преглед по недели
+        </a>
+    </div>
+
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden">
+        <div class="card-header text-white py-4 px-5 fw-bold" 
+             style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-plus-circle me-3 fs-4"></i>
+                Нов внес во залиха
+            </h4>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" novalidate id="dodadiForm">
+                <input type="hidden" name="artikl_id" id="artikl_id" value="">
+
+                <div class="row g-4">
+                    <!-- Part Number -->
+                    <div class="col-12">
+                        <label for="pn" class="form-label fw-bold fs-5">Part Number (PN) *</label>
+                        <input type="text" id="pn" name="pn" class="form-control form-control-lg text-uppercase" 
+                               placeholder="На пр. 12345-ABC" required autofocus autocomplete="off">
+                        <small id="pnStatus" class="form-text"></small>
+                    </div>
+
+                    <!-- Име на артикл -->
+                    <div class="col-12">
+                        <label for="ime" class="form-label fw-bold fs-5">Име на артикл</label>
+                        <input type="text" id="ime" name="ime" class="form-control form-control-lg" readonly>
+                        <small class="form-text text-muted">Автоматски се пополнува</small>
+                    </div>
+
+                    <!-- Количина -->
+                    <div class="col-md-6">
+                        <label for="kolicina" class="form-label fw-bold fs-5">Количина *</label>
+                        <input type="number" id="kolicina" name="kolicina" min="1" 
+                               class="form-control form-control-lg text-center fw-bold" required>
+                    </div>
+
+                    <!-- Цена -->
+                    <div class="col-md-6">
+                        <label for="cena" class="form-label fw-bold fs-5">Цена</label>
+                        <input type="number" id="cena" name="cena" step="0.01" min="0"
+                               class="form-control form-control-lg text-center" value="0">
+                    </div>
+
+                    <!-- Датум -->
+                    <div class="col-md-6">
+                        <label for="datum" class="form-label fw-bold fs-5">Датум</label>
+                        <input type="date" id="datum" name="datum" class="form-control form-control-lg"
+                               value="{{ today }}">
+                    </div>
+
+                    <!-- Статус -->
+                    <div class="col-md-6">
+                        <label for="plateno" class="form-label fw-bold fs-5">Статус *</label>
+                        <select id="plateno" name="plateno" class="form-select form-select-lg" required>
+                            <option value="">Избери...</option>
+                            <option value="1">Платена</option>
+                            <option value="0">Неплатена</option>
+                        </select>
+                    </div>
+
+                    <!-- Забелешка -->
+                    <div class="col-12">
+                        <label for="zabeleska" class="form-label fw-bold fs-5">Забелешка</label>
+                        <textarea id="zabeleska" name="zabeleska" rows="3" 
+                                  class="form-control form-control-lg" 
+                                  placeholder="На пр. 'Набавка од 20.02.2025'"></textarea>
+                    </div>
+
+                    <div class="col-12 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-lg">
+                            <i class="fas fa-save me-2"></i> Зачувај залиха
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('zalihi.zalihi') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Залихи
+        </a>
+    </div>
+</div>
+
+<script>
+// Автоматско пополнување на име
+let searchTimeout;
+
+document.getElementById('pn')?.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    
+    const pn = this.value.trim().toUpperCase();
+    const imeField = document.getElementById('ime');
+    const artiklIdField = document.getElementById('artikl_id');
+    const pnStatus = document.getElementById('pnStatus');
+
+    imeField.value = '';
+    artiklIdField.value = '';
+    imeField.classList.remove('is-valid', 'is-invalid');
+    pnStatus.textContent = '';
+    pnStatus.className = 'form-text';
+
+    if (pn.length < 2) return;
+
+    pnStatus.textContent = '⏳ Пребарувам...';
+    pnStatus.className = 'form-text text-muted';
+
+    searchTimeout = setTimeout(() => {
+        fetch(`/zalihi/get_artikal/${encodeURIComponent(pn)}`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+            credentials: 'same-origin'
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.ime) {
+                imeField.value = data.ime;
+                artiklIdField.value = data.id;
+                imeField.classList.add('is-valid');
+                imeField.classList.remove('is-invalid');
+                pnStatus.textContent = '✅ Пронајден';
+                pnStatus.className = 'form-text text-success';
+            } else {
+                imeField.value = '';
+                artiklIdField.value = '';
+                imeField.classList.add('is-invalid');
+                imeField.classList.remove('is-valid');
+                pnStatus.textContent = '❌ Не е пронајден';
+                pnStatus.className = 'form-text text-danger';
+            }
+        })
+        .catch(() => {
+            pnStatus.textContent = '⚠️ Грешка';
+            pnStatus.className = 'form-text text-danger';
+        });
+    }, 300);
+});
+
+// Валидирај пред submit
+document.getElementById('dodadiForm')?.addEventListener('submit', function(e) {
+    if (!document.getElementById('artikl_id').value) {
+        e.preventDefault();
+        alert('Пребарај и селектирај валиден артикл!');
+    }
+});
+</script>
+
+{% endblock %}

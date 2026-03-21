@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Архива на завршени нарачки – Fersedo{% endblock %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    <!-- Наслов и назад -->
+    <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3.2rem); margin: 0;">
+            Архива на завршени барања
+        </h1>
+        <a href="{{ url_for('nabavki.nabavki') }}" class="btn btn-outline-primary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на активни барања
+        </a>
+    </div>
+
+    <!-- Flash пораки -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center shadow-sm" role="alert">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-3 fs-4"></i>
+                        <div class="flex-grow-1">{{ message }}</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% if archived_requests %}
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden">
+        <div class="card-header text-white py-4 px-5 fw-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-archive me-3 fs-4"></i>
+                Завршени и архивирани барања ({{ archived_requests|length }})
+            </h4>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Арх. број</th>
+                            <th>Налог број</th>
+                            <th>Наслов</th>
+                            <th>Креирал</th>
+                            <th>Кол.</th>
+                            <th>Архивирано на</th>
+                            <th>Архивирано од</th>
+                            <th>Детали</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in archived_requests %}
+                        <tr class="align-middle">
+                            <td><strong class="text-success">{{ r.arhiva_broj or '—' }}</strong></td>
+                            <td><small class="text-muted">{{ r.nalog_broj or '—' }}</small></td>
+                            <td>{{ r.naslov }}</td>
+                            <td>{{ r.username }}</td>
+                            <td>{{ r.kolicina }}</td>
+                            <td>{{ r.arhivirano_na }}</td>
+                            <td>{{ r.arhivirano_od }}</td>
+                            <td>
+                                <button type="button" class="btn btn-outline-primary btn-sm px-3 py-2"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#detailsModal{{ r.id }}">
+                                    <i class="fas fa-eye me-1"></i> Детали
+                                    {% if r.comments %}
+                                    <span class="badge bg-secondary ms-1">{{ r.comments|length }}</span>
+                                    {% endif %}
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center py-5 shadow-lg rounded-4">
+        <i class="fas fa-archive fa-5x mb-4 text-info opacity-75"></i>
+        <h4 class="fw-light">Архивата е празна</h4>
+        <p class="lead">Завршените барања автоматски ќе се појават овде откако ќе добијат статус „Zavrseno".</p>
+    </div>
+    {% endif %}
+
+    <!-- Модали за детали -->
+    {% for r in archived_requests %}
+    <div class="modal fade" id="detailsModal{{ r.id }}" tabindex="-1" aria-labelledby="detailsModalLabel{{ r.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content rounded-4 shadow-2xl">
+                <div class="modal-header text-white py-4 px-5" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: var(--radius) var(--radius) 0 0;">
+                    <h5 class="modal-title fs-4 mb-0" id="detailsModalLabel{{ r.id }}">
+                        <i class="fas fa-file-invoice-dollar me-3"></i>
+                        Архивирано барање: {{ r.arhiva_broj or r.nalog_broj or 'Без број' }} – {{ r.naslov }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-5">
+                    <div class="row g-4">
+
+                        <!-- Лева колона -->
+                        <div class="col-md-6">
+                            <div class="d-flex flex-column gap-3">
+                                <p class="mb-0"><strong>Архивски број:</strong> <span class="text-success fw-bold fs-5">{{ r.arhiva_broj or '—' }}</span></p>
+                                <p class="mb-0"><strong>Оригинален налог:</strong> <span class="text-primary fw-bold">{{ r.nalog_broj or '—' }}</span></p>
+                                <p class="mb-0"><strong>Креирал:</strong> {{ r.username }}</p>
+                                <p class="mb-0"><strong>Датум на креирање:</strong> {{ r.datum_kreiranje }}</p>
+                                <p class="mb-0"><strong>Датум на итност:</strong> {{ r.datum_itnost or '—' }}</p>
+                                <p class="mb-0"><strong>Архивирано на:</strong> {{ r.arhivirano_na }}</p>
+                                <p class="mb-0"><strong>Архивирано од:</strong> {{ r.arhivirano_od }}</p>
+                                <p class="mb-0"><strong>Статус:</strong>
+                                    <span class="badge fs-6 py-2 px-4 rounded-pill bg-success">Завршено</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Десна колона -->
+                        <div class="col-md-6">
+                            <div class="d-flex flex-column gap-3">
+                                <p class="mb-0"><strong>Количина:</strong> {{ r.kolicina }} парчиња</p>
+                                <p class="mb-0"><strong>Опис:</strong> {{ r.opis or 'Нема дополнителен опис' }}</p>
+                                {% if r.slika %}
+                                <p class="mb-0"><strong>Прикачена слика:</strong></p>
+                                <a href="{{ url_for('static', filename='nabavki/' + r.slika) }}" target="_blank">
+                                    <img src="{{ url_for('static', filename='nabavki/' + r.slika) }}"
+                                         alt="Слика" class="img-fluid rounded shadow mt-2 zoomable-img"
+                                         style="max-height: 320px;">
+                                </a>
+                                {% else %}
+                                <p class="mb-0"><strong>Слика:</strong> <span class="text-muted">Нема прикачена слика</span></p>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- ══ ЧАТ КОМЕНТАРИ ══ -->
+                        <div class="col-12 mt-4 border-top pt-4">
+                            <h6 class="fw-bold mb-3 fs-5">
+                                <i class="fas fa-comments me-2 text-primary"></i>
+                                Чат од барањето
+                                {% if r.comments %}
+                                <span class="badge bg-primary ms-2">{{ r.comments|length }}</span>
+                                {% endif %}
+                            </h6>
+
+                            {% if r.comments %}
+                            <div class="chat-box p-3 rounded border"
+                                 id="archiveChatBox{{ r.id }}"
+                                 style="max-height: 400px; overflow-y: auto; background: #f8f9fa;">
+                                {% for c in r.comments %}
+                                <div class="chat-message mb-3 p-3 rounded
+                                    {% if c.user == session.user %}bg-primary text-white text-end ms-auto{% else %}bg-white text-dark text-start me-auto{% endif %}"
+                                     style="max-width: 80%; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                                    <small class="d-block mb-1 opacity-75">
+                                        <i class="fas fa-user me-1"></i>{{ c.user }}
+                                        &nbsp;•&nbsp;
+                                        <i class="fas fa-clock me-1"></i>{{ c.timestamp }}
+                                    </small>
+                                    {% if c.comment %}
+                                    <p class="mb-0">{{ c.comment }}</p>
+                                    {% endif %}
+                                    {% if c.slika %}
+                                    <a href="/static/nabavki_chat/{{ c.slika }}" target="_blank" class="d-block mt-2">
+                                        <img src="/static/nabavki_chat/{{ c.slika }}"
+                                             alt="Слика во чат"
+                                             class="rounded shadow-sm zoomable-img"
+                                             style="max-width: 220px; max-height: 200px; object-fit: cover; cursor: zoom-in;">
+                                    </a>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="text-center py-4 text-muted">
+                                <i class="fas fa-comment-slash fa-2x mb-2 opacity-50"></i>
+                                <p class="mb-0">Нема коментари за ова барање.</p>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-4 px-5">
+                    <button type="button" class="btn btn-secondary btn-lg px-5 py-3" data-bs-dismiss="modal">Затвори</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+    .card { border-radius: var(--radius); overflow: hidden; transition: transform 0.3s ease; }
+    .card:hover { transform: translateY(-6px); }
+    .table-hover tbody tr:hover { background-color: rgba(102,126,234,0.08); }
+    .chat-box { border-radius: 12px; }
+    .chat-message { max-width: 80%; word-wrap: break-word; }
+    .zoomable-img { cursor: pointer; transition: transform 0.3s ease; }
+    .zoomable-img:hover { transform: scale(1.05); }
+    @media (max-width: 992px) {
+        .container { padding: 0 1.5rem; }
+        .modal-dialog { margin: 1rem; }
+    }
+    @media (max-width: 576px) {
+        .card-body { padding: 1.5rem !important; }
+        .table th, .table td { padding: 0.75rem; font-size: 0.95rem; }
+        .modal-body { padding: 1.5rem !important; }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('shown.bs.modal', function() {
+            const reqId = this.id.replace('detailsModal', '');
+            const chatBox = document.getElementById(`archiveChatBox${reqId}`);
+            if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    });
+});
+</script>
+
+{% endblock %}

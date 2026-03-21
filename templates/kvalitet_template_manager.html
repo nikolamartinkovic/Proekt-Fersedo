@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+{% block title %}QC Template Manager{% endblock %}
+
+{% block content %}
+
+<div class="container mt-4" style="max-width:1100px">
+
+<h2 class="mb-4">QC Template Manager</h2>
+
+<!-- ============================= -->
+<!-- ИЗБОР НА КАМИН -->
+<!-- ============================= -->
+<form method="GET" class="mb-4">
+    <select name="kamin" class="form-select" onchange="this.form.submit()">
+        <option value="">-- Избери камин --</option>
+        {% for k in kamini %}
+        <option value="{{ k }}"
+        {% if k == selected_kamin %}selected{% endif %}>
+            {{ k }}
+        </option>
+        {% endfor %}
+    </select>
+</form>
+
+{% if selected_kamin and template %}
+
+<input type="hidden" id="template_id" value="{{ template.id }}">
+
+<div class="card p-4 shadow-sm rounded-4">
+
+<h4 class="mb-4">Чекори за: {{ selected_kamin }}</h4>
+
+<!-- ============================= -->
+<!-- ДОДАВАЊЕ ЧЕКОР -->
+<!-- ============================= -->
+<div class="input-group mb-4">
+    <input type="text"
+           id="nov_cekor"
+           class="form-control"
+           placeholder="Нов чекор">
+    <button type="button"
+            class="btn btn-primary"
+            onclick="dodadiCekor()">
+        ➕ Додади чекор
+    </button>
+</div>
+
+<!-- ============================= -->
+<!-- ЛИСТА НА ЧЕКОРИ -->
+<!-- ============================= -->
+{% for cekor in cekori %}
+<div class="card p-3 mb-3 border rounded-4">
+
+    <div class="d-flex align-items-center mb-3">
+
+        <form method="POST"
+              action="{{ url_for('kvalitet.edit_template_cekor', cekor_id=cekor.id) }}"
+              class="d-flex align-items-center w-100">
+
+            <input type="text"
+                   name="naslov"
+                   value="{{ cekor.naslov }}"
+                   class="form-control me-2"
+                   readonly
+                   id="cekor_{{ cekor.id }}">
+
+            <!-- EDIT -->
+            <button type="button"
+                    class="btn btn-warning btn-sm me-2"
+                    onclick="enableEdit('cekor_{{ cekor.id }}', this)">
+                ✏
+            </button>
+
+            <!-- SAVE -->
+            <button type="submit"
+                    class="btn btn-success btn-sm me-2 d-none"
+                    id="save_cekor_{{ cekor.id }}">
+                💾
+            </button>
+
+            <!-- MOVE UP -->
+            <a href="{{ url_for('kvalitet.move_template_cekor', cekor_id=cekor.id, direction='up') }}"
+               class="btn btn-secondary btn-sm me-1">
+               ⬆
+            </a>
+
+            <!-- MOVE DOWN -->
+            <a href="{{ url_for('kvalitet.move_template_cekor', cekor_id=cekor.id, direction='down') }}"
+               class="btn btn-secondary btn-sm me-2">
+               ⬇
+            </a>
+
+            <!-- DELETE -->
+            <a href="{{ url_for('kvalitet.delete_template_cekor', cekor_id=cekor.id) }}"
+               class="btn btn-danger btn-sm"
+               onclick="return confirm('Да се избрише чекорот?')">
+               ❌
+            </a>
+
+        </form>
+
+    </div>
+
+    <!-- ============================= -->
+    <!-- ДОДАВАЊЕ ПОДЧЕКОР -->
+    <!-- ============================= -->
+    <div class="input-group mb-3">
+        <input type="text"
+               id="pod_{{ cekor.id }}"
+               class="form-control"
+               placeholder="Нов подчекор">
+        <button type="button"
+                class="btn btn-outline-primary"
+                onclick="dodadiPodcekor({{ cekor.id }})">
+            ➕
+        </button>
+    </div>
+
+    <!-- ============================= -->
+    <!-- ПОДЧЕКОРИ -->
+    <!-- ============================= -->
+    {% for pod in cekor.podcekori %}
+    <form method="POST"
+          action="{{ url_for('kvalitet.edit_template_podcekor', pod_id=pod.id) }}"
+          class="d-flex align-items-center mb-2">
+
+        <input type="text"
+               name="opis"
+               value="{{ pod.opis }}"
+               class="form-control me-2"
+               readonly
+               id="podcekor_{{ pod.id }}">
+
+        <!-- EDIT -->
+        <button type="button"
+                class="btn btn-warning btn-sm me-2"
+                onclick="enableEdit('podcekor_{{ pod.id }}', this)">
+            ✏
+        </button>
+
+        <!-- SAVE -->
+        <button type="submit"
+                class="btn btn-success btn-sm me-2 d-none"
+                id="save_podcekor_{{ pod.id }}">
+            💾
+        </button>
+
+        <!-- DELETE -->
+        <a href="{{ url_for('kvalitet.delete_template_podcekor', pod_id=pod.id) }}"
+           class="btn btn-danger btn-sm"
+           onclick="return confirm('Да се избрише подчекорот?')">
+           ❌
+        </a>
+
+    </form>
+    {% endfor %}
+
+</div>
+{% endfor %}
+
+</div>
+{% endif %}
+
+</div>
+
+<!-- ============================= -->
+<!-- JAVASCRIPT -->
+<!-- ============================= -->
+<script>
+
+function enableEdit(inputId, button){
+    const input = document.getElementById(inputId);
+    input.removeAttribute("readonly");
+    input.focus();
+
+    button.classList.add("d-none");
+
+    const saveBtn = document.getElementById("save_" + inputId);
+    if(saveBtn){
+        saveBtn.classList.remove("d-none");
+    }
+}
+
+function dodadiCekor(){
+
+    const input = document.getElementById("nov_cekor");
+    const templateInput = document.getElementById("template_id");
+
+    if(!templateInput || !templateInput.value){
+        alert("Template ID недостасува.");
+        return;
+    }
+
+    const naslov = input.value.trim();
+    const template_id = templateInput.value;
+
+    if(!naslov){
+        alert("Внеси наслов на чекор");
+        return;
+    }
+
+    fetch("{{ url_for('kvalitet.add_template_cekor') }}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "template_id=" + template_id +
+              "&naslov=" + encodeURIComponent(naslov)
+    })
+    .then(response => {
+        if(!response.ok){
+            throw new Error("Server error");
+        }
+        return response.text();
+    })
+    .then(() => {
+        location.reload();
+    })
+    .catch(error => {
+        console.error(error);
+        alert("Грешка при додавање чекор");
+    });
+}
+
+function dodadiPodcekor(cekor_id){
+
+    const input = document.getElementById("pod_" + cekor_id);
+    const opis = input.value.trim();
+
+    if(!opis){
+        alert("Внеси опис на подчекор");
+        return;
+    }
+
+    fetch("/kvalitet/template/add_podcekor", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: "cekor_id=" + cekor_id + "&opis=" + encodeURIComponent(opis)
+    })
+    .then(response => response.text())
+    .then(data => {
+        console.log("Server:", data);
+        location.reload();
+    })
+    .catch(error => {
+        console.error("Error:", error);
+    });
+}
+
+</script>
+
+{% endblock %}

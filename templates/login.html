@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="login-page d-flex align-items-center justify-content-center" style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="login-card bg-white rounded-4 shadow-2xl p-4 p-md-5" style="max-width: 460px; width: 92%;">
+        <!-- Лого -->
+        <div class="text-center mb-4">
+            <img src="{{ url_for('static', filename='logo.webp') }}" alt="Fersedo" style="max-height: 90px; width: auto;">
+        </div>
+
+        <!-- Наслов -->
+        <h1 class="text-center mb-1 fw-bold fs-2" style="color: var(--primary);">
+            Добредојде назад
+        </h1>
+        <p class="text-center text-muted mb-5 fs-5">
+            Најави се за да продолжиш
+        </p>
+
+        <!-- Форма -->
+        <form method="POST" id="loginForm" novalidate>
+            <!-- Корисничко име -->
+            <div class="mb-4">
+                <label for="username" class="form-label fw-bold">Корисничко име</label>
+                <input type="text" id="username" name="username" class="form-control form-control-lg" required autofocus placeholder="Внеси корисничко име">
+                <div class="invalid-feedback">Корисничкото име е задолжително</div>
+            </div>
+
+            <!-- Лозинка -->
+            <div class="mb-4 position-relative">
+                <label for="password" class="form-label fw-bold">Лозинка</label>
+                <input type="password" id="password" name="password" class="form-control form-control-lg pe-5" required placeholder="Внеси лозинка">
+                <i class="fas fa-eye-slash position-absolute top-50 end-0 translate-middle-y pe-4 fs-5" id="togglePassword" style="cursor: pointer; color: #6c757d;"></i>
+                <div class="invalid-feedback">Лозинката е задолжителна</div>
+            </div>
+
+            <!-- Грешка -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category in ['error', 'danger'] else 'warning' }} alert-dismissible fade show d-flex align-items-center mb-4" role="alert">
+                            <i class="fas fa-exclamation-circle me-3 fs-4"></i>
+                            <div>{{ message }}</div>
+                            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Копче за најава -->
+            <button type="submit" id="loginBtn" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow mt-2">
+                <span id="loginText">Најави се</span>
+                <span id="loginSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
+            </button>
+        </form>
+
+        <!-- Footer текст -->
+        <p class="text-center mt-5 text-white opacity-75 small">
+            © {{ current_year }} Fersedo Performance Tracker
+        </p>
+    </div>
+</div>
+
+<script>
+// Toggle password visibility
+document.getElementById('togglePassword')?.addEventListener('click', function () {
+    const password = document.getElementById('password');
+    const type = password.type === 'password' ? 'text' : 'password';
+    password.type = type;
+    this.classList.toggle('fa-eye-slash');
+    this.classList.toggle('fa-eye');
+});
+
+// Loader при submit + валидација
+document.getElementById('loginForm')?.addEventListener('submit', function (e) {
+    if (!this.checkValidity()) {
+        e.preventDefault();
+        this.classList.add('was-validated');
+        return;
+    }
+
+    const btn = document.getElementById('loginBtn');
+    const text = document.getElementById('loginText');
+    const spinner = document.getElementById('loginSpinner');
+
+    text.classList.add('d-none');
+    spinner.classList.remove('d-none');
+    btn.disabled = true;
+});
+</script>
+
+<style>
+    .login-page {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        position: relative;
+    }
+
+    .login-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 30px 100px rgba(0,0,0,0.4);
+        transition: transform 0.3s ease;
+    }
+
+    .login-card:hover {
+        transform: translateY(-8px);
+    }
+
+    .form-control-lg {
+        font-size: 1.1rem;
+        padding: 0.85rem 1.5rem;
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+    }
+
+    .form-control-lg:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 0.25rem rgba(102,126,234,0.25);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border: none;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 35px rgba(102,126,234,0.4);
+    }
+
+    @media (max-width: 576px) {
+        .login-card {
+            padding: 2rem 1.5rem;
+            border-radius: 20px;
+        }
+        h1 {
+            font-size: 2.2rem;
+        }
+    }
+</style>
+
+{% endblock %}

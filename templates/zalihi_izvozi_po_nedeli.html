@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto; padding: 0 1rem;">
+
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.3rem;">
+                Извози по недели
+            </h1>
+            <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary); margin: 0;">
+                Сумирани извози групирани по календарска недела
+            </p>
+        </div>
+
+        <a href="{{ url_for('zalihi.izvozi_po_nedeli_export') }}"
+           class="btn btn-success btn-lg d-flex align-items-center gap-2 shadow">
+            <i class="fas fa-file-excel"></i> Export во Excel
+        </a>
+    </div>
+
+    {% if sorted_weeks %}
+        {% for nedela, artikli in sorted_weeks %}
+        <div class="mb-5">
+            <!-- Заглавие на неделата -->
+            <div class="d-flex justify-content-between align-items-center text-white p-3 px-4 rounded-top"
+                 style="background: linear-gradient(135deg, var(--primary), var(--primary-dark, #1d4ed8));">
+                <h4 class="mb-0 fw-bold">
+                    <i class="fas fa-calendar-week me-2"></i>
+                    {{ nedela }}
+                </h4>
+                <div class="d-flex gap-3 align-items-center">
+                    <span class="badge bg-light text-dark fs-6">
+                        {{ artikli|length }} артикли
+                    </span>
+                    <span class="badge bg-warning text-dark fs-6">
+                        Вкупно: {{ week_totals[nedela] }} ед.
+                    </span>
+                </div>
+            </div>
+
+            <div class="table-responsive shadow-sm">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>PN</th>
+                            <th>Ime на артикл</th>
+                            <th class="text-center">Платена</th>
+                            <th class="text-center">Неплатена</th>
+                            <th class="text-center">Вкупно</th>
+                            <th>Корисници</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for art in artikli %}
+                        <tr>
+                            <td class="fw-bold">{{ art.pn }}</td>
+                            <td>{{ art.ime or '—' }}</td>
+                            <td class="text-center fw-bold text-success">{{ art.kolicina_platena }}</td>
+                            <td class="text-center fw-bold text-warning">{{ art.kolicina_neplatena }}</td>
+                            <td class="text-center fw-bold text-primary fs-5">{{ art.vkupno }}</td>
+                            <td><small class="text-muted">{{ art.korisnici }}</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-success">
+                        <tr>
+                            <td colspan="2" class="text-end fw-bold">Вкупно за {{ nedela }}:</td>
+                            <td class="text-center fw-bold text-success">{{ week_platena[nedela] }}</td>
+                            <td class="text-center fw-bold text-warning">{{ week_neplatena[nedela] }}</td>
+                            <td class="text-center fw-bold fs-5">{{ week_totals[nedela] }}</td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="alert alert-info text-center py-5 shadow-lg rounded-4">
+        <i class="fas fa-inbox fa-3x mb-3 text-muted"></i>
+        <h4>Сè уште нема одобрени извози</h4>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('zalihi.zalihi') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Залихи
+        </a>
+    </div>
+</div>
+
+{% endblock %}

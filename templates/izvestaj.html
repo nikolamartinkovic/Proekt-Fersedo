@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    <div class="text-center mb-5 pb-4">
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.5rem, 8vw, 3.5rem); margin-bottom: 0.5rem;">
+            {{ title }}
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
+            Период: <strong>од {{ datum_od }} до {{ datum_do }}</strong>
+        </p>
+    </div>
+
+    <!-- Копчиња за период -->
+    <div class="d-flex flex-wrap gap-3 justify-content-center mb-5">
+        <a href="{{ url_for('main.izvestaj', period='week') }}" 
+           class="btn btn-lg px-4 py-3 fw-bold shadow {% if period == 'week' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            Последна недела
+        </a>
+        <a href="{{ url_for('main.izvestaj', period='current_week') }}" 
+           class="btn btn-lg px-4 py-3 fw-bold shadow {% if period == 'current_week' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            Тековна недела
+        </a>
+        <a href="{{ url_for('main.izvestaj', period='month') }}" 
+           class="btn btn-lg px-4 py-3 fw-bold shadow {% if period == 'month' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            Последен месец
+        </a>
+        <a href="{{ url_for('main.izvestaj', period='quarter') }}" 
+           class="btn btn-lg px-4 py-3 fw-bold shadow {% if period == 'quarter' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+            Квартален
+        </a>
+    </div>
+
+    <!-- KPI -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-4 col-md-6">
+            <div class="card shadow border-0 rounded-4 h-100 text-center" style="background: linear-gradient(135deg, #e6f0ff, #f0f7ff);">
+                <div class="card-body p-5">
+                    <i class="fas fa-boxes-stacked fa-4x mb-4" style="color: var(--primary); opacity: 0.9;"></i>
+                    <p class="fs-5 fw-bold mb-2" style="color: var(--primary);">Произведени</p>
+                    <span class="display-4 fw-black" style="color: var(--primary);">{{ summary.total_proizvedeni | int or 0 }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card shadow border-0 rounded-4 h-100 text-center" style="background: linear-gradient(135deg, #fff5f5, #ffebeb);">
+                <div class="card-body p-5">
+                    <i class="fas fa-exclamation-triangle fa-4x mb-4" style="color: #e63946; opacity: 0.9;"></i>
+                    <p class="fs-5 fw-bold mb-2" style="color: #e63946;">Грешки</p>
+                    <span class="display-4 fw-black" style="color: #e63946;">{{ summary.total_greski | int or 0 }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-12">
+            <div class="card shadow border-0 rounded-4 h-100 text-center" style="background: linear-gradient(135deg, #e6f4ff, #f0f9ff);">
+                <div class="card-body p-5">
+                    <i class="fas fa-percentage fa-4x mb-4" style="color: var(--primary); opacity: 0.9;"></i>
+                    <p class="fs-5 fw-bold mb-2" style="color: var(--primary);">Ефективност</p>
+                    <span class="display-4 fw-black" style="color: var(--primary);">
+                        {% if summary.total_proizvedeni and summary.total_proizvedeni > 0 %}
+                            {{ (100 - (summary.total_greski / summary.total_proizvedeni * 100)) | round(0) | int }} %
+                        {% else %}
+                            0 %
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Преглед по оддели -->
+    <div class="card shadow border-0 rounded-4 overflow-hidden">
+        <div class="card-header text-white py-4 px-5" style="background: var(--primary); text-align: center;">
+            <h4 class="mb-0 fw-bold fs-4">Преглед по оддели</h4>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-center">Оддел</th>
+                            <th class="text-center">Произведени</th>
+                            <th class="text-center">Грешки</th>
+                            <th class="text-center">Ефективност</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for od in po_oddel %}
+                        <tr>
+                            <td class="text-center py-3 fw-bold">{{ od.oddel }}</td>
+                            <td class="text-center py-3 fw-bold">{{ od.proizvedeni or 0 }}</td>
+                            <td class="text-center py-3 fw-bold" style="color: {% if od.greski >= 5 %}#e63946{% elif od.greski >= 2 %}#f4a261{% else %}#2a9d8f{% endif %};">
+                                {{ od.greski or 0 }}
+                            </td>
+                            <td class="text-center py-3 fw-bold" style="color: {% if od.efektivnost >= 95 %}#2a9d8f{% elif od.efektivnost >= 80 %}#e9c46a{% else %}#e63946{% endif %};">
+                                {% if od.proizvedeni and od.proizvedeni > 0 %}
+                                    {{ (100 - (od.greski / od.proizvedeni * 100)) | round(0) | int }} %
+                                {% else %}
+                                    0 %
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted fw-bold fs-5">
+                                Нема податоци за овој период
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+    .card:hover { transform: translateY(-6px); }
+    .display-4 { font-weight: 900; line-height: 1; }
+    .btn-lg {
+        font-size: clamp(1.1rem, 4vw, 1.3rem);
+        padding: clamp(0.9rem, 4vw, 1.2rem) clamp(2rem, 6vw, 3rem);
+        min-height: 60px;
+    }
+    @media (max-width: 992px) {
+        .d-flex.flex-wrap { flex-direction: column; align-items: stretch; }
+        .row.g-4 > div { margin-bottom: 1.5rem; }
+        .btn { width: 100%; }
+    }
+    @media (max-width: 576px) {
+        .container { padding: 0 1rem; margin-top: 3rem; }
+        .card-body { padding: 1.5rem !important; }
+        .display-4 { font-size: 3rem; }
+    }
+</style>
+
+{% endblock %}

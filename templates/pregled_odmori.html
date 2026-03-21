@@ -1,0 +1,380 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+
+    <div class="text-center mb-5 pb-4">
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.5rem;">
+            Преглед на барања за одмор
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
+            Сите барања, статуси, одобрувања и салдо за {{ godina }}
+        </p>
+    </div>
+
+    <!-- Flash пораки -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-4">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show d-flex align-items-center shadow-sm" role="alert">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-3 fs-4"></i>
+                        <div class="flex-grow-1">{{ message }}</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ── Резиме картички ── -->
+    {% if baranja %}
+    {% set pending_count  = baranja | selectattr('status','equalto','pending')  | list | length %}
+    {% set approved_count = baranja | selectattr('status','equalto','approved') | list | length %}
+    {% set rejected_count = baranja | selectattr('status','equalto','rejected') | list | length %}
+    {% set otkazano_count = baranja | selectattr('status','equalto','otkazano') | list | length %}
+    <div class="row g-3 mb-5">
+        <div class="col-sm-3">
+            <div class="card border-0 shadow text-center py-4" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:16px;">
+                <div class="fs-1 fw-bold">{{ pending_count }}</div>
+                <div class="mt-1 opacity-90"><i class="fas fa-clock me-1"></i> Чекаат одобрување</div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="card border-0 shadow text-center py-4" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border-radius:16px;">
+                <div class="fs-1 fw-bold">{{ approved_count }}</div>
+                <div class="mt-1 opacity-90"><i class="fas fa-check me-1"></i> Одобрени</div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="card border-0 shadow text-center py-4" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border-radius:16px;">
+                <div class="fs-1 fw-bold">{{ rejected_count }}</div>
+                <div class="mt-1 opacity-90"><i class="fas fa-times me-1"></i> Отфрлени</div>
+            </div>
+        </div>
+        <div class="col-sm-3">
+            <div class="card border-0 shadow text-center py-4" style="background:linear-gradient(135deg,#6b7280,#4b5563);color:#fff;border-radius:16px;">
+                <div class="fs-1 fw-bold">{{ otkazano_count }}</div>
+                <div class="mt-1 opacity-90"><i class="fas fa-ban me-1"></i> Откажани</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Главна табела ── -->
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden">
+        <div class="card-header text-white py-4 px-5 fw-bold"
+             style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-list-check me-3 fs-4"></i>
+                Сите барања за одмор
+            </h4>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                <table class="table table-hover table-striped mb-0 align-middle" style="width: 100%; min-width: 1200px;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Вработен</th>
+                            <th>Од датум</th>
+                            <th>До датум</th>
+                            <th class="text-center">Вкупно денови</th>
+                            <th class="text-center">Работни денови</th>
+                            <th>Статус</th>
+                            <th class="text-center" style="background:#1e3a5f; min-width:170px;">
+                                <i class="fas fa-umbrella-beach me-1"></i> Салдо {{ godina }}
+                            </th>
+                            <th>Забелешка</th>
+                            <th>Поднесено од</th>
+                            <th>Поднесено на</th>
+                            <th class="text-center" style="min-width: 220px;">Акции</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if baranja %}
+                            {% for b in baranja %}
+                            {% set sd = saldo_map.get(b.vraboten_id, {'vkupno': 20, 'iskoristeni': 0, 'preostanati': 20}) %}
+                            {% set pct = ((sd.iskoristeni / sd.vkupno) * 100) | int if sd.vkupno > 0 else 0 %}
+                            <tr {% if b.status == 'otkazano' %}style="opacity:0.55;"{% endif %}>
+                                <td class="fw-medium">{{ b.prezime }} {{ b.ime }}</td>
+                                <td>{{ b.datum_od_formatted }}</td>
+                                <td>{{ b.datum_do_formatted }}</td>
+                                <td class="text-center fw-bold">{{ b.total_days }}</td>
+                                <td class="text-center fw-bold">{{ b.working_days }}</td>
+                                <td>
+                                    {% if b.status == 'pending' %}
+                                        <span class="badge bg-warning text-dark px-3 py-2">
+                                            <i class="fas fa-clock me-1"></i> Чека одобрување
+                                        </span>
+                                    {% elif b.status == 'approved' %}
+                                        <span class="badge bg-success px-3 py-2">
+                                            <i class="fas fa-check me-1"></i> Одобрено
+                                        </span>
+                                    {% elif b.status == 'rejected' %}
+                                        <span class="badge bg-danger px-3 py-2">
+                                            <i class="fas fa-times me-1"></i> Отфрлено
+                                        </span>
+                                    {% elif b.status == 'otkazano' %}
+                                        <span class="badge bg-secondary px-3 py-2">
+                                            <i class="fas fa-ban me-1"></i> Откажано
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary px-3 py-2">{{ b.status }}</span>
+                                    {% endif %}
+                                </td>
+
+                                <!-- КОЛОНА: САЛДО -->
+                                <td style="min-width:170px;">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <small class="text-muted" style="font-size:0.78rem;">
+                                            {{ sd.iskoristeni }}/{{ sd.vkupno }}
+                                        </small>
+                                        <span class="badge px-2 py-1
+                                            {% if sd.preostanati == 0 %}bg-danger
+                                            {% elif sd.preostanati <= 5 %}bg-warning text-dark
+                                            {% else %}bg-success{% endif %}"
+                                              style="font-size:0.8rem;">
+                                            {{ sd.preostanati }} ден.
+                                        </span>
+                                    </div>
+                                    <div class="progress" style="height:6px; border-radius:3px; background:#e5e7eb;">
+                                        <div class="progress-bar
+                                            {% if pct >= 100 %}bg-danger
+                                            {% elif pct >= 75 %}bg-warning
+                                            {% else %}bg-success{% endif %}"
+                                             style="width:{{ [pct,100]|min }}%"></div>
+                                    </div>
+                                    <div style="font-size:0.72rem; color:#6b7280; text-align:center; margin-top:3px;">
+                                        преостанати {{ godina }}
+                                    </div>
+                                </td>
+
+                                <td>{{ b.zabeleska }}</td>
+                                <td>{{ b.podneseno_od }}</td>
+                                <td>{{ b.podneseno_na }}</td>
+
+                                <!-- ── АКЦИИ ── -->
+                                <td class="text-center">
+                                    <div class="d-flex flex-wrap gap-1 justify-content-center">
+
+                                        {% if b.status == 'pending' %}
+                                        <!-- Одобри -->
+                                        <form method="POST" class="d-inline">
+                                            <input type="hidden" name="action" value="approve">
+                                            <input type="hidden" name="baranje_id" value="{{ b.id }}">
+                                            <button type="submit" class="btn btn-sm btn-success px-2 py-1">
+                                                <i class="fas fa-check me-1"></i> Одобри
+                                            </button>
+                                        </form>
+                                        <!-- Отфрли -->
+                                        <form method="POST" class="d-inline">
+                                            <input type="hidden" name="action" value="reject">
+                                            <input type="hidden" name="baranje_id" value="{{ b.id }}">
+                                            <button type="submit" class="btn btn-sm btn-danger px-2 py-1">
+                                                <i class="fas fa-times me-1"></i> Отфрли
+                                            </button>
+                                        </form>
+                                        {% endif %}
+
+                                        {% if b.status != 'otkazano' %}
+                                        <!-- Измени -->
+                                        <button type="button"
+                                                class="btn btn-sm btn-warning px-2 py-1"
+                                                onclick="otвориIzmeni(
+                                                    {{ b.id }},
+                                                    '{{ b.datum_od_formatted | replace('-', '/') }}',
+                                                    '{{ b.datum_do_formatted | replace('-', '/') }}',
+                                                    '{{ b.zabeleska | replace("'", "\\'") }}',
+                                                    '{{ b.datum_od_year }}'
+                                                )">
+                                            <i class="fas fa-edit me-1"></i> Измени
+                                        </button>
+
+                                        <!-- Откажи -->
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-secondary px-2 py-1"
+                                                onclick="otвориOtkazi({{ b.id }}, '{{ b.prezime }} {{ b.ime }}', '{{ b.datum_od_formatted }}', '{{ b.datum_do_formatted }}')">
+                                            <i class="fas fa-ban me-1"></i> Откажи
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted" style="font-size:0.85rem;">—</span>
+                                        {% endif %}
+
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="11" class="text-center text-muted py-5">
+                                    <i class="fas fa-inbox fa-4x mb-3 opacity-50"></i><br>
+                                    Сè уште нема поднесени барања за одмор.
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('main.odmori') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Одмори
+        </a>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     МОДАЛ: ИЗМЕНИ БАРАЊЕ
+══════════════════════════════════════════ -->
+<div class="modal fade" id="modalIzmeni" tabindex="-1" aria-labelledby="modalIzmeniLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header text-white py-3 px-4"
+                 style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                <h5 class="modal-title fw-bold" id="modalIzmeniLabel">
+                    <i class="fas fa-edit me-2"></i> Измени барање за одмор
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" id="formIzmeni">
+                <div class="modal-body p-4">
+                    <input type="hidden" name="action" value="edit">
+                    <input type="hidden" name="baranje_id" id="edit_baranje_id">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Од датум</label>
+                        <input type="date" name="datum_od" id="edit_datum_od"
+                               class="form-control form-control-lg rounded-3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">До датум</label>
+                        <input type="date" name="datum_do" id="edit_datum_do"
+                               class="form-control form-control-lg rounded-3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Забелешка</label>
+                        <textarea name="zabeleska" id="edit_zabeleska"
+                                  class="form-control rounded-3" rows="3"
+                                  placeholder="Опционална забелешка..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 gap-2">
+                    <button type="button" class="btn btn-outline-secondary fw-semibold px-4"
+                            data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Затвори
+                    </button>
+                    <button type="submit" class="btn btn-warning fw-bold px-4 text-dark">
+                        <i class="fas fa-save me-1"></i> Зачувај промени
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     МОДАЛ: ОТКАЖИ БАРАЊЕ
+══════════════════════════════════════════ -->
+<div class="modal fade" id="modalOtkazi" tabindex="-1" aria-labelledby="modalOtkaziLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="modal-header text-white py-3 px-4"
+                 style="background: linear-gradient(135deg, #6b7280, #4b5563);">
+                <h5 class="modal-title fw-bold" id="modalOtkaziLabel">
+                    <i class="fas fa-ban me-2"></i> Откажи барање за одмор
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-warning border-0 rounded-3 d-flex align-items-start gap-3 mb-3">
+                    <i class="fas fa-exclamation-triangle fs-4 mt-1 flex-shrink-0"></i>
+                    <div>
+                        <strong>Дали сте сигурни дека сакате да го откажете ова барање?</strong>
+                        <div class="mt-2 text-muted" style="font-size:0.9rem;">
+                            Барањето ќе добие статус <strong>„Откажано"</strong> и нема да биде активно. Записот ќе остане зачуван во системот.
+                        </div>
+                    </div>
+                </div>
+                <div class="rounded-3 p-3" style="background:#f8fafc; border:1px solid #e2e8f0;">
+                    <div class="fw-bold text-dark mb-1" id="otkazi_ime">—</div>
+                    <div class="text-muted" style="font-size:0.9rem;">
+                        <i class="fas fa-calendar me-1"></i>
+                        <span id="otkazi_period">—</span>
+                    </div>
+                </div>
+            </div>
+            <form method="POST" id="formOtkazi">
+                <input type="hidden" name="action" value="cancel">
+                <input type="hidden" name="baranje_id" id="otkazi_baranje_id">
+                <div class="modal-footer border-0 px-4 pb-4 gap-2">
+                    <button type="button" class="btn btn-outline-secondary fw-semibold px-4"
+                            data-bs-dismiss="modal">
+                        <i class="fas fa-arrow-left me-1"></i> Назад
+                    </button>
+                    <button type="submit" class="btn btn-secondary fw-bold px-4">
+                        <i class="fas fa-ban me-1"></i> Да, откажи барање
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<style>
+    .card { border-radius: 16px; overflow: hidden; transition: box-shadow 0.3s ease; }
+    .card:hover { box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important; }
+    body.modal-open .card,
+    body.modal-open .card:hover { box-shadow: none !important; transition: none !important; }
+    .table-hover tbody tr:hover { background-color: rgba(220,38,38,0.06); }
+    .progress { background: #e5e7eb; }
+    .modal-content { border-radius: 16px !important; }
+
+    @media (max-width: 992px) {
+        .table-responsive { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+        table { min-width: 1200px !important; }
+        th, td { white-space: nowrap !important; padding: 0.7rem 0.6rem; font-size: 0.9rem; }
+        .btn-sm { padding: 0.4rem 0.7rem; font-size: 0.82rem; }
+        .alert { font-size: 0.95rem; padding: 0.8rem; }
+    }
+    @media (max-width: 576px) {
+        table { min-width: 900px !important; }
+        th, td { padding: 0.6rem 0.5rem; font-size: 0.82rem; }
+        .btn-outline-secondary { width: 100%; padding: 0.8rem; font-size: 0.95rem; }
+    }
+</style>
+
+<script>
+function formatZaInput(datumStr) {
+    var parts = datumStr.replace(/\//g, '-').split('-');
+    if (parts.length === 3 && parts[0].length === 2) {
+        return parts[2] + '-' + parts[1] + '-' + parts[0];
+    }
+    return datumStr;
+}
+
+function otвориIzmeni(id, datumOd, datumDo, zabeleska, godina) {
+    document.getElementById('edit_baranje_id').value = id;
+    document.getElementById('edit_datum_od').value   = formatZaInput(datumOd);
+    document.getElementById('edit_datum_do').value   = formatZaInput(datumDo);
+    document.getElementById('edit_zabeleska').value  = zabeleska;
+    var modal = new bootstrap.Modal(document.getElementById('modalIzmeni'));
+    modal.show();
+}
+
+function otвориOtkazi(id, ime, datumOd, datumDo) {
+    document.getElementById('otkazi_baranje_id').value = id;
+    document.getElementById('otkazi_ime').textContent  = ime;
+    document.getElementById('otkazi_period').textContent = datumOd + ' — ' + datumDo;
+    var modal = new bootstrap.Modal(document.getElementById('modalOtkazi'));
+    modal.show();
+}
+</script>
+
+{% endblock %}

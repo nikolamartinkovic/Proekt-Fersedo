@@ -1,0 +1,292 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    <div class="text-center mb-5 pb-4">
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.5rem, 8vw, 3.5rem); margin-bottom: 0.5rem;">
+            Календар на одмори
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
+            Преглед на одобрени одмори и неработни денови
+        </p>
+    </div>
+
+    <!-- Филтер + Легенда -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-6">
+            <div class="card shadow border-0 rounded-4 h-100">
+                <div class="card-body p-4">
+                    <form method="GET" class="d-flex align-items-center gap-3 flex-wrap">
+                        <label for="vraboten_id" class="form-label fw-bold fs-5 mb-0">Филтер по вработен:</label>
+                        <select class="form-select form-select-lg" id="vraboten_id" name="vraboten_id" onchange="this.form.submit()" style="max-width: 300px;">
+                            <option value="all" {% if selected_vraboten_id == 'all' %}selected{% endif %}>Сите вработени</option>
+                            {% for v in vraboteni %}
+                                <option value="{{ v.id }}" {% if selected_vraboten_id == v.id|string %}selected{% endif %}>
+                                    {{ v.prezime }} {{ v.ime }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow border-0 rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="mb-3 fw-bold">Легенда:</h5>
+                    <div class="d-flex flex-wrap gap-4">
+                        <div class="d-flex align-items-center">
+                            <span class="me-2" style="background:#28a745; width:28px; height:28px; border-radius:8px; display:inline-block;"></span>
+                            <span class="fw-medium">Одобрен одмор</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2" style="background:#dc3545; width:28px; height:28px; border-radius:8px; display:inline-block;"></span>
+                            <span class="fw-medium">Празник / неработен ден <small class="text-muted">(клик за бришење)</small></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Календар -->
+    <div id="calendar" class="shadow-lg rounded-4 bg-white p-4 mb-5"></div>
+
+    <!-- Копче за неработни денови -->
+    <div class="text-center mb-5">
+        <button class="btn btn-outline-primary btn-lg px-5 py-3 fw-bold shadow" type="button"
+                data-bs-toggle="collapse" data-bs-target="#nerabotniPregled">
+            <i class="fas fa-eye me-2"></i> Преглед на неработни денови за {{ current_year }} година
+        </button>
+    </div>
+
+    <!-- Преглед на неработни денови -->
+    <div class="collapse" id="nerabotniPregled">
+        <div class="card shadow border-0 rounded-4 overflow-hidden">
+            <div class="card-header text-white py-4 px-5" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); text-align: center;">
+                <h4 class="mb-0 fw-bold fs-4">Неработни денови за {{ current_year }} година</h4>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-4">
+                    {% for month in nerabotni_grouped %}
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="card h-100 shadow-sm border-0 rounded-4 overflow-hidden">
+                            <div class="card-header fw-bold text-center py-3" style="background: var(--primary); color: white;">
+                                {{ month.month }} ({{ month.count }} денови)
+                            </div>
+                            <div class="card-body p-3" style="min-height: 180px;">
+                                {% if month.days %}
+                                    <ul class="list-group list-group-flush">
+                                        {% for day in month.days %}
+                                        <li class="list-group-item d-flex justify-content-between align-items-center border-0 py-2 px-0">
+                                            <div>
+                                                <span class="fw-medium">{{ day.datum }}</span><br>
+                                                <small class="text-muted">{{ day.ime }}</small>
+                                            </div>
+                                            <form method="POST" class="d-inline">
+                                                <input type="hidden" name="action" value="delete_neraboten">
+                                                <input type="hidden" name="neraboten_id" value="{{ day.id }}">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm px-2 py-1"
+                                                        onclick="return confirm('Избриши: {{ day.ime }} ({{ day.datum }})?');"
+                                                        title="Избриши">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <p class="text-center text-muted my-4 fw-medium">Нема неработни денови</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Копчиња за акција -->
+    <div class="text-center mt-5">
+        <button class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow me-3"
+                data-bs-toggle="modal" data-bs-target="#addNerabotenModal">
+            <i class="fas fa-plus me-2"></i> Додади нов неработен ден
+        </button>
+        <a href="{{ url_for('main.odmori') }}" class="btn btn-outline-secondary btn-lg px-5 py-3">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Odmori
+        </a>
+    </div>
+
+    <!-- Модал: Додади неработен ден -->
+    <div class="modal fade" id="addNerabotenModal" tabindex="-1" aria-labelledby="addNerabotenLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow-2xl">
+                <div class="modal-header text-white py-4 px-5"
+                     style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+                    <h5 class="modal-title fs-4 mb-0" id="addNerabotenLabel">
+                        <i class="fas fa-calendar-day me-2"></i> Додади неработен ден
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-5">
+                    <form method="POST">
+                        <input type="hidden" name="action" value="add_neraboten">
+                        <div class="mb-4">
+                            <label for="datum" class="form-label fw-bold fs-5">Датум</label>
+                            <input type="date" class="form-control form-control-lg" id="datum" name="datum" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="ime" class="form-label fw-bold fs-5">Ime / опис</label>
+                            <input type="text" class="form-control form-control-lg" id="ime" name="ime" required
+                                   placeholder="На пр. 8 Март, Велигден, Слободен ден">
+                        </div>
+                        <div class="text-end mt-4">
+                            <button type="button" class="btn btn-secondary btn-lg px-4 py-3 me-2" data-bs-dismiss="modal">Затвори</button>
+                            <button type="submit" class="btn btn-primary btn-lg px-5 py-3 fw-bold">Додади</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модал: Детали за одмор -->
+    <div class="modal fade" id="eventModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow-2xl">
+                <div class="modal-header text-white py-4 px-5"
+                     style="background: linear-gradient(135deg, #28a745, #1e7e34);">
+                    <h5 class="modal-title fs-4 mb-0">
+                        <i class="fas fa-umbrella-beach me-2"></i> Детали за одмор
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-5">
+                    <p class="mb-3"><strong>Вработен:</strong> <span id="modalIme" class="fw-bold"></span></p>
+                    <p class="mb-3"><strong>Период:</strong> <span id="modalPeriod" class="fw-bold"></span></p>
+                    <p class="mb-0"><strong>Забелешка:</strong> <span id="modalZabeleska"></span></p>
+                </div>
+                <div class="modal-footer bg-light py-4 px-5">
+                    <button type="button" class="btn btn-secondary btn-lg px-5 py-3" data-bs-dismiss="modal">Затвори</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модал: Неработен ден (со бришење) -->
+    <div class="modal fade" id="nerabotenModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow-2xl">
+                <div class="modal-header text-white py-4 px-5"
+                     style="background: linear-gradient(135deg, #dc3545, #b91c1c);">
+                    <h5 class="modal-title fs-4 mb-0">
+                        <i class="fas fa-calendar-times me-2"></i> Неработен ден
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-5">
+                    <p class="mb-2"><strong>Датум:</strong> <span id="nerabotenDatum" class="fw-bold"></span></p>
+                    <p class="mb-0"><strong>Опис:</strong> <span id="nerabotenIme" class="fw-bold"></span></p>
+                </div>
+                <div class="modal-footer bg-light py-4 px-5 d-flex justify-content-between">
+                    <button type="button" class="btn btn-secondary btn-lg px-4 py-3" data-bs-dismiss="modal">Затвори</button>
+                    <form method="POST" id="deleteNerabotenForm">
+                        <input type="hidden" name="action" value="delete_neraboten">
+                        <input type="hidden" name="neraboten_id" id="deleteNerabotenId">
+                        <button type="submit" class="btn btn-danger btn-lg px-4 py-3 fw-bold"
+                                onclick="return confirm('Дали сте сигурни дека сакате да го избришете овој неработен ден?');">
+                            <i class="fas fa-trash-alt me-2"></i> Избриши
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'mk',
+        firstDay: 1,
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+        },
+        events: {{ events_json | safe }},
+        dateClick: function(info) {
+            document.getElementById('datum').value = info.dateStr;
+            new bootstrap.Modal(document.getElementById('addNerabotenModal')).show();
+        },
+        eventClick: function(info) {
+            var props = info.event.extendedProps;
+
+            if (props.type === 'neraboten') {
+                // Неработен ден — отвори модал со бришење
+                var start = info.event.start;
+                var dateStr = start.toLocaleDateString('mk-MK', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                document.getElementById('nerabotenDatum').textContent = dateStr;
+                document.getElementById('nerabotenIme').textContent = props.ime || info.event.title;
+                document.getElementById('deleteNerabotenId').value = props.neraboten_id;
+                new bootstrap.Modal(document.getElementById('nerabotenModal')).show();
+            } else {
+                // Одмор — детали
+                document.getElementById('modalIme').textContent = (props.ime || '') + ' ' + (props.prezime || '');
+                document.getElementById('modalPeriod').textContent = props.period || '';
+                document.getElementById('modalZabeleska').textContent = props.zabeleska || 'Нема забелешка';
+                new bootstrap.Modal(document.getElementById('eventModal')).show();
+            }
+        },
+        eventMouseEnter: function(info) {
+            info.el.style.cursor = 'pointer';
+        },
+        height: 'auto',
+        contentHeight: 'auto',
+        dayMaxEvents: true,
+    });
+    calendar.render();
+});
+</script>
+
+<style>
+    #calendar {
+        max-width: 100%;
+        margin: 0 auto 40px;
+        padding: 1.5rem;
+        border-radius: 16px;
+        background: white;
+        box-shadow: var(--shadow-lg);
+    }
+    .fc-event {
+        border-radius: 10px;
+        border: none;
+        padding: 6px 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .fc-event:hover { transform: scale(1.05); }
+    .fc-daygrid-day-number { color: #444; font-weight: 500; }
+    .fc-toolbar-title { color: var(--primary); font-weight: 700; font-size: 1.5rem; }
+    .card-header { font-size: 1.4rem; }
+    .card-body ul { font-size: 1rem; }
+
+    @media (max-width: 992px) {
+        #calendar { padding: 1rem; }
+        .row.g-4 { row-gap: 1.5rem; }
+    }
+    @media (max-width: 576px) {
+        .container { padding: 0 1rem; margin-top: 3rem; }
+        .card-body { padding: 1.5rem !important; }
+        .fc-toolbar-title { font-size: 1.3rem; }
+    }
+</style>
+
+{% endblock %}

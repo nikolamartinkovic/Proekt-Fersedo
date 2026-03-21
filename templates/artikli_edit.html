@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Уреди артикл – Fersedo{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <h1 class="text-center mb-5 fw-bold" style="color: var(--primary);">Уреди артикл: {{ art.part_number }}</h1>
+
+    <div class="card shadow-lg border-0 rounded-4 mx-auto" style="max-width: 600px;">
+        <div class="card-body p-5">
+            <form method="POST" enctype="multipart/form-data" id="editPartForm" novalidate>
+                <!-- Part Number -->
+                <div class="mb-4">
+                    <label for="part_number" class="form-label fw-bold fs-5">Part Number</label>
+                    {% if is_admin %}
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text"><i class="fas fa-barcode"></i></span>
+                        <input type="text" id="part_number" name="part_number" class="form-control" 
+                               value="{{ art.part_number }}" required>
+                    </div>
+                    {% else %}
+                    <input type="text" class="form-control form-control-lg bg-light" 
+                           value="{{ art.part_number }}" readonly>
+                    {% endif %}
+                    <div class="invalid-feedback mt-2">
+                        Внесете Part Number
+                    </div>
+                </div>
+
+                <!-- Камин -->
+                <div class="mb-4">
+                    <label for="kamin" class="form-label fw-bold fs-5">Камин</label>
+                    {% if is_admin %}
+                    <select name="kamin" id="kamin" class="form-select form-select-lg" required>
+                        {% for k in kamini %}
+                            <option {% if k.ime == art.kamin %}selected{% endif %}>{{ k.ime }}</option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
+                    <input type="text" class="form-control form-control-lg bg-light" 
+                           value="{{ art.kamin }}" readonly>
+                    {% endif %}
+                </div>
+
+                <!-- Вид на артикл -->
+                <div class="mb-5">
+                    <label for="vid_artikal" class="form-label fw-bold fs-5">Вид на артикл</label>
+                    {% if is_admin %}
+                    <select name="vid_artikal" id="vid_artikal" class="form-select form-select-lg" required>
+                        <option value="Poluproizvod" {% if art.vid_artikal == 'Poluproizvod' %}selected{% endif %}>Полупроизвод</option>
+                        <option value="Gotov proizvod" {% if art.vid_artikal == 'Gotov proizvod' %}selected{% endif %}>Готов производ</option>
+                    </select>
+                    {% else %}
+                    <input type="text" class="form-control form-control-lg bg-light" 
+                           value="{{ art.vid_artikal | default('Полупроизвод') }}" readonly>
+                    {% endif %}
+                </div>
+
+                <!-- Тековна слика -->
+                <div class="mb-5">
+                    <label class="form-label fw-bold fs-5">Тековна слика</label>
+                    <div class="text-center">
+                        {% if art.slika %}
+                        <img src="{{ url_for('static', filename='parts/' + art.slika) }}" alt="{{ art.part_number }}" 
+                             class="rounded shadow-sm zoomable-img" 
+                             style="max-width: 280px; max-height: 280px; object-fit: contain;" 
+                             data-full="{{ url_for('static', filename='parts/' + art.slika) }}">
+                        {% else %}
+                        <div class="bg-light rounded p-5 d-inline-block">
+                            <i class="fas fa-image fa-5x text-muted"></i>
+                            <p class="mt-3 text-muted">Нема слика</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Нова слика -->
+                <div class="mb-5">
+                    <label for="slika" class="form-label fw-bold fs-5">Нова слика (ќе ја замени старата)</label>
+                    <input type="file" id="slika" name="slika" accept="image/*" class="form-control form-control-lg">
+                    <small class="form-text text-muted mt-2 d-block">
+                        Поддржани формати: JPG, PNG, GIF (макс. 5MB)
+                    </small>
+                </div>
+
+                <!-- Акции -->
+                <div class="d-grid gap-3 d-md-flex justify-content-md-center mt-5">
+                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow">
+                        <span id="btnText"><i class="fas fa-save me-2"></i> Зачувај измени</span>
+                        <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+
+                    <a href="{{ url_for('artikli.artikli') }}" class="btn btn-outline-secondary btn-lg px-5 py-3">
+                        <i class="fas fa-arrow-left me-2"></i> Назад на листа
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Loader + валидација
+document.getElementById('editPartForm')?.addEventListener('submit', function(e) {
+    const btn = document.getElementById('submitBtn');
+    const text = document.getElementById('btnText');
+    const spinner = document.getElementById('loadingSpinner');
+
+    if (!this.checkValidity()) {
+        e.preventDefault();
+        this.classList.add('was-validated');
+        return;
+    }
+
+    text.classList.add('d-none');
+    spinner.classList.remove('d-none');
+    btn.disabled = true;
+});
+
+// Bootstrap валидација
+(function () {
+    'use strict';
+    const form = document.getElementById('editPartForm');
+    if (form) {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    }
+})();
+</script>
+
+{% endblock %}

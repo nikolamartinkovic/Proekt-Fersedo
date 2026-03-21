@@ -1,0 +1,283 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 900px; margin: 4rem auto 5rem; padding: 0 1rem;">
+    <div class="text-center mb-5">
+        <h2 style="font-weight: 800; color: var(--primary); font-size: clamp(2rem, 7vw, 2.8rem); margin-bottom: 0.5rem;">
+            Нов запис
+        </h2>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
+            за камин: <strong style="color: var(--text);">{{ kamin }}</strong>
+        </p>
+    </div>
+
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden" style="background: var(--surface);">
+        <div class="card-body p-4 p-md-5">
+            <form method="post" id="addForm" class="needs-validation" novalidate>
+                <!-- Датум -->
+                <div class="mb-4">
+                    <label for="datum" class="form-label fw-bold fs-5">Датум</label>
+                    <input type="date" id="datum" name="datum" class="form-control form-control-lg" 
+                           value="{{ today }}" required autofocus>
+                    <div class="invalid-feedback mt-2">
+                        Изберете датум
+                    </div>
+                </div>
+
+                <!-- Оддел -->
+                <div class="mb-4">
+                    <label for="oddel" class="form-label fw-bold fs-5">Оддел</label>
+                    <select id="oddel" name="oddel" class="form-select form-select-lg" required>
+                        <option value="" disabled selected>Избери оддел...</option>
+                        <option>Заварување</option>
+                        <option>Брусење</option>
+                        <option>Сачмарење</option>
+                        <option>Фарбање</option>
+                    </select>
+                    <div class="invalid-feedback mt-2">
+                        Изберете оддел
+                    </div>
+                </div>
+
+                <!-- Камин (readonly) -->
+                <div class="mb-4">
+                    <label class="form-label fw-bold fs-5">Камин</label>
+                    <input type="text" class="form-control form-control-lg bg-light" 
+                           value="{{ kamin }}" readonly>
+                    <input type="hidden" name="proizvod" value="{{ kamin }}">
+                </div>
+
+                <!-- Part Number + Preview -->
+                <div class="mb-4">
+                    <label for="part_number" class="form-label fw-bold fs-5">Part Number</label>
+                    <input type="text" id="part_number" name="part_number" class="form-control form-control-lg" 
+                           placeholder="Внеси Part Number (опционално)" autocomplete="off">
+                    <div id="part_preview" class="mt-3 text-center" style="min-height: 180px;"></div>
+                </div>
+
+                <!-- Произведени + Грешки + Ефективност -->
+                <div class="row g-4 mb-5">
+                    <div class="col-md-4">
+                        <label for="proizvedeni" class="form-label fw-bold fs-5">Произведени</label>
+                        <input type="number" id="proizvedeni" name="proizvedeni" min="0" required 
+                               class="form-control form-control-lg text-center fs-4 fw-bold shadow-sm" 
+                               placeholder="0" style="border: 2px solid var(--primary-light);">
+                        <div class="invalid-feedback mt-2">
+                            Внесете број
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="greski" class="form-label fw-bold fs-5">Грешки</label>
+                        <input type="number" id="greski" name="greski" min="0" required 
+                               class="form-control form-control-lg text-center fs-4 fw-bold shadow-sm" 
+                               placeholder="0" style="border: 2px solid var(--primary-light);">
+                        <div class="invalid-feedback mt-2">
+                            Внесете број
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 d-flex flex-column justify-content-end">
+                        <label class="form-label fw-bold fs-5">Ефективност</label>
+                        <div id="efektivnostDisplay" class="d-flex align-items-center justify-content-center fs-3 fw-bold rounded-3 shadow-sm" 
+                             style="height: 80px; background: linear-gradient(135deg, #f0fdf4, #d1fae5); color: #065f46; transition: all 0.4s;">
+                            - %
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Вид на грешка (задолжително) -->
+                <div class="mb-4">
+                    <label for="vid_greska" class="form-label fw-bold fs-5">Вид на грешка *</label>
+                    <input type="text" id="vid_greska" name="vid_greska" class="form-control form-control-lg" 
+                           required placeholder="На пр. 'Лош завар', 'Гребанина', 'Неправилна димензија'">
+                    <div class="invalid-feedback mt-2">
+                        Внесете вид на грешка (задолжително)
+                    </div>
+                </div>
+
+                <!-- Забелешка -->
+                <div class="mb-5">
+                    <label for="zabeleska" class="form-label fw-bold fs-5">Забелешка</label>
+                    <textarea id="zabeleska" name="zabeleska" rows="4" class="form-control form-control-lg" 
+                              placeholder="Дополнителни информации, проблеми, коментари..."></textarea>
+                </div>
+
+                <!-- Акции -->
+                <div class="d-grid gap-3 d-md-flex justify-content-md-center mt-5">
+                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow">
+                        <span id="btnText"><i class="fas fa-save me-2"></i> Зачувај запис</span>
+                        <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+
+                    <a href="{{ url_for('main.select_kamin') }}" class="btn btn-outline-secondary btn-lg px-5 py-3">
+                        <i class="fas fa-arrow-left me-2"></i> Назад
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+// ================================================
+// Efektivnost - динамички градиент и боја
+// ================================================
+document.getElementById('proizvedeni')?.addEventListener('input', updateEfektivnost);
+document.getElementById('greski')?.addEventListener('input', updateEfektivnost);
+
+function updateEfektivnost() {
+    const p = parseInt(document.getElementById('proizvedeni').value) || 0;
+    const g = parseInt(document.getElementById('greski').value) || 0;
+    let efekt = p > 0 ? Math.round((p - g) / p * 100) : 0;
+    efekt = Math.max(0, Math.min(100, efekt));
+
+    const display = document.getElementById('efektivnostDisplay');
+    display.textContent = efekt + ' %';
+
+    if (efekt >= 95) {
+        display.style.background = 'linear-gradient(135deg, #d1fae5, #a7f3d0)';
+        display.style.color = '#065f46';
+    } else if (efekt >= 80) {
+        display.style.background = 'linear-gradient(135deg, #fef3c7, #fde68a)';
+        display.style.color = '#92400e';
+    } else {
+        display.style.background = 'linear-gradient(135deg, #fee2e2, #fecaca)';
+        display.style.color = '#991b1b';
+    }
+}
+
+// ================================================
+// Part Number preview со зумирање
+// ================================================
+document.getElementById('part_number')?.addEventListener('input', function() {
+    const val = this.value.trim();
+    const preview = document.getElementById('part_preview');
+    preview.innerHTML = '';
+
+    if (val.length < 3) return;
+
+    fetch(`/api/part_info?part_number=${encodeURIComponent(val)}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.slika) {
+                const img = document.createElement('img');
+                img.src = data.slika;
+                img.alt = data.ime || 'Слика на артикл';
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = 'clamp(200px, 50vw, 300px)';
+                img.style.borderRadius = '16px';
+                img.style.boxShadow = 'var(--shadow)';
+                img.style.cursor = 'pointer';
+                img.classList.add('zoomable-img');
+                img.dataset.full = data.slika;
+                preview.appendChild(img);
+            } else {
+                preview.innerHTML = '<p class="text-danger mt-3 fw-bold fs-5">Не е пронајден</p>';
+            }
+        })
+        .catch(() => preview.innerHTML = '<p class="text-danger mt-3 fw-bold fs-5">Грешка</p>');
+});
+
+// ================================================
+// Loader + Bootstrap валидација
+// ================================================
+document.getElementById('addForm')?.addEventListener('submit', function(e) {
+    const form = this;
+    const btn = document.getElementById('submitBtn');
+    const text = document.getElementById('btnText');
+    const spinner = document.getElementById('loadingSpinner');
+
+    if (!form.checkValidity()) {
+        e.preventDefault();
+        form.classList.add('was-validated');
+        return;
+    }
+
+    text.classList.add('d-none');
+    spinner.classList.remove('d-none');
+    btn.disabled = true;
+});
+
+// Bootstrap валидација
+(function () {
+    'use strict';
+    const form = document.getElementById('addForm');
+    if (form) {
+        form.addEventListener('submit', event => {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    }
+})();
+</script>
+
+<style>
+    .card {
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .form-control-lg, .form-select-lg {
+        font-size: clamp(1.05rem, 3.5vw, 1.25rem);
+        padding: 0.85rem 1.5rem;
+        border-radius: 12px;
+    }
+
+    .form-label {
+        font-size: clamp(1.1rem, 3.5vw, 1.25rem);
+    }
+
+    .btn-lg {
+        font-size: clamp(1.1rem, 4vw, 1.3rem);
+        padding: clamp(0.9rem, 4vw, 1.2rem) clamp(2rem, 6vw, 3rem);
+        min-height: 60px;
+        border-radius: 12px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        border: none;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(102,126,234,0.4);
+    }
+
+    /* Ефективност стилови */
+    #efektivnostDisplay {
+        transition: all 0.4s ease;
+        min-height: 80px;
+        line-height: 80px;
+        font-weight: 900;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .container { padding: 0 1.5rem; margin-top: 3rem; }
+        h2 { font-size: clamp(1.8rem, 7vw, 2.5rem); }
+        .row.g-4 { flex-direction: column; }
+        .btn-lg { width: 100%; }
+    }
+
+    @media (max-width: 576px) {
+        .card-body { padding: 1.5rem !important; }
+        .form-control-lg, .form-select-lg { font-size: 1.1rem; }
+        .btn-lg { font-size: 1.05rem; padding: 0.9rem 1.5rem; min-height: 56px; }
+        #part_preview { max-height: 320px; }
+    }
+</style>
+
+{% endblock %}

@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1100px; margin: 3rem auto; padding: 0 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 2.5rem;">
+        <h1 style="margin: 0; font-size: clamp(1.8rem, 5vw, 2.5rem); font-weight: 700; color: var(--text);">
+            Позиции за камин: <strong>{{ kamin }}</strong>
+        </h1>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <a href="{{ url_for('admin.export_procesen_cekor', kamin=kamin) }}"
+               class="btn btn-export" style="padding: clamp(0.8rem, 4vw, 1rem) clamp(1.2rem, 5vw, 1.8rem); background: #10b981; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; min-height: 52px; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(16,185,129,0.3); transition: all 0.3s; font-size: clamp(0.95rem, 4vw, 1.1rem);">
+                <i class="fas fa-file-excel"></i> Export во Excel
+            </a>
+            <a href="{{ url_for('admin.export_procesen_cekor_pdf', kamin=kamin) }}"
+               class="btn btn-pdf" style="padding: clamp(0.8rem, 4vw, 1rem) clamp(1.2rem, 5vw, 1.8rem); background: #d32f2f; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; min-height: 52px; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 12px rgba(211,47,47,0.3); transition: all 0.3s; font-size: clamp(0.95rem, 4vw, 1.1rem);">
+                <i class="fas fa-file-pdf"></i> Export во PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Форма за додавање нова позиција -->
+    <div style="background: white; padding: clamp(1.5rem, 5vw, 2rem); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); margin-bottom: 3rem;">
+        <h3 style="text-align: center; margin-bottom: 1.5rem; font-size: clamp(1.3rem, 5vw, 1.5rem); font-weight: 600; color: #1e293b;">
+            Додади нова позиција
+        </h3>
+        <form method="POST" enctype="multipart/form-data">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155; font-size: clamp(0.95rem, 4vw, 1rem);">Број на позиција</label>
+                    <input type="number" name="pozicija_broj" min="1" required 
+                           style="width: 100%; padding: clamp(0.8rem, 4vw, 1rem); border: 1px solid #cbd5e1; border-radius: 10px; font-size: clamp(1rem, 4vw, 1.1rem); transition: border 0.3s;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #334155; font-size: clamp(0.95rem, 4vw, 1rem);">Part Number (опционално)</label>
+                    <input type="text" name="part_number" placeholder="Остави празно ако нема артикл" 
+                           style="width: 100%; padding: clamp(0.8rem, 4vw, 1rem); border: 1px solid #cbd5e1; border-radius: 10px; font-size: clamp(1rem, 4vw, 1.1rem); transition: border 0.3s;">
+                </div>
+            </div>
+
+            <!-- Секција за слика -->
+            <div style="margin-top: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Слика (опционално)</label>
+                <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+                    <div style="flex: 1; min-width: 220px;">
+                        <input type="file" name="slika" id="slikaInput" accept="image/*" 
+                               style="width: 100%; padding: 0.9rem; border: 1px solid #cbd5e1; border-radius: 8px;">
+                    </div>
+
+                    <button type="button" id="cameraBtn" 
+                            style="flex: 0 0 auto; padding: 0.9rem 1.5rem; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 0.6rem; box-shadow: 0 4px 12px rgba(16,185,129,0.3); transition: all 0.3s; min-width: 180px;">
+                        <i class="fas fa-camera"></i> Сликај со камера
+                    </button>
+                </div>
+
+                <!-- Камера видео -->
+                <div style="position: relative; margin-top: 1rem;">
+                    <video id="video" autoplay playsinline muted style="display: none; width: 100%; max-height: 500px; border-radius: 12px; background: black; object-fit: cover;"></video>
+                    
+                    <!-- X за затворање на камерата -->
+                    <button id="closeCameraBtn" type="button" 
+                            style="display: none; position: absolute; top: 15px; right: 15px; background: rgba(220,38,38,0.9); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.6rem; cursor: pointer; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.5); transition: all 0.2s;">
+                        ×
+                    </button>
+                </div>
+
+                <!-- Canvas (скриен) -->
+                <canvas id="canvas" style="display: none;"></canvas>
+
+                <!-- Preview на снимената слика со X за бришење/пресликување -->
+                <div style="position: relative; display: none;" id="previewContainer">
+                    <img id="preview" style="width: 100%; max-height: 400px; border-radius: 12px; margin-top: 1rem; object-fit: contain; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 2px solid var(--primary);">
+                    
+                    <!-- X за бришење на сликата и повторно снимање -->
+                    <button id="retakeBtn" type="button" 
+                            style="display: none; position: absolute; top: 15px; right: 15px; background: rgba(220,38,38,0.9); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 1.6rem; cursor: pointer; z-index: 10; box-shadow: 0 2px 10px rgba(0,0,0,0.5); transition: all 0.2s;">
+                        ×
+                    </button>
+                </div>
+
+                <!-- Копче за снимање -->
+                <button type="button" id="captureBtn" style="display: none; margin-top: 1rem; width: 100%; padding: 1rem; background: #3b82f6; color: white; border: none; border-radius: 10px; font-size: 1.1rem; cursor: pointer; box-shadow: 0 4px 12px rgba(59,130,246,0.3); transition: all 0.3s;">
+                    <i class="fas fa-camera-retro"></i> Сними
+                </button>
+
+                <!-- Скриено поле за име на слика од камера -->
+                <input type="hidden" name="camera_slika_filename" id="cameraSlikaFilename">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="margin-top: 2rem; width: 100%; padding: clamp(1rem, 5vw, 1.2rem); font-size: clamp(1rem, 4vw, 1.1rem); background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 10px; cursor: pointer; box-shadow: 0 6px 20px rgba(102,126,234,0.3); transition: all 0.3s;">
+                Додади позиција
+            </button>
+        </form>
+    </div>
+
+    <!-- Групирани позиции со собирање/расклопување -->
+    {% if pozicii %}
+    <div style="margin-bottom: 3rem;">
+        {% set grouped = namespace(data={}) %}
+        {% for p in pozicii %}
+            {% if p.pozicija_broj not in grouped.data %}
+                {% set _ = grouped.data.update({p.pozicija_broj: []}) %}
+            {% endif %}
+            {% set _ = grouped.data[p.pozicija_broj].append(p) %}
+        {% endfor %}
+
+        {% for poz_broj in grouped.data.keys() | sort %}
+        <div class="position-group" style="margin-bottom: 1.5rem; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 20px rgba(0,0,0,0.08);">
+            <div class="position-header" onclick="toggleGroup(this)" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: clamp(0.8rem, 4vw, 1rem) clamp(1rem, 5vw, 1.5rem); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s;">
+                <h3 style="margin: 0; font-size: clamp(1.2rem, 5vw, 1.4rem); font-weight: 600;">
+                    Позиција {{ poz_broj }} <span style="font-size: clamp(0.9rem, 4vw, 1rem); opacity: 0.9;">({{ grouped.data[poz_broj]|length }} елемент{{ 'и' if grouped.data[poz_broj]|length > 1 else '' }})</span>
+                </h3>
+                <i class="fas fa-chevron-down toggle-icon" style="font-size: clamp(1.2rem, 5vw, 1.4rem); transition: transform 0.3s;"></i>
+            </div>
+
+            <div class="position-content" style="display: none; background: white; padding: 1rem; overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                <table style="width: 100%; min-width: 600px; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #f8fafc;">
+                            <th style="padding: clamp(0.8rem, 4vw, 1rem); text-align: center; font-weight: 600; color: #334155; font-size: clamp(0.9rem, 3.5vw, 1rem);">Part Number</th>
+                            <th style="padding: clamp(0.8rem, 4vw, 1rem); text-align: center; font-weight: 600; color: #334155; font-size: clamp(0.9rem, 3.5vw, 1rem);">Слика</th>
+                            <th style="padding: clamp(0.8rem, 4vw, 1rem); text-align: center; font-weight: 600; color: #334155; font-size: clamp(0.9rem, 3.5vw, 1rem);">Акција</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in grouped.data[poz_broj] %}
+                        <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.2s;">
+                            <td style="padding: clamp(0.8rem, 4vw, 1.2rem); text-align: center; font-weight: 500; font-size: clamp(0.9rem, 3.5vw, 1rem);">
+                                {{ p.part_number or '<span style="color:#999; font-style:italic;">— (без артикл)</span>' | safe }}
+                            </td>
+                            <td style="padding: clamp(0.8rem, 4vw, 1.2rem); text-align: center;">
+                                {% if p.slika %}
+                                <img src="{{ url_for('main.pozicii_static', filename=p.slika) }}" 
+                                     alt="{{ p.part_number or 'позиција' }}" 
+                                     class="zoomable-img"
+                                     data-full="{{ url_for('main.pozicii_static', filename=p.slika) }}"
+                                     style="max-width: clamp(120px, 40vw, 160px); max-height: clamp(120px, 40vw, 160px); border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.3s;">
+                                {% else %}
+                                <span style="color: #64748b; font-style: italic; font-size: clamp(0.9rem, 3.5vw, 1rem);">нема слика</span>
+                                {% endif %}
+                            </td>
+                            <td style="padding: clamp(0.8rem, 4vw, 1.2rem); text-align: center; white-space: nowrap;">
+                                <a href="{{ url_for('admin.edit_pozicija', kamin=kamin, pozicija_id=p['id']) }}" 
+                                   class="btn btn-edit" style="padding: clamp(0.5rem, 3vw, 0.6rem) clamp(0.8rem, 4vw, 1.2rem); background: #f59e0b; color: white; border: none; border-radius: 6px; text-decoration: none; font-size: clamp(0.85rem, 3.5vw, 0.95rem); margin-right: 0.5rem; display: inline-block; transition: all 0.3s;">
+                                    <i class="fas fa-edit"></i> Едитирај
+                                </a>
+
+                                <form method="POST" action="{{ url_for('admin.delete_pozicija', kamin=kamin, pozicija_id=p['id']) }}" 
+                                      style="display: inline;" 
+                                      onsubmit="return confirm('Сигурно сакаш да ја избришеш позиција {{ p.pozicija_broj }}{% if p.part_number %} – {{ p.part_number }}{% endif %}? Ова е неповратно!');">
+                                    <button type="submit" class="btn btn-danger" 
+                                            style="padding: clamp(0.5rem, 3vw, 0.6rem) clamp(0.8rem, 4vw, 1.2rem); background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: clamp(0.85rem, 3.5vw, 0.95rem); transition: all 0.3s;">
+                                        <i class="fas fa-trash-alt"></i> Избриши
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: clamp(3rem, 10vw, 5rem) 1rem; background: white; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+        <i class="fas fa-layer-group" style="font-size: clamp(3rem, 15vw, 5rem); color: #cbd5e1; margin-bottom: 1.5rem;"></i>
+        <h3 style="margin: 0.5rem 0; color: #334155; font-size: clamp(1.2rem, 5vw, 1.6rem);">Сè уште нема дефинирани позиции за овој камин</h3>
+        <p style="color: #64748b; font-size: clamp(1rem, 4vw, 1.1rem);">Додај нова позиција – Part Number е опционално.</p>
+    </div>
+    {% endif %}
+
+    <a href="{{ url_for('admin.procesni_cekori') }}" style="display: block; margin: 3rem auto; text-align: center; color: var(--text-secondary); font-size: clamp(1rem, 4vw, 1.1rem); text-decoration: none;">
+        <i class="fas fa-arrow-left"></i> Назад на листа на камини
+    </a>
+</div>
+
+<!-- Модален прозорец за зумирање -->
+<div id="imageModal" class="modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.9);">
+    <span class="close-modal" style="position: absolute; top: clamp(15px, 5vw, 20px); right: clamp(25px, 8vw, 35px); color: #f1f1f1; font-size: clamp(40px, 10vw, 50px); font-weight: bold; cursor: pointer; transition: 0.3s;">×</span>
+    <img id="modalImage" style="margin: auto; display: block; width: 90%; max-width: 95%; max-height: 90vh; object-fit: contain; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+</div>
+
+<!-- Копче "Назад на врвот" -->
+<button id="scrollToTopBtn" title="Назад на врвот" style="display: none; position: fixed; bottom: 30px; right: 30px; z-index: 999; border: none; outline: none; background: linear-gradient(135deg, #667eea, #764ba2); color: white; cursor: pointer; padding: 15px; border-radius: 50%; font-size: 24px; box-shadow: 0 4px 15px rgba(102,126,234,0.4); transition: all 0.3s ease; width: 60px; height: 60px; text-align: center; line-height: 30px;">
+    <i class="fas fa-arrow-up"></i>
+</button>
+
+<script>
+// Зумирање на слика
+document.querySelectorAll('.zoomable-img').forEach(img => {
+    img.addEventListener('click', function() {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        modal.style.display = "block";
+        modalImg.src = this.getAttribute('data-full') || this.src;
+    });
+});
+
+document.querySelector('.close-modal').addEventListener('click', function() {
+    document.getElementById('imageModal').style.display = "none";
+});
+
+document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        this.style.display = "none";
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === "Escape") {
+        document.getElementById('imageModal').style.display = "none";
+    }
+});
+
+// Собирање/расклопување
+function toggleGroup(header) {
+    const content = header.nextElementSibling;
+    const icon = header.querySelector('.toggle-icon');
+    
+    if (content.style.display === "block") {
+        content.style.display = "none";
+        icon.style.transform = "rotate(0deg)";
+    } else {
+        content.style.display = "block";
+        icon.style.transform = "rotate(180deg)";
+    }
+}
+
+// Назад на врвот
+window.onscroll = function() {
+    const btn = document.getElementById("scrollToTopBtn");
+    if (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300) {
+        btn.style.display = "block";
+    } else {
+        btn.style.display = "none";
+    }
+};
+
+document.getElementById("scrollToTopBtn").onclick = function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// Камера логика
+const cameraBtn = document.getElementById('cameraBtn');
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const preview = document.getElementById('preview');
+const fileInput = document.getElementById('slikaInput');
+const captureBtn = document.getElementById('captureBtn');
+const closeCameraBtn = document.getElementById('closeCameraBtn');
+const previewContainer = document.getElementById('previewContainer');
+const retakeBtn = document.getElementById('retakeBtn');
+const cameraSlikaFilename = document.getElementById('cameraSlikaFilename');
+
+let stream = null;
+
+cameraBtn.addEventListener('click', async () => {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' }
+        });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        closeCameraBtn.style.display = 'block';
+        cameraBtn.style.display = 'none';
+        fileInput.disabled = true;
+        captureBtn.style.display = 'block';
+        previewContainer.style.display = 'none';
+
+    } catch (err) {
+        alert('Не можам да ја отворам камерата: ' + err.message + '\n\nПровери:\n1. Дозволи за камера\n2. HTTPS или localhost\n3. Освежи ја страницата');
+        closeCamera();
+    }
+});
+
+// Затвори камера со X
+closeCameraBtn.addEventListener('click', () => {
+    closeCamera();
+});
+
+// Сними и испрати преку AJAX
+captureBtn.addEventListener('click', () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+
+    preview.src = canvas.toDataURL('image/png');
+    previewContainer.style.display = 'block';
+    preview.style.display = 'block';
+    retakeBtn.style.display = 'block';
+
+    canvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append('slika', blob, 'camera_photo_' + Date.now() + '.png');
+
+        try {
+            const response = await fetch('/upload_temp_image', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                cameraSlikaFilename.value = result.filename;
+                console.log("DEBUG: Сликата е привремено зачувана:", result.filename);
+            } else {
+                alert("Грешка при привремено зачувување: " + result.error);
+            }
+        } catch (err) {
+            console.error("DEBUG: Fetch грешка:", err);
+            alert("Грешка при испраќање на сликата");
+        }
+    }, 'image/png');
+
+    video.style.display = 'none';
+    captureBtn.style.display = 'none';
+});
+
+// Пресликај (отфрли тековна слика и врати се во камера)
+retakeBtn.addEventListener('click', () => {
+    previewContainer.style.display = 'none';
+    preview.style.display = 'none';
+    retakeBtn.style.display = 'none';
+    cameraSlikaFilename.value = '';  // Отфрли го името
+    cameraBtn.click();  // Повторно отвори камера
+});
+
+// Функција за затворање на камерата
+function closeCamera() {
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+    }
+    video.style.display = 'none';
+    closeCameraBtn.style.display = 'none';
+    captureBtn.style.display = 'none';
+    previewContainer.style.display = 'none';
+    preview.style.display = 'none';
+    retakeBtn.style.display = 'none';
+    cameraBtn.style.display = 'block';
+    fileInput.disabled = false;
+    cameraSlikaFilename.value = '';  // Ресетирај го скриеното поле
+}
+
+// Ако корисникот избере датотека обично – исклучи камера
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+        closeCamera();
+    }
+});
+</script>
+
+<style>
+    #cameraBtn, #captureBtn {
+        transition: transform 0.2s;
+    }
+    #cameraBtn:hover, #captureBtn:hover {
+        transform: scale(1.05);
+    }
+    video, #preview {
+        border: 3px solid var(--primary);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    #closeCameraBtn, #retakeBtn {
+        transition: transform 0.2s;
+    }
+    #closeCameraBtn:hover, #retakeBtn:hover {
+        background: rgba(220,38,38,0.9);
+        transform: scale(1.1);
+    }
+    .form-group .flex-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    /* Mobile responsive – најважниот дел за скролирање на табелата во collapse */
+    @media (max-width: 768px) {
+        .container { padding: 0 0.8rem; margin-top: 2rem; }
+        h1 { font-size: clamp(1.6rem, 6vw, 2.2rem); }
+        .btn-export, .btn-pdf { 
+            width: 100%; 
+            font-size: clamp(0.9rem, 4vw, 1rem); 
+            padding: 0.9rem 1.2rem; 
+            min-height: 50px; 
+        }
+        .position-header { padding: 0.8rem 1rem !important; font-size: clamp(1.1rem, 5vw, 1.3rem) !important; }
+        .position-content { 
+            overflow-x: auto !important; 
+            -webkit-overflow-scrolling: touch; 
+        }
+        .position-content table {
+            min-width: 600px !important; /* спречува стискање */
+            width: max-content !important;
+        }
+        .position-content th, .position-content td { 
+            padding: 0.7rem 0.6rem; 
+            font-size: 0.92rem; 
+            white-space: nowrap; /* текстот не се прекршува */
+        }
+        #preview, video { max-height: 300px !important; }
+        .form-group .flex-container { flex-direction: column; gap: 0.8rem; }
+        .btn { width: 100%; margin-bottom: 0.8rem; }
+    }
+
+    @media (max-width: 480px) {
+        .container { padding: 0 0.6rem; }
+        h1 { font-size: clamp(1.5rem, 7vw, 2rem); }
+        .btn-export, .btn-pdf { font-size: 0.9rem; padding: 0.8rem; min-height: 48px; }
+        .position-header { font-size: clamp(1rem, 6vw, 1.2rem) !important; }
+        .position-content table { min-width: 500px !important; }
+        .position-content th, .position-content td { font-size: 0.85rem; padding: 0.6rem 0.5rem; }
+        #preview, video { max-height: 250px !important; }
+    }
+</style>
+
+{% endblock %}

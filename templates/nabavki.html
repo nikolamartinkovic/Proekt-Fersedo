@@ -1,0 +1,800 @@
+{% extends "base.html" %}
+
+{% block title %}Набавки – Fersedo{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Flash пораки -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-5">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center shadow" role="alert">
+                        <i class="fas {% if category == 'success' %}fa-check-circle{% elif category in ['error', 'danger'] %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-3 fs-4"></i>
+                        <div class="flex-grow-1 fw-medium">{{ message }}</div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Горен хедер -->
+    <div class="mb-5 pb-4">
+        <div class="text-white py-5 px-4 px-md-5 rounded-4 shadow-lg text-center" style="background: linear-gradient(135deg, #0f172a, #1e293b);">
+            <div class="d-flex justify-content-center align-items-center mb-3">
+                <i class="fas fa-shopping-cart fa-3x me-4" style="opacity: 0.9;"></i>
+                <h1 class="display-4 fw-bold mb-0" style="text-shadow: 0 4px 10px rgba(0,0,0,0.8); color: #f1f5f9;">
+                    Барања за набавки
+                </h1>
+            </div>
+            <p class="lead fw-medium mb-0" style="text-shadow: 0 2px 5px rgba(0,0,0,0.7); opacity: 0.95;">
+                Преглед и креирање на барања за набавка
+            </p>
+        </div>
+    </div>
+
+    <!-- Форма за креирање ново барање -->
+    {% if session.user %}
+    <div class="card shadow-lg border-0 rounded-4 overflow-hidden mb-5">
+        <div class="card-header text-white py-4 px-5" style="background: linear-gradient(135deg, #0f172a, #111827);">
+            <h5 class="mb-0 d-flex align-items-center fs-4 fw-bold" style="color: #ffffff;">
+                <i class="fas fa-plus-circle me-3 fs-3"></i>
+                Креирај ново барање за набавка
+            </h5>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <form method="POST" enctype="multipart/form-data" id="nabavkaForm">
+                <input type="hidden" name="action" value="kreiraj">
+                <input type="hidden" name="chat_comment" id="hiddenChatComment" value="">
+                <input type="hidden" name="camera_slika_filename" id="cameraSlikaFilename" value="">
+
+                <div class="row g-4">
+                    <div class="col-12">
+                        <label class="form-label fw-bold fs-5">Наслов</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light"><i class="fas fa-heading"></i></span>
+                            <input type="text" name="naslov" class="form-control" required
+                                   placeholder="На пр. 'Ласерски делови за 711314'">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold fs-5">Количина</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light"><i class="fas fa-cubes"></i></span>
+                            <input type="number" name="kolicina" class="form-control" min="1" required
+                                   placeholder="Број на парчиња">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold fs-5">Датум на барање</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light"><i class="fas fa-calendar-alt"></i></span>
+                            <input type="date" name="datum" class="form-control" value="{{ today }}" required>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold fs-5">Датум на итност</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light"><i class="fas fa-clock text-danger"></i></span>
+                            <input type="date" name="datum_itnost" class="form-control" required>
+                        </div>
+                        <small class="form-text text-muted mt-2 d-block">Најдоцна кога мора да пристигне набавката</small>
+                    </div>
+
+                    <!-- ── СЛИКА СЕКЦИЈА ── -->
+                    <div class="col-12">
+                        <label class="form-label fw-bold fs-5">Додади слика и коментар (опционално)</label>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label class="btn btn-outline-primary btn-md w-100 py-3 d-flex align-items-center justify-content-center"
+                                       for="galleryInput">
+                                    <input type="file" name="slika" class="d-none"
+                                           accept="image/*" id="galleryInput"
+                                           onchange="handleGallerySelect(this)">
+                                    <i class="fas fa-images me-2"></i> Галерија
+                                </label>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <label class="btn btn-outline-success btn-md w-100 py-3 d-flex align-items-center justify-content-center"
+                                       for="cameraInput" id="cameraLabel">
+                                    <input type="file" class="d-none"
+                                           accept="image/*" capture="environment" id="cameraInput"
+                                           onchange="handleCameraCapture(this)">
+                                    <i class="fas fa-camera me-2"></i>
+                                    <span id="cameraLabelText">Сликај со камера</span>
+                                </label>
+                                <div id="cameraUploadSpinner" class="d-none text-center mt-2">
+                                    <div class="spinner-border spinner-border-sm text-success me-2"></div>
+                                    <small class="text-success">Се прикачува...</small>
+                                </div>
+                            </div>
+
+                            <div class="col-12 col-md-4">
+                                <button type="button"
+                                        class="btn btn-outline-info btn-md w-100 py-3 d-flex align-items-center justify-content-center"
+                                        data-bs-toggle="modal" data-bs-target="#komentarModal">
+                                    <i class="fas fa-comment-dots me-2"></i> Коментар (ќе оди во чат)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="slikaPreview" class="mt-3 d-none">
+                            <div class="d-flex align-items-center gap-3 p-3 bg-light rounded border">
+                                <img id="slikaPreviewImg" src="" alt="Preview"
+                                     style="max-height:120px;max-width:160px;border-radius:8px;object-fit:cover;">
+                                <div>
+                                    <div id="slikaPreviewName" class="fw-bold text-success">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger mt-2"
+                                            onclick="clearSlika()">
+                                        <i class="fas fa-times me-1"></i> Отстрани
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="komentarPreview" class="mt-3 p-3 bg-light rounded border text-muted"
+                             style="min-height: 60px;">
+                            Нема коментар
+                        </div>
+                    </div>
+
+                    <div class="col-12 mt-5">
+                        <button type="submit" id="submitBtn" class="btn btn-success btn-lg w-100 py-4 fw-bold shadow-lg">
+                            <i class="fas fa-plus-circle me-3 fs-4"></i> Креирај барање
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модал за коментар -->
+    <div class="modal fade" id="komentarModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow-xl">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fs-5">
+                        <i class="fas fa-comment-dots me-2"></i> Коментар за барањето
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="komentarText" class="form-control" rows="7"
+                              placeholder="Внесете коментар, детали, забелешки..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-lg px-5 py-3" data-bs-dismiss="modal">Откажи</button>
+                    <button type="button" class="btn btn-primary btn-lg px-5 py-3" onclick="saveKomentar()">Зачувај коментар</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <div class="alert alert-warning text-center p-5 shadow-lg rounded-4">
+        <i class="fas fa-exclamation-triangle fa-5x mb-4 text-warning"></i>
+        <h4 class="fw-bold">Мора да се најавите за да креирате барање за набавка.</h4>
+    </div>
+    {% endif %}
+
+    <!-- Табела со барања -->
+    <div class="mt-5 pt-4">
+        <form method="POST" action="{{ url_for('nabavki.delete_selected') }}" id="deleteForm">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-dark text-white py-4 px-5 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 d-flex align-items-center fs-4">
+                        <i class="fas fa-list-ul me-3"></i>
+                        {{ page_title }}
+                    </h5>
+                    <div class="d-flex align-items-center gap-4">
+                        <span class="badge bg-light text-dark fs-5 px-4 py-2" id="requestCount">{{ requests|length }}</span>
+                        {% if is_nabavki_user or session.is_admin %}
+                        <button type="submit" class="btn btn-danger btn-lg px-4 py-2 fw-bold shadow"
+                                id="deleteBtn" disabled
+                                onclick="return confirm('Сигурно сакаш да ги избришеш избраните барања?');">
+                            <i class="fas fa-trash-alt me-2"></i> Избриши избрани
+                        </button>
+                        {% endif %}
+                        {% if is_nabavki_user %}
+                        <div class="dropdown">
+                            <button class="btn btn-outline-light btn-lg px-4 py-2" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-ellipsis-v fs-4"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg">
+                                <li>
+                                    <a class="dropdown-item {% if filter_type != 'my_taken' %}active fw-bold{% endif %}"
+                                       href="#" data-filter="all">
+                                        <i class="fas fa-list-ul me-2"></i> Сите барања
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if filter_type == 'my_taken' %}active fw-bold{% endif %}"
+                                       href="#" data-filter="my_taken">
+                                        <i class="fas fa-hand-paper me-2"></i> Мои превземени барања
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    {% if requests %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped mb-0 align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"></th>
+                                    <th>Број</th>
+                                    <th>Датум</th>
+                                    <th>Корисник</th>
+                                    <th>Наслов</th>
+                                    <th>Кол.</th>
+                                    <th>Итност</th>
+                                    <th>Денови</th>
+                                    <th>Слика</th>
+                                    <th>Статус</th>
+                                    <th>Превземено</th>
+                                    <th>Детали</th>
+                                    <th>Акција</th>
+                                </tr>
+                            </thead>
+                            <tbody id="requestsTableBody">
+                                {% for r in requests %}
+                                <tr class="align-middle">
+                                    <td><input type="checkbox" name="selected_ids" value="{{ r.id }}" class="select-checkbox"></td>
+                                    <td><strong class="text-primary fs-5">{{ r.nalog_broj or '—' }}</strong></td>
+                                    <td>{{ r.datum_kreiranje_formatted }}</td>
+                                    <td>{{ r.username }}</td>
+                                    <td>{{ r.naslov }}</td>
+                                    <td class="fw-bold">{{ r.kolicina }}</td>
+                                    <td>{{ r.datum_itnost or '-' }}</td>
+                                    <td>
+                                        {% if r.datum_kreiranje and r.datum_itnost %}
+                                            <span class="fw-bold text-success">{{ r.days_remaining }}</span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if r.slika %}
+                                        <a href="{{ url_for('static', filename='nabavki/' + r.slika) }}" target="_blank">
+                                            <img src="{{ url_for('static', filename='nabavki/' + r.slika) }}"
+                                                 alt="Слика" class="rounded shadow" style="max-width:90px;height:auto;">
+                                        </a>
+                                        {% else %}
+                                        <span class="text-muted">Нема</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge fs-6 py-2 px-4 rounded-pill
+                                            {% if r.status == 'Videno' %}bg-info
+                                            {% elif r.status == 'Naracano' %}bg-warning text-dark
+                                            {% elif r.status == 'Dostaveno' %}bg-primary
+                                            {% elif r.status in ['Zavrseno', 'Prevzemeno'] %}bg-success
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ r.status|default('креирано')|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if r.prevzemeno_od %}
+                                            <strong class="text-success">{{ r.prevzemeno_od }}</strong>
+                                            {% if r.datum_prevzemanje %}
+                                                <br><small class="text-muted">{{ r.datum_prevzemanje }}</small>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-outline-primary btn-lg px-4 py-2"
+                                                data-bs-toggle="modal" data-bs-target="#detailsModal{{ r.id }}">
+                                            <i class="fas fa-eye me-2"></i> Детали
+                                        </button>
+                                    </td>
+                                    <td>
+                                        {% if is_admin or session.user_group == 'Nabavki' %}
+                                        <div class="dropdown">
+                                            <button class="btn btn-outline-secondary btn-lg dropdown-toggle px-4 py-2"
+                                                    type="button" data-bs-toggle="dropdown">Смени статус</button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-lg">
+                                                <li><a class="dropdown-item status-change" href="#" data-status="Videno" data-id="{{ r.id }}">Videno</a></li>
+                                                <li><a class="dropdown-item status-change" href="#" data-status="Naracano" data-id="{{ r.id }}">Naracano</a></li>
+                                                <li><a class="dropdown-item status-change" href="#" data-status="Dostaveno" data-id="{{ r.id }}">Dostaveno</a></li>
+                                                <li><a class="dropdown-item status-change" href="#" data-status="Zavrseno" data-id="{{ r.id }}">Zavrseno</a></li>
+                                                <li><a class="dropdown-item status-change" href="#" data-status="Prevzemeno" data-id="{{ r.id }}">Prevzemeno</a></li>
+                                            </ul>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="fas fa-box-open fa-5x mb-4 opacity-75"></i>
+                        <h4 class="fw-light">Нема барања за набавки во моментов.</h4>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Модали за детали со ЧАТ -->
+    {% for r in requests %}
+    <div class="modal fade" id="detailsModal{{ r.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content shadow-2xl border-0 rounded-4 overflow-hidden">
+                <div class="modal-header bg-gradient text-white py-4 px-5">
+                    <h5 class="modal-title fs-4">
+                        <i class="fas fa-file-invoice-dollar me-3"></i>
+                        Барање: {{ r.nalog_broj or 'Без број' }} – {{ r.naslov }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-5">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="d-flex flex-column gap-3">
+                                <p class="mb-0"><strong>Број на налог:</strong> <span class="text-primary fw-bold fs-5">{{ r.nalog_broj or '—' }}</span></p>
+                                <p class="mb-0"><strong>Креирал:</strong> {{ r.username }}</p>
+                                <p class="mb-0"><strong>Датум на креирање:</strong> {{ r.datum_kreiranje_formatted }}</p>
+                                <p class="mb-0"><strong>Датум на итност:</strong> {{ r.datum_itnost or '—' }}</p>
+                                <p class="mb-0"><strong>Статус:</strong>
+                                    <span class="badge fs-6 py-2 px-4 rounded-pill
+                                        {% if r.status == 'Videno' %}bg-info
+                                        {% elif r.status == 'Naracano' %}bg-warning text-dark
+                                        {% elif r.status == 'Dostaveno' %}bg-primary
+                                        {% elif r.status in ['Zavrseno', 'Prevzemeno'] %}bg-success
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ r.status|default('креирано')|title }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex flex-column gap-3">
+                                <p class="mb-0"><strong>Количина:</strong> {{ r.kolicina }} парчиња</p>
+                                <p class="mb-0"><strong>Опис:</strong> {{ r.opis or 'Нема дополнителен опис' }}</p>
+
+                                {# ── СЛИКА или КОПЧЕ ЗА ПОСТАВИ СЛИКА ── #}
+                                {% if r.slika %}
+                                    <p class="mb-0"><strong>Прикачена слика:</strong></p>
+                                    <a href="{{ url_for('static', filename='nabavki/' + r.slika) }}" target="_blank">
+                                        <img src="{{ url_for('static', filename='nabavki/' + r.slika) }}"
+                                             alt="Слика" class="img-fluid rounded shadow mt-2" style="max-height:320px;">
+                                    </a>
+                                {% else %}
+                                    <div>
+                                        <p class="mb-2"><strong>Слика:</strong>
+                                            <span class="text-muted">Нема прикачена слика</span>
+                                        </p>
+
+                                        {% if session.is_admin or r.username == session.user or session.user_group == 'Nabavki' %}
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-sm px-3 py-2 fw-bold"
+                                                onclick="toggleUploadPanel('{{ r.id }}')">
+                                            <i class="fas fa-upload me-2"></i> Постави слика
+                                        </button>
+
+                                        <div id="uploadForm{{ r.id }}" class="d-none mt-3">
+                                            <form method="POST"
+                                                  action="{{ url_for('nabavki.upload_slika', req_id=r.id, filter=filter_type) }}"
+                                                  enctype="multipart/form-data">
+
+                                                {# Preview #}
+                                                <div id="uploadPreview{{ r.id }}" class="d-none mb-3">
+                                                    <div class="d-flex align-items-center gap-3 p-2 bg-light border rounded">
+                                                        <img id="uploadPreviewImg{{ r.id }}" src="" alt=""
+                                                             style="max-height:100px;max-width:140px;border-radius:6px;object-fit:cover;">
+                                                        <div>
+                                                            <small id="uploadPreviewName{{ r.id }}" class="text-success fw-bold d-block"></small>
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-outline-danger mt-1"
+                                                                    onclick="clearUploadPreview('{{ r.id }}')">
+                                                                <i class="fas fa-times me-1"></i> Отстрани
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="input-group">
+                                                    <label class="btn btn-outline-secondary px-3"
+                                                           for="novaSlikaInput{{ r.id }}"
+                                                           style="border-radius:8px 0 0 8px;">
+                                                        <input type="file"
+                                                               name="nova_slika"
+                                                               id="novaSlikaInput{{ r.id }}"
+                                                               accept="image/*"
+                                                               class="d-none"
+                                                               onchange="previewUploadSlika(this, '{{ r.id }}')">
+                                                        <i class="fas fa-image me-1"></i> Избери
+                                                    </label>
+                                                    <input type="text" class="form-control"
+                                                           id="uploadFileName{{ r.id }}"
+                                                           placeholder="Нема избрана слика..."
+                                                           readonly style="background:#f8fafc;">
+                                                    <button type="submit"
+                                                            class="btn btn-primary px-4 fw-bold"
+                                                            id="uploadSubmitBtn{{ r.id }}"
+                                                            disabled>
+                                                        <i class="fas fa-upload me-1"></i> Прикачи
+                                                    </button>
+                                                </div>
+                                                <small class="text-muted mt-1 d-block">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Поддржани формати: JPG, PNG, WEBP
+                                                </small>
+                                            </form>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Превземено -->
+                        <div class="col-12 mt-4 border-top pt-4">
+                            <h6 class="fw-bold mb-3 fs-5">Превземено од</h6>
+                            {% if r.prevzemeno_od %}
+                                <p class="fw-bold text-success fs-5 mb-2">
+                                    <i class="fas fa-user-check me-2"></i>{{ r.prevzemeno_od }}
+                                    {% if r.datum_prevzemanje %}
+                                        <small class="text-muted d-block fs-6 fw-normal mt-1">
+                                            <i class="fas fa-clock me-1"></i>{{ r.datum_prevzemanje }}
+                                        </small>
+                                    {% endif %}
+                                </p>
+                                {% if session.user_group == 'Nabavki' or session.is_admin %}
+                                <button type="button" class="btn btn-outline-warning mt-2 px-4 py-2 fw-bold"
+                                        data-bs-toggle="collapse" data-bs-target="#transferPanel{{ r.id }}">
+                                    <i class="fas fa-exchange-alt me-2"></i> Префрли на друг корисник
+                                </button>
+                                <div class="collapse mt-3" id="transferPanel{{ r.id }}">
+                                    <div class="card card-body border-warning rounded-3 shadow-sm">
+                                        <form method="POST" action="{{ url_for('nabavki.transfer', req_id=r.id) }}">
+                                            <input type="hidden" name="filter" value="{{ filter_type }}">
+                                            <div class="input-group input-group-lg">
+                                                <span class="input-group-text bg-light">
+                                                    <i class="fas fa-user-friends text-warning"></i>
+                                                </span>
+                                                <select name="novi_korisnik" class="form-select" required>
+                                                    <option value="" disabled selected>— Изберете корисник —</option>
+                                                    {% for u in nabavki_users %}
+                                                        {% if u.username != r.prevzemeno_od %}
+                                                        <option value="{{ u.username }}">{{ u.username }}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </select>
+                                                <button type="submit" class="btn btn-warning fw-bold px-4"
+                                                        onclick="return confirm('Сигурно сакате да го префрлите барањето?')">
+                                                    <i class="fas fa-paper-plane me-1"></i> Префрли
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% else %}
+                                <p class="text-muted fs-5 mb-2">Сè уште не е превземено</p>
+                                {% if session.user_group == 'Nabavki' or session.is_admin %}
+                                <form method="POST" action="{{ url_for('nabavki.prevzemi', req_id=r.id, filter=filter_type) }}">
+                                    <button type="submit" class="btn btn-success btn-lg px-5 py-3 fw-bold shadow">
+                                        <i class="fas fa-hand-paper me-2"></i> Превземи
+                                    </button>
+                                </form>
+                                {% else %}
+                                <small class="text-muted fs-6">Само група „Набавки" може да превзема</small>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <!-- ══ ЧАТ КОМЕНТАРИ ══ -->
+                        <div class="col-12 mt-4 border-top pt-4">
+                            <h6 class="fw-bold mb-3 fs-5">Коментари (чат)</h6>
+
+                            <div class="chat-box p-3 rounded border mb-3"
+                                 id="chatBox{{ r.id }}"
+                                 style="max-height:360px;overflow-y:auto;background:#f8f9fa;">
+                                {% if r.comments %}
+                                    {% for c in r.comments %}
+                                    <div class="chat-message mb-3 p-3 rounded
+                                        {% if c.user == session.user %}bg-primary text-white text-end ms-auto{% else %}bg-light text-dark text-start me-auto{% endif %}"
+                                         style="max-width:80%;">
+                                        <small class="d-block mb-1 opacity-75">{{ c.user }} • {{ c.timestamp | datetimeformat }}</small>
+                                        {% if c.comment %}
+                                        <p class="mb-0">{{ c.comment }}</p>
+                                        {% endif %}
+                                        {% if c.slika %}
+                                        <a href="/static/nabavki_chat/{{ c.slika }}" target="_blank" class="d-block mt-2">
+                                            <img src="/static/nabavki_chat/{{ c.slika }}"
+                                                 alt="Слика во чат"
+                                                 class="rounded shadow-sm"
+                                                 style="max-width:220px;max-height:200px;object-fit:cover;cursor:zoom-in;">
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted text-center py-4">Сè уште нема коментари.</p>
+                                {% endif %}
+                            </div>
+
+                            {% if is_admin or r.username == session.user or session.user_group == 'Nabavki' %}
+                            <form method="POST"
+                                  action="{{ url_for('nabavki.add_comment', req_id=r.id, filter=filter_type) }}"
+                                  enctype="multipart/form-data"
+                                  class="chat-form"
+                                  id="chatForm{{ r.id }}">
+
+                                <div id="chatImgPreview{{ r.id }}" class="d-none mb-2">
+                                    <div class="d-flex align-items-center gap-2 p-2 bg-light border rounded">
+                                        <img id="chatImgPreviewImg{{ r.id }}" src="" alt=""
+                                             style="max-height:80px;max-width:120px;border-radius:6px;object-fit:cover;">
+                                        <div class="flex-grow-1">
+                                            <small id="chatImgPreviewName{{ r.id }}" class="text-success fw-bold d-block"></small>
+                                            <button type="button" class="btn btn-sm btn-outline-danger mt-1"
+                                                    onclick="clearChatImg('{{ r.id }}')">
+                                                <i class="fas fa-times"></i> Отстрани
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="input-group">
+                                    <label class="btn btn-outline-secondary px-3"
+                                           for="chatSlikaInput{{ r.id }}"
+                                           title="Прикачи слика во чат"
+                                           style="border-radius:8px 0 0 8px;">
+                                        <input type="file"
+                                               name="chat_slika"
+                                               id="chatSlikaInput{{ r.id }}"
+                                               accept="image/*"
+                                               class="d-none"
+                                               onchange="previewChatImg(this, '{{ r.id }}')">
+                                        <i class="fas fa-image"></i>
+                                    </label>
+                                    <input type="text"
+                                           name="comment"
+                                           class="form-control"
+                                           placeholder="Напиши коментар или прикачи слика..."
+                                           id="chatInput{{ r.id }}">
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </form>
+                            {% else %}
+                            <small class="text-muted">Можеш да коментираш само ако си креаторот или админ.</small>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-4 px-5">
+                    <button type="button" class="btn btn-secondary btn-lg px-5 py-3" data-bs-dismiss="modal">Затвори</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+// ── Коментар за новото барање ──
+function saveKomentar() {
+    const text = document.getElementById('komentarText').value.trim();
+    document.getElementById('hiddenChatComment').value = text;
+    document.getElementById('komentarPreview').innerHTML = text
+        ? `<strong>Коментар:</strong> ${text}` : 'Нема коментар';
+    bootstrap.Modal.getInstance(document.getElementById('komentarModal'))?.hide();
+}
+
+// ── Галерија ──
+function handleGallerySelect(input) {
+    if (!input.files || !input.files[0]) return;
+    document.getElementById('cameraSlikaFilename').value = '';
+    showPreview(input.files[0], input.files[0].name);
+}
+
+// ── Камера ──
+function handleCameraCapture(input) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const spinner  = document.getElementById('cameraUploadSpinner');
+    const labelText = document.getElementById('cameraLabelText');
+    spinner.classList.remove('d-none');
+    labelText.textContent = 'Се прикачува...';
+    document.getElementById('galleryInput').value = '';
+    const formData = new FormData();
+    formData.append('slika', file);
+    fetch('/upload_temp_image', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            spinner.classList.add('d-none');
+            if (data.success) {
+                document.getElementById('cameraSlikaFilename').value = data.filename;
+                labelText.textContent = '✓ Сликата е прикачена';
+                showPreview(file, data.filename);
+            } else {
+                labelText.textContent = 'Сликај со камера';
+                alert('Грешка: ' + (data.error || 'непозната грешка'));
+            }
+        })
+        .catch(() => {
+            spinner.classList.add('d-none');
+            labelText.textContent = 'Сликај со камера';
+            alert('Грешка при прикачување.');
+        });
+}
+
+function showPreview(file, name) {
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('slikaPreviewImg').src = e.target.result;
+        document.getElementById('slikaPreviewName').innerHTML =
+            `<i class="fas fa-check-circle me-1 text-success"></i>${name}`;
+        document.getElementById('slikaPreview').classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearSlika() {
+    document.getElementById('galleryInput').value = '';
+    document.getElementById('cameraSlikaFilename').value = '';
+    document.getElementById('cameraInput').value = '';
+    document.getElementById('cameraLabelText').textContent = 'Сликај со камера';
+    document.getElementById('slikaPreview').classList.add('d-none');
+    document.getElementById('slikaPreviewImg').src = '';
+}
+
+// ── Слика во ЧАТ ──
+function previewChatImg(input, reqId) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById(`chatImgPreviewImg${reqId}`).src = e.target.result;
+        document.getElementById(`chatImgPreviewName${reqId}`).textContent = file.name;
+        document.getElementById(`chatImgPreview${reqId}`).classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearChatImg(reqId) {
+    document.getElementById(`chatSlikaInput${reqId}`).value = '';
+    document.getElementById(`chatImgPreview${reqId}`).classList.add('d-none');
+    document.getElementById(`chatImgPreviewImg${reqId}`).src = '';
+}
+
+// ── Постави слика на постоечко барање ──
+function toggleUploadPanel(reqId) {
+    const form = document.getElementById(`uploadForm${reqId}`);
+    if (form.classList.contains('d-none')) {
+        form.classList.remove('d-none');
+    } else {
+        form.classList.add('d-none');
+        clearUploadPreview(reqId);
+    }
+}
+
+function previewUploadSlika(input, reqId) {
+    if (!input.files || !input.files[0]) return;
+    const file = input.files[0];
+    document.getElementById(`uploadFileName${reqId}`).value = file.name;
+    document.getElementById(`uploadSubmitBtn${reqId}`).disabled = false;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById(`uploadPreviewImg${reqId}`).src = e.target.result;
+        document.getElementById(`uploadPreviewName${reqId}`).innerHTML =
+            `<i class="fas fa-check-circle me-1"></i>${file.name}`;
+        document.getElementById(`uploadPreview${reqId}`).classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
+}
+
+function clearUploadPreview(reqId) {
+    document.getElementById(`novaSlikaInput${reqId}`).value = '';
+    document.getElementById(`uploadFileName${reqId}`).value = '';
+    document.getElementById(`uploadSubmitBtn${reqId}`).disabled = true;
+    document.getElementById(`uploadPreview${reqId}`).classList.add('d-none');
+    document.getElementById(`uploadPreviewImg${reqId}`).src = '';
+}
+
+// ── Чекбокси ──
+function toggleSelectAll(source) {
+    document.querySelectorAll('.select-checkbox').forEach(cb => cb.checked = source.checked);
+    updateDeleteButton();
+}
+function updateDeleteButton() {
+    const checked = document.querySelectorAll('.select-checkbox:checked').length;
+    const btn = document.getElementById('deleteBtn');
+    if (btn) btn.disabled = checked === 0;
+}
+document.querySelectorAll('.select-checkbox').forEach(cb => {
+    cb.addEventListener('change', updateDeleteButton);
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    updateDeleteButton();
+
+    // Scroll до дното на chat box при отворање на модал
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('shown.bs.modal', function() {
+            const reqId = this.id.replace('detailsModal', '');
+            if (!reqId || isNaN(reqId)) return;
+
+            const chatBox = document.getElementById(`chatBox${reqId}`);
+            if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+
+            fetch(`/nabavki/comments/${reqId}`)
+                .then(r => r.json())
+                .then(comments => {
+                    if (!chatBox) return;
+                    if (comments.length === 0) {
+                        chatBox.innerHTML = '<p class="text-muted text-center py-4">Сè уште нема коментари.</p>';
+                        return;
+                    }
+                    const currentUser = '{{ session.user }}';
+                    chatBox.innerHTML = comments.map(c => {
+                        const isMe = c.user === currentUser;
+                        const imgHtml = c.slika
+                            ? `<a href="/static/nabavki_chat/${c.slika}" target="_blank" class="d-block mt-2">
+                                 <img src="/static/nabavki_chat/${c.slika}"
+                                      class="rounded shadow-sm"
+                                      style="max-width:220px;max-height:200px;object-fit:cover;cursor:zoom-in;">
+                               </a>`
+                            : '';
+                        const textHtml = c.comment ? `<p class="mb-0">${c.comment}</p>` : '';
+                        return `
+                            <div class="chat-message mb-3 p-3 rounded
+                                ${isMe ? 'bg-primary text-white text-end ms-auto' : 'bg-light text-dark text-start me-auto'}"
+                                 style="max-width:80%;">
+                                <small class="d-block mb-1 opacity-75">${c.user} • ${c.timestamp}</small>
+                                ${textHtml}
+                                ${imgHtml}
+                            </div>`;
+                    }).join('');
+                    chatBox.scrollTop = chatBox.scrollHeight;
+                });
+        });
+    });
+
+    // Промена на статус
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('.status-change');
+        if (!link) return;
+        e.preventDefault();
+        const status = link.getAttribute('data-status');
+        const id     = link.getAttribute('data-id');
+        if (!confirm(`Дали сте сигурни дека сакате да го смените статусот на "${status}"?`)) return;
+        fetch(`/nabavki/update_status/${id}/${status}`)
+            .then(r => { if (!r.ok) throw new Error(); location.reload(); })
+            .catch(() => location.reload());
+    });
+
+    // Филтер
+    document.querySelectorAll('.dropdown-item[data-filter]').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = `?filter=${this.getAttribute('data-filter')}`;
+        });
+    });
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,74 @@
+﻿{% extends "base.html" %}
+{% block title %}Избери камин - Квалитет{% endblock %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+
+  <div class="text-center mb-5 pb-4">
+    <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.5rem, 8vw, 3.5rem); margin-bottom: 0.75rem;">
+      Избери камин
+    </h1>
+    <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary); max-width: 700px; margin: 0 auto;">
+      Кликни на каминот за да започнеш контрола
+    </p>
+  </div>
+
+  <div class="row g-4 justify-content-center">
+    {% for kamin in kamini %}
+    <div class="col-lg-3 col-md-4 col-sm-6">
+      <a href="{{ url_for('kvalitet.nova_kontrola', kamin=kamin) }}"
+         class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all">
+        <div class="card-body text-center p-4 d-flex flex-column justify-content-center align-items-center"
+             style="min-height: 260px;">
+          <img src="{{ url_for('main.kamin_static', filename=kamin ~ '.png') }}"
+               alt="{{ kamin }}"
+               onerror="this.onerror=null; this.src='{{ url_for('main.kamin_static', filename='default-kamin.png') }}';"
+               style="width: 100%; height: clamp(140px, 30vw, 180px); object-fit: contain; border-radius: 12px; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <h3 style="margin: 0.5rem 0; font-size: clamp(1.2rem, 4vw, 1.35rem); font-weight: 600; color: var(--text);">
+            {{ kamin }}
+          </h3>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="text-center mt-5">
+    <a href="{{ url_for('kvalitet.kvalitet') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+      <i class="fas fa-arrow-left me-2"></i> Назад
+    </a>
+  </div>
+
+</div>
+
+<script>
+document.querySelectorAll('.transition-all').forEach(card => {
+  card.addEventListener('mouseenter', () => {
+    card.style.transform = 'translateY(-12px)';
+    card.style.boxShadow = '0 25px 60px rgba(0,0,0,0.18)';
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = 'translateY(0)';
+    card.style.boxShadow = 'var(--shadow)';
+  });
+});
+</script>
+
+<style>
+.transition-all {
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  background: var(--surface);
+}
+
+@media (max-width: 768px) {
+  .transition-all img { height: 160px; }
+}
+
+@media (max-width: 480px) {
+  h1 { font-size: clamp(1.8rem, 7vw, 2.5rem); }
+  .transition-all img { height: 140px; }
+}
+</style>
+
+{% endblock %}

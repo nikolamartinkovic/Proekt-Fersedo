@@ -1,0 +1,33 @@
+﻿{% extends "base.html" %}
+{% block title %}Квалитет{% endblock %}
+
+{% block content %}
+
+<div class="container py-5" style="max-width: 1100px;">
+  <div class="text-center mb-5">
+    <h1 class="fw-bold" style="color: var(--primary);">Квалитет</h1>
+    <p class="text-muted fs-5 mb-0">Започни нова контрола и избери камин.</p>
+  </div>
+
+  <div class="row g-4 justify-content-center">
+    <div class="col-lg-6 col-md-8 col-sm-10">
+      <!-- Поправено: користи постоечка рута -->
+      <a href="{{ url_for('main.select_kamin') }}" class="module-card">
+        <div class="module-icon">
+          <i class="fas fa-clipboard-check"></i>
+        </div>
+
+        <div class="module-text">
+          <div class="module-title">Започни контрола</div>
+          <div class="module-subtitle">Избор на камин →</div>
+        </div>
+
+        <div class="module-arrow">
+          <i class="fas fa-arrow-right"></i>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

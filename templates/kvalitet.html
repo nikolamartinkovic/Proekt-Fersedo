@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Квалитет{% endblock %}
+
+{% block content %}
+
+<style>
+.kvalitet-wrapper {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 0 15px;
+}
+
+.kvalitet-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.8rem 2.2rem;
+  border-radius: 16px;
+  text-decoration: none;
+  background: white;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+  transition: all 0.35s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.kvalitet-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.18);
+  border-color: #cbd5e1;
+}
+
+.kvalitet-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.1rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.kvalitet-icon.primary  { background: linear-gradient(135deg, #6366f1, #4f46e5); }
+.kvalitet-icon.success  { background: linear-gradient(135deg, #10b981, #059669); }
+.kvalitet-icon.warning  { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+.kvalitet-text { flex: 1; }
+
+.kvalitet-title-card {
+  font-weight: 700;
+  font-size: 1.45rem;
+  color: #0f172a;
+  margin-bottom: 0.35rem;
+}
+
+.kvalitet-subtitle-card {
+  color: #64748b;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.kvalitet-arrow {
+  font-size: 1.5rem;
+  color: #94a3b8;
+  transition: all 0.3s ease;
+}
+
+.kvalitet-card:hover .kvalitet-arrow {
+  transform: translateX(8px);
+  color: #1e293b;
+}
+
+@media (max-width: 576px) {
+  .kvalitet-card { padding: 1.4rem 1.6rem; gap: 1.2rem; }
+  .kvalitet-icon { width: 60px; height: 60px; font-size: 1.8rem; }
+  .kvalitet-title-card { font-size: 1.25rem; }
+  .kvalitet-subtitle-card { font-size: 0.9rem; }
+}
+</style>
+
+{% set allowed = (session.allowed_modules or '').split(',') | map('trim') | list %}
+
+<div class="container py-5">
+
+  <div class="text-center mb-5">
+    <h1 class="fw-bold mb-2" style="color: var(--primary, #4f46e5);">Контрола на Квалитет</h1>
+    <p class="text-muted lead">Управување со проверки и архивирање на контроли</p>
+  </div>
+
+  <div class="kvalitet-wrapper">
+
+    <!-- Започни нова контрола -->
+    {% if session.get('is_admin') or 'kvalitet_nova' in allowed %}
+    <a href="{{ url_for('kvalitet.kvalitet_select_kamin') }}" class="kvalitet-card">
+      <div class="kvalitet-icon primary">
+        <i class="fas fa-clipboard-check"></i>
+      </div>
+      <div class="kvalitet-text">
+        <div class="kvalitet-title-card">Започни нова контрола</div>
+        <div class="kvalitet-subtitle-card">Изберете камин и креирајте нов запис за контрола на квалитет</div>
+      </div>
+      <div class="kvalitet-arrow"><i class="fas fa-arrow-right"></i></div>
+    </a>
+    {% endif %}
+
+    <!-- Архива -->
+    {% if session.get('is_admin') or 'kvalitet_arhiva' in allowed %}
+    <a href="{{ url_for('kvalitet.kvalitet_arhiva') }}" class="kvalitet-card">
+      <div class="kvalitet-icon success">
+        <i class="fas fa-folder-open"></i>
+      </div>
+      <div class="kvalitet-text">
+        <div class="kvalitet-title-card">Архива на контроли</div>
+        <div class="kvalitet-subtitle-card">Преглед, пребарување и преземање на сите претходни контроли и PDF извештаи</div>
+      </div>
+      <div class="kvalitet-arrow"><i class="fas fa-arrow-right"></i></div>
+    </a>
+    {% endif %}
+
+    <!-- QC Шаблони -->
+    {% if session.get('is_admin') or 'kvalitet_template' in allowed %}
+    <a href="{{ url_for('kvalitet.kvalitet_template_manager') }}" class="kvalitet-card">
+      <div class="kvalitet-icon warning">
+        <i class="fas fa-cogs"></i>
+      </div>
+      <div class="kvalitet-text">
+        <div class="kvalitet-title-card">Управување со QC шаблони</div>
+        <div class="kvalitet-subtitle-card">Дефинирање и уредување на чекори и подчекори за секој тип на камин</div>
+      </div>
+      <div class="kvalitet-arrow"><i class="fas fa-arrow-right"></i></div>
+    </a>
+    {% endif %}
+
+  </div>
+
+</div>
+
+{% endblock %}

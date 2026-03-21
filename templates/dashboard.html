@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto; padding: 0 1rem;">
+    <!-- Филтер -->
+    <div class="filter-card card shadow-xl border-0 rounded-4 overflow-hidden mb-5">
+        <div class="card-header text-white py-4 px-5 fw-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-filter me-3 fs-4"></i>
+                Филтер по период
+            </h4>
+        </div>
+
+        <div class="card-body p-4 p-md-5">
+            <div class="row g-4 justify-content-center">
+                <div class="col-md-5 col-12">
+                    <label for="datum_od" class="form-label fw-bold fs-5">Од датум</label>
+                    <input type="date" id="datum_od" value="{{ today }}" class="form-control form-control-lg">
+                </div>
+                <div class="col-md-5 col-12">
+                    <label for="datum_do" class="form-label fw-bold fs-5">До датум</label>
+                    <input type="date" id="datum_do" value="{{ today }}" class="form-control form-control-lg">
+                </div>
+                <div class="col-md-2 col-12 d-flex align-items-end">
+                    <button onclick="updateDashboard()" id="updateBtn" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-lg">
+                        <span id="updateText"><i class="fas fa-sync-alt me-2"></i> Ажурирај</span>
+                        <span id="updateSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI статистики -->
+    <div class="stats-grid row g-4 mb-5">
+        <div class="col-lg-4 col-md-6 col-12">
+            <div class="stat-card card shadow-xl border-0 rounded-4 text-center p-4" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0);">
+                <div class="stat-icon mb-3" style="font-size: clamp(3.5rem, 10vw, 4.5rem); color: #065f46;">
+                    <i class="fas fa-boxes-stacked"></i>
+                </div>
+                <p class="mb-2 fw-bold fs-5" style="color: #065f46;">Произведени</p>
+                <span id="totalProizvedeni" class="fs-1 fw-black" style="color: #065f46;">0</span>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 col-12">
+            <div class="stat-card card shadow-xl border-0 rounded-4 text-center p-4" style="background: linear-gradient(135deg, #fee2e2, #fecaca);">
+                <div class="stat-icon mb-3" style="font-size: clamp(3.5rem, 10vw, 4.5rem); color: #991b1b;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <p class="mb-2 fw-bold fs-5" style="color: #991b1b;">Грешки</p>
+                <span id="totalGreski" class="fs-1 fw-black" style="color: #991b1b;">0</span>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-12 col-12">
+            <div class="stat-card card shadow-xl border-0 rounded-4 text-center p-4" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe);">
+                <div class="stat-icon mb-3" style="font-size: clamp(3.5rem, 10vw, 4.5rem); color: #1e40af;">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <p class="mb-2 fw-bold fs-5" style="color: #1e40af;">Ефективност</p>
+                <span id="totalEfektivnost" class="fs-1 fw-black" style="color: #1e40af;">0 %</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Графикони -->
+    <div class="charts-grid row g-4 mb-5">
+        <div class="col-lg-6 col-12">
+            <div class="chart-card card shadow-xl border-0 rounded-4 p-4 p-md-5">
+                <h3 class="text-center mb-4 fw-bold" style="font-size: clamp(1.4rem, 5vw, 1.6rem);">Ефективност</h3>
+                <div style="height: clamp(280px, 55vw, 420px); position: relative;">
+                    <canvas id="totalGaugeChart"></canvas>
+                    <div id="gaugeCenterValue" style="position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); font-size: clamp(2.5rem, 8vw, 3.8rem); font-weight: 900; color: #334155; pointer-events: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 col-12">
+            <div class="chart-card card shadow-xl border-0 rounded-4 p-4 p-md-5">
+                <h3 class="text-center mb-4 fw-bold" style="font-size: clamp(1.4rem, 5vw, 1.6rem);">По оддели</h3>
+                <div style="height: clamp(280px, 55vw, 400px);">
+                    <canvas id="perOdelBarChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Детали по оддели (табела) -->
+    <div class="table-card card shadow-xl border-0 rounded-4 overflow-hidden">
+        <div class="card-header text-white py-4 px-5 fw-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-table-list me-3 fs-4"></i>
+                Детали по оддели
+            </h4>
+        </div>
+
+        <div class="card-body p-0">
+            <div class="table-container" style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-height: 600px; overflow-y: auto;">
+                <table id="dashboardTable" class="table table-hover table-striped mb-0 align-middle" style="width: 100%; min-width: 800px;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="text-align: center; padding: 1.4rem;">Оддел</th>
+                            <th style="text-align: center; padding: 1.4rem;">Грешки</th>
+                            <th style="text-align: center; padding: 1.4rem;">Произведени</th>
+                            <th style="text-align: center; padding: 1.4rem;">Ефективност</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboardBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    let totalGaugeChart = null;
+    let perOdelBarChart = null;
+
+    function updateDashboard() {
+        const datum_od = document.getElementById('datum_od').value;
+        const datum_do = document.getElementById('datum_do').value;
+        const updateBtn = document.getElementById('updateBtn');
+        const updateText = document.getElementById('updateText');
+        const updateSpinner = document.getElementById('updateSpinner');
+
+        if (!datum_od || !datum_do) return alert('Внеси датум од и до!');
+
+        updateText.classList.add('d-none');
+        updateSpinner.classList.remove('d-none');
+        updateBtn.disabled = true;
+
+        fetch(`/admin/api/greski?datum_od=${datum_od}&datum_do=${datum_do}`)
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('dashboardBody');
+                tbody.innerHTML = '';
+
+                if (totalGaugeChart) totalGaugeChart.destroy();
+                if (perOdelBarChart) perOdelBarChart.destroy();
+
+                if (data.error) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-danger fw-bold">${data.error}</td></tr>`;
+                    document.getElementById('totalProizvedeni').textContent = '0';
+                    document.getElementById('totalGreski').textContent = '0';
+                    document.getElementById('totalEfektivnost').textContent = '0 %';
+                    document.getElementById('gaugeCenterValue').textContent = '0%';
+                    updateText.classList.remove('d-none');
+                    updateSpinner.classList.add('d-none');
+                    updateBtn.disabled = false;
+                    return;
+                }
+
+                let totalGreski = data.total?.greski || 0;
+                let totalProizvedeni = data.total?.proizvedeni || 0;
+                let efektivnost = data.total?.efektivnost || 0;
+
+                document.getElementById('totalProizvedeni').textContent = totalProizvedeni;
+                document.getElementById('totalGreski').textContent = totalGreski;
+                document.getElementById('totalEfektivnost').textContent = efektivnost + ' %';
+                document.getElementById('gaugeCenterValue').textContent = efektivnost + '%';
+
+                // Gauge Chart
+                const ctx = document.getElementById('totalGaugeChart').getContext('2d');
+
+                const needlePlugin = {
+                    id: 'needle',
+                    afterDatasetsDraw(chart) {
+                        const { ctx, chartArea: { width, height }, data } = chart;
+                        const value = efektivnost;
+                        const angle = (value / 100) * Math.PI - Math.PI / 2;
+
+                        ctx.save();
+                        ctx.translate(width / 2, height);
+                        ctx.rotate(angle);
+
+                        ctx.beginPath();
+                        ctx.moveTo(0, -12);
+                        ctx.lineTo(0, 12);
+                        ctx.lineTo(width * 0.42, 0);
+                        ctx.closePath();
+                        ctx.fillStyle = '#1e293b';
+                        ctx.fill();
+                        ctx.shadowColor = 'rgba(0,0,0,0.4)';
+                        ctx.shadowBlur = 8;
+                        ctx.shadowOffsetX = 4;
+                        ctx.shadowOffsetY = 4;
+
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 14, 0, Math.PI * 2);
+                        ctx.fillStyle = '#1e293b';
+                        ctx.fill();
+
+                        ctx.restore();
+                    }
+                };
+
+                totalGaugeChart = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        datasets: [{
+                            data: [efektivnost, 100 - efektivnost],
+                            backgroundColor: [
+                                efektivnost >= 95 ? '#10b981' :
+                                efektivnost >= 80 ? '#f59e0b' :
+                                efektivnost >= 60 ? '#f97316' : '#ef4444',
+                                '#e2e8f0'
+                            ],
+                            borderWidth: 0,
+                            borderColor: 'transparent',
+                            cutout: '75%'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        circumference: 180,
+                        rotation: -90,
+                        animation: { duration: 1800, easing: 'easeOutBounce' },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { enabled: false }
+                        }
+                    },
+                    plugins: [needlePlugin]
+                });
+
+                // Бар чарт по оддели
+                if (data.per_oddel && data.per_oddel.length > 0) {
+                    data.per_oddel.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="text-center py-3">${item.oddel}</td>
+                            <td class="text-center fw-bold" style="color:${item.greski>=5?'#dc2626':item.greski>=2?'#ca8a04':'#16a34a'};">${item.greski}</td>
+                            <td class="text-center py-3">${item.proizvedeni}</td>
+                            <td class="text-center fw-bold" style="color:${item.efektivnost>=95?'#16a34a':item.efektivnost>=80?'#eab308':'#dc2626'};">${item.efektivnost}%</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+
+                    const barCtx = document.getElementById('perOdelBarChart').getContext('2d');
+                    perOdelBarChart = new Chart(barCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.per_oddel.map(i => i.oddel),
+                            datasets: [
+                                { label: 'Произведени', data: data.per_oddel.map(i => i.proizvedeni), backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 8 },
+                                { label: 'Грешки', data: data.per_oddel.map(i => i.greski), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 8 }
+                            ]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted fw-bold">Нема податоци за периодот</td></tr>';
+                }
+
+                updateBtn.disabled = false;
+                updateText.classList.remove('d-none');
+                updateSpinner.classList.add('d-none');
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('dashboardBody').innerHTML = '<tr><td colspan="4" class="text-center py-5 text-danger fw-bold">Грешка при вчитување</td></tr>';
+                updateBtn.disabled = false;
+                updateText.classList.remove('d-none');
+                updateSpinner.classList.add('d-none');
+            });
+    }
+
+    // Автоматско ажурирање секои 60 секунди
+    setInterval(updateDashboard, 60000);
+    window.onload = updateDashboard;
+</script>
+
+<style>
+    .filter-card, .stat-card, .chart-card, .table-card {
+        border-radius: 20px;
+        transition: transform 0.3s ease;
+    }
+
+    .filter-card:hover, .stat-card:hover, .chart-card:hover, .table-card:hover {
+        transform: translateY(-6px);
+    }
+
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+        min-width: 800px;
+    }
+
+    th, td {
+        white-space: nowrap;
+        padding: clamp(0.8rem, 2vw, 1.4rem);
+    }
+
+    /* Mobile responsive – графиконите и KPI еден под друг */
+    @media (max-width: 991px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        .charts-grid {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+        .filter-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        .date-group {
+            width: 100%;
+            max-width: none;
+        }
+        .btn-update {
+            min-width: 100% !important;
+            padding: 1rem !important;
+            font-size: clamp(1rem, 4vw, 1.1rem) !important;
+        }
+        .filter-card {
+            padding: 1.2rem;
+        }
+        .stat-card, .chart-card, .table-card {
+            padding: clamp(1.5rem, 5vw, 2.5rem);
+        }
+        #totalGaugeChart, #perOdelBarChart {
+            max-height: 320px;
+        }
+        #gaugeCenterValue {
+            font-size: clamp(2rem, 7vw, 3rem);
+        }
+        table {
+            min-width: 800px;
+        }
+        th, td {
+            font-size: 0.92rem;
+            padding: 0.75rem 0.6rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .container {
+            padding: 0 0.8rem;
+            margin-top: 3rem;
+        }
+        .filter-card, .stat-card, .chart-card, .table-card {
+            padding: 1.5rem;
+        }
+        .btn-update {
+            font-size: 1rem;
+        }
+        table {
+            min-width: 700px;
+        }
+        th, td {
+            font-size: 0.85rem;
+            padding: 0.6rem 0.5rem;
+        }
+    }
+</style>
+
+{% endblock %}

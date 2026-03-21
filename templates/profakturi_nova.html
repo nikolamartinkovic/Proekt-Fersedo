@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Нова Профактура – Fersedo{% endblock %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1200px; margin: 4rem auto; padding: 0 1rem;">
+
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2rem, 6vw, 3rem); margin-bottom: 0.3rem;">
+                <i class="fas fa-file-invoice me-3" style="color:#6366f1;"></i>Нова Профактура
+            </h1>
+            <p style="font-size: 1.15rem; color: var(--text-secondary); margin: 0;">
+                Избери артикли од неплатена залиха
+            </p>
+        </div>
+        <a href="{{ url_for('zalihi.zalihi') }}" class="btn btn-outline-secondary px-4 py-2 fw-bold">
+            <i class="fas fa-arrow-left me-2"></i> Назад
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show rounded-3">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if artikli %}
+
+    <!-- Напомена -->
+    <div class="card shadow border-0 rounded-4 mb-4">
+        <div class="card-body p-4">
+            <label class="form-label fw-bold fs-5 mb-2">
+                <i class="fas fa-sticky-note me-2 text-warning"></i>Напомена (опционално)
+            </label>
+            <input type="text" id="napomenaInput" class="form-control form-control-lg rounded-3"
+                   placeholder="Број на профактура, клиент, забелешка…">
+        </div>
+    </div>
+
+    <!-- Табела со артикли -->
+    <div class="card shadow border-0 rounded-4 overflow-hidden mb-4">
+        <div class="card-header py-4 px-4 fw-bold fs-5"
+             style="background: linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff;">
+            <i class="fas fa-boxes me-2"></i>
+            Неплатена залиха – {{ artikli|length }} артикли
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="artikliTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="width:50px;">
+                                <input type="checkbox" id="selectAll" class="form-check-input"
+                                       title="Избери ги сите">
+                            </th>
+                            <th>Part Number</th>
+                            <th>Опис на артикл</th>
+                            <th class="text-center">Расположливо</th>
+                            <th class="text-center" style="width:180px;">Количина за профактура</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for art in artikli %}
+                        <tr id="row_{{ art.id }}">
+                            <td>
+                                <input type="checkbox" class="form-check-input art-check"
+                                       data-id="{{ art.id }}"
+                                       data-pn="{{ art.part_number }}"
+                                       data-max="{{ art.kolicina_neplatena }}"
+                                       onchange="toggleRow(this)">
+                            </td>
+                            <td class="fw-bold">{{ art.part_number }}</td>
+                            <td class="text-muted">{{ art.ime or '—' }}</td>
+                            <td class="text-center">
+                                <span class="badge fs-6 rounded-pill"
+                                      style="background:#fef3c7;color:#92400e;padding:.4rem .9rem;">
+                                    {{ art.kolicina_neplatena }}
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <input type="number"
+                                       class="form-control form-control-sm text-center qty-input"
+                                       id="qty_{{ art.id }}"
+                                       min="1" max="{{ art.kolicina_neplatena }}"
+                                       placeholder="0"
+                                       disabled
+                                       oninput="validateQty(this, {{ art.kolicina_neplatena }})">
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary bar -->
+    <div id="summaryBar" class="alert rounded-4 border-0 shadow mb-4 d-none"
+         style="background:linear-gradient(135deg,#ede9fe,#ddd6fe);">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <i class="fas fa-shopping-cart fs-4" style="color:#6366f1;"></i>
+            <span class="fw-bold fs-5" style="color:#4c1d95;">
+                Избрано: <span id="summaryCount">0</span> артикли,
+                вкупно <span id="summaryQty">0</span> единици
+            </span>
+        </div>
+    </div>
+
+    <!-- Копчиња -->
+    <div class="d-flex gap-3 justify-content-end flex-wrap">
+        <button class="btn btn-outline-secondary btn-lg px-4 fw-bold"
+                onclick="resetForm()">
+            <i class="fas fa-undo me-2"></i> Ресетирај
+        </button>
+        <button id="btnKreraj" class="btn btn-lg px-5 fw-bold shadow"
+                style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;"
+                onclick="kreirajProfaktura()" disabled>
+            <i class="fas fa-file-invoice me-2"></i> Креирај профактура
+        </button>
+    </div>
+
+    {% else %}
+    <div class="alert alert-warning text-center py-5 rounded-4 shadow">
+        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+        <h4>Нема неплатена залиха</h4>
+        <p class="text-muted">Нема артикли со неплатена залиха за профактурирање.</p>
+        <a href="{{ url_for('zalihi.zalihi') }}" class="btn btn-outline-warning mt-2 px-4 fw-bold">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Залихи
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+// ── Избери ги сите ──────────────────────────────────────────
+document.getElementById('selectAll')?.addEventListener('change', function () {
+    document.querySelectorAll('.art-check').forEach(cb => {
+        cb.checked = this.checked;
+        toggleRow(cb);
+    });
+});
+
+function toggleRow(cb) {
+    const id    = cb.dataset.id;
+    const input = document.getElementById(`qty_${id}`);
+    const row   = document.getElementById(`row_${id}`);
+
+    if (cb.checked) {
+        input.disabled = false;
+        input.value    = input.value || 1;
+        row.style.background = 'rgba(99,102,241,0.07)';
+    } else {
+        input.disabled = true;
+        input.value    = '';
+        row.style.background = '';
+    }
+    updateSummary();
+}
+
+function validateQty(input, max) {
+    let v = parseInt(input.value) || 0;
+    if (v < 0)   input.value = 0;
+    if (v > max) input.value = max;
+    updateSummary();
+}
+
+function updateSummary() {
+    let count = 0, total = 0;
+    document.querySelectorAll('.art-check:checked').forEach(cb => {
+        const qty = parseInt(document.getElementById(`qty_${cb.dataset.id}`).value) || 0;
+        if (qty > 0) { count++; total += qty; }
+    });
+
+    const bar = document.getElementById('summaryBar');
+    const btn = document.getElementById('btnKreraj');
+    if (count > 0) {
+        bar.classList.remove('d-none');
+        document.getElementById('summaryCount').textContent = count;
+        document.getElementById('summaryQty').textContent   = total;
+        btn.disabled = false;
+    } else {
+        bar.classList.add('d-none');
+        btn.disabled = true;
+    }
+}
+
+function resetForm() {
+    document.querySelectorAll('.art-check').forEach(cb => {
+        cb.checked = false;
+        const input = document.getElementById(`qty_${cb.dataset.id}`);
+        input.disabled = true;
+        input.value    = '';
+        document.getElementById(`row_${cb.dataset.id}`).style.background = '';
+    });
+    document.getElementById('selectAll').checked = false;
+    document.getElementById('napomenaInput').value = '';
+    updateSummary();
+}
+
+function kreirajProfaktura() {
+    const artikli  = [];
+    const napomena = document.getElementById('napomenaInput').value.trim();
+
+    document.querySelectorAll('.art-check:checked').forEach(cb => {
+        const id       = cb.dataset.id;
+        const pn       = cb.dataset.pn;
+        const kolicina = parseInt(document.getElementById(`qty_${id}`).value) || 0;
+        if (kolicina > 0) artikli.push({ id: parseInt(id), pn, kolicina });
+    });
+
+    if (!artikli.length) {
+        alert('⚠️ Избери барем еден артикл со количина!');
+        return;
+    }
+
+    const lines = artikli.map(a => `  • ${a.pn}  ×  ${a.kolicina}`).join('\n');
+    if (!confirm(`Креирај профактура со:\n${lines}\n\nЗалихата ќе биде резервирана (одземена од Неплатена).`)) return;
+
+    const btn = document.getElementById('btnKreraj');
+    btn.disabled   = true;
+    btn.innerHTML  = '<i class="fas fa-spinner fa-spin me-2"></i>Се зачувува…';
+
+    fetch('/zalihi/profakturi/nova', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ artikli, napomena })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.href = "{{ url_for('zalihi.profakturi_pending') }}";
+        } else {
+            alert('❌ ' + (data.message || 'Грешка!'));
+            btn.disabled  = false;
+            btn.innerHTML = '<i class="fas fa-file-invoice me-2"></i>Креирај профактура';
+        }
+    })
+    .catch(err => {
+        alert('❌ Грешка при комуникација со серверот!');
+        console.error(err);
+        btn.disabled  = false;
+        btn.innerHTML = '<i class="fas fa-file-invoice me-2"></i>Креирај профактура';
+    });
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,97 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 700px; margin: 4rem auto; padding: 0 1rem; text-align: center;">
+    <h1 style="margin-bottom: 2rem; font-weight: 700; color: var(--text); font-size: clamp(1.8rem, 5vw, 2.5rem);">Избриши камин</h1>
+
+    {% if kamini %}
+    <form method="POST" style="background: var(--surface); padding: clamp(1.5rem, 5vw, 2rem); border-radius: var(--radius); box-shadow: var(--shadow);">
+        <div class="table-container" style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 2rem; max-height: 400px; overflow-y: auto;">
+            <table style="width: 100%; min-width: 300px; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f1f5f9;">
+                        <th style="padding: 0.8rem; text-align: center; width: 50px;">
+                            <input type="checkbox" id="selectAll" onclick="toggleSelectAll()">
+                        </th>
+                        <th style="padding: 0.8rem; text-align: left; font-weight: 600;">Име на камин</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for kamin in kamini %}
+                    <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.2s;">
+                        <td style="padding: 0.8rem; text-align: center;">
+                            <input type="checkbox" name="selected_kamini" value="{{ kamin }}">
+                        </td>
+                        <td style="padding: 0.8rem;">{{ kamin }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Копче за бришење со потврда -->
+        <button type="submit" 
+                onclick="return confirm('Сигурно сакаш да ги избришеш избраните камини? Ова ќе ги избрише и сите записи поврзани со нив! Операцијата е неповратна!');"
+                style="width: 100%; padding: 1rem; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); transition: all 0.3s; min-height: 52px; font-size: 1.1rem;">
+            <i class="fas fa-trash-alt"></i> Избриши избрани
+        </button>
+    </form>
+
+    {% else %}
+    <p style="color: var(--text-secondary); font-size: 1.2rem; padding: 3rem 1rem; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);">
+        Нема камини за бришење
+    </p>
+    {% endif %}
+
+    <a href="{{ url_for('main.select_kamin') }}" style="display: block; margin-top: 2.5rem; color: var(--text-secondary); text-decoration: none; font-weight: 500; font-size: 1.1rem;">
+        <i class="fas fa-arrow-left"></i> Назад на избор на камин
+    </a>
+</div>
+
+<script>
+    function toggleSelectAll() {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.querySelectorAll('input[name="selected_kamini"]');
+        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    }
+</script>
+
+<style>
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth scroll на iOS */
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    table tr:hover {
+        background: rgba(220, 38, 38, 0.1);
+    }
+    th, td {
+        padding: 0.8rem;
+        text-align: left;
+    }
+    thead tr {
+        background: #f1f5f9;
+        font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .container { padding: 0 0.8rem; }
+        h1 { font-size: 1.8rem; }
+        button { width: 100%; padding: 1rem; font-size: 1rem; min-height: 52px; }
+        table { font-size: 0.92rem; }
+        th, td { padding: 0.7rem 0.6rem; }
+    }
+
+    @media (max-width: 480px) {
+        .container { padding: 0.6rem; }
+        h1 { font-size: 1.6rem; }
+        p { font-size: 1rem; }
+    }
+</style>
+
+{% endblock %}

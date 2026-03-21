@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="mk" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="theme-color" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Fersedo">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="Fersedo - Систем за производство, набавки, грешки и одмори">
+
+    <title>{% block title %}Fersedo - Перформанси{% endblock %}</title>
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css' rel='stylesheet' />
+
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a67d8;
+            --primary-light: #a5b4fc;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #eab308;
+            --info: #0dcaf0;
+            --light: #f8fafc;
+            --dark: #0f172a;
+            --gray: #64748b;
+            --gray-light: #cbd5e1;
+            --bg: #f8fafc;
+            --surface: white;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow: 0 4px 20px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 40px rgba(0,0,0,0.15);
+            --radius: 12px;
+            --transition: all 0.3s ease;
+
+            /* Sidebar specific */
+            --sb-width-collapsed: 64px;
+            --sb-width-expanded: 260px;
+            --sb-bg: #ffffff;
+            --sb-border: #e8edf5;
+            --sb-item-hover: rgba(102,126,234,0.08);
+            --sb-item-active: rgba(102,126,234,0.14);
+            --sb-icon-color: #94a3b8;
+            --sb-text-color: #374151;
+            --sb-group-color: #9ca3af;
+            --sb-shadow: 4px 0 32px rgba(15,23,42,0.10);
+            --sb-transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        [data-theme="dark"] {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --border: #475569;
+            --shadow: 0 4px 20px rgba(0,0,0,0.5);
+
+            --sb-bg: #1a2236;
+            --sb-border: #2d3a50;
+            --sb-item-hover: rgba(102,126,234,0.12);
+            --sb-item-active: rgba(102,126,234,0.20);
+            --sb-icon-color: #64748b;
+            --sb-text-color: #cbd5e1;
+            --sb-group-color: #475569;
+            --sb-shadow: 4px 0 32px rgba(0,0,0,0.4);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html, body { height:100%; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+        body { min-height:100vh; touch-action:manipulation; }
+
+        /* ═══════════════════════════════════════════
+           HEADER
+        ═══════════════════════════════════════════ */
+        header {
+            position: fixed;
+            top: 0; left: 0; width: 100%;
+            z-index: 1200;
+            background: var(--surface);
+            box-shadow: 0 1px 0 var(--border), var(--shadow-sm);
+            height: 64px;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1.25rem;
+            height: 64px;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .nav-brand img { height: 44px; width: auto; }
+
+        .menu-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px; height: 40px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background 0.2s, color 0.2s;
+            font-size: 1.2rem;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(102,126,234,0.1);
+            color: var(--primary);
+        }
+
+        /* ═══════════════════════════════════════════
+           SIDEBAR
+        ═══════════════════════════════════════════ */
+
+        #sb-trigger {
+            position: fixed;
+            top: 64px; left: 0;
+            width: var(--sb-width-collapsed);
+            height: calc(100vh - 64px);
+            z-index: 1080;
+            pointer-events: none;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 64px; left: 0;
+            width: var(--sb-width-collapsed);
+            height: calc(100vh - 64px);
+            background: var(--sb-bg);
+            border-right: 1px solid var(--sb-border);
+            box-shadow: none;
+            z-index: 1100;
+            overflow: hidden;
+            transition:
+                width var(--sb-transition),
+                box-shadow var(--sb-transition);
+            will-change: width;
+        }
+
+        @media (min-width: 992px) {
+            .sidebar:hover {
+                width: var(--sb-width-expanded);
+                box-shadow: var(--sb-shadow);
+            }
+        }
+
+        .sidebar.mobile-open {
+            width: var(--sb-width-expanded) !important;
+            box-shadow: var(--sb-shadow) !important;
+        }
+
+        .sidebar-inner {
+            width: var(--sb-width-expanded);
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0.75rem 0 2rem;
+            scrollbar-width: none;
+        }
+        .sidebar-inner::-webkit-scrollbar { display: none; }
+
+        .sb-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1.2rem 0 0.4rem 1.1rem;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--sb-group-color);
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        .sb-group::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--sb-border);
+            margin-right: 0.75rem;
+            opacity: 0;
+            transition: opacity var(--sb-transition);
+        }
+
+        .sidebar:hover .sb-group::after,
+        .sidebar.mobile-open .sb-group::after {
+            opacity: 1;
+        }
+
+        .sb-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            padding: 0 0.75rem;
+            height: 46px;
+            color: var(--sb-text-color);
+            text-decoration: none;
+            border-radius: 10px;
+            margin: 2px 0.5rem;
+            overflow: hidden;
+            transition:
+                background 0.2s ease,
+                color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .sb-link:hover {
+            background: var(--sb-item-hover);
+            color: var(--primary);
+        }
+
+        .sb-link.active {
+            background: var(--sb-item-active);
+            color: var(--primary);
+        }
+
+        .sb-link.active::before {
+            content: '';
+            position: absolute;
+            left: -0.5rem;
+            top: 50%; transform: translateY(-50%);
+            width: 4px; height: 60%;
+            background: var(--primary);
+            border-radius: 0 4px 4px 0;
+        }
+
+        .sb-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px; height: 40px;
+            border-radius: 9px;
+            font-size: 1.05rem;
+            color: var(--sb-icon-color);
+            transition: color 0.2s ease, background 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .sb-link:hover .sb-icon,
+        .sb-link.active .sb-icon {
+            color: var(--primary);
+            background: rgba(102,126,234,0.10);
+        }
+
+        .sb-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateX(-6px);
+            transition:
+                opacity 0.28s ease 0.04s,
+                transform 0.28s ease 0.04s;
+            pointer-events: none;
+            padding-left: 0.5rem;
+        }
+
+        .sidebar:hover .sb-label,
+        .sidebar.mobile-open .sb-label {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .sidebar:hover .sb-link:nth-child(1) .sb-label  { transition-delay: 0.00s; }
+        .sidebar:hover .sb-link:nth-child(2) .sb-label  { transition-delay: 0.02s; }
+        .sidebar:hover .sb-link:nth-child(3) .sb-label  { transition-delay: 0.04s; }
+        .sidebar:hover .sb-link:nth-child(4) .sb-label  { transition-delay: 0.06s; }
+        .sidebar:hover .sb-link:nth-child(5) .sb-label  { transition-delay: 0.08s; }
+        .sidebar:hover .sb-link:nth-child(6) .sb-label  { transition-delay: 0.10s; }
+        .sidebar:hover .sb-link:nth-child(7) .sb-label  { transition-delay: 0.12s; }
+        .sidebar:hover .sb-link:nth-child(8) .sb-label  { transition-delay: 0.14s; }
+        .sidebar:hover .sb-link:nth-child(9) .sb-label  { transition-delay: 0.16s; }
+        .sidebar:hover .sb-link:nth-child(10) .sb-label { transition-delay: 0.18s; }
+        .sidebar:hover .sb-link:nth-child(11) .sb-label { transition-delay: 0.20s; }
+        .sidebar:hover .sb-link:nth-child(12) .sb-label { transition-delay: 0.22s; }
+        .sidebar:hover .sb-link:nth-child(13) .sb-label { transition-delay: 0.24s; }
+        .sidebar:hover .sb-link:nth-child(14) .sb-label { transition-delay: 0.26s; }
+        .sidebar:hover .sb-link:nth-child(15) .sb-label { transition-delay: 0.28s; }
+
+        @media (min-width: 992px) {
+            .sidebar:not(:hover) .sb-link::after {
+                content: attr(data-tooltip);
+                position: absolute;
+                left: calc(var(--sb-width-collapsed) - 0.2rem);
+                top: 50%; transform: translateY(-50%);
+                background: #1e293b;
+                color: #f8fafc;
+                font-size: 0.78rem;
+                font-weight: 600;
+                padding: 0.35rem 0.75rem;
+                border-radius: 7px;
+                white-space: nowrap;
+                pointer-events: none;
+                opacity: 0;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+                z-index: 9999;
+            }
+            .sidebar:not(:hover) .sb-link:hover::after {
+                opacity: 1;
+                transition: opacity 0.18s ease 0.4s;
+            }
+        }
+
+        /* ═══════════════════════════════════════════
+           OVERLAY (mobile)
+        ═══════════════════════════════════════════ */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.45);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+        .overlay.show { opacity: 1; visibility: visible; }
+
+        /* ═══════════════════════════════════════════
+           MAIN CONTENT
+        ═══════════════════════════════════════════ */
+        main {
+            margin-top: 64px;
+            margin-left: var(--sb-width-collapsed);
+            transition: margin-left var(--sb-transition);
+            padding: 1rem;
+            min-height: calc(100vh - 64px);
+        }
+
+        @media (max-width: 991px) {
+            main { margin-left: 0 !important; }
+            .sidebar { width: 0; border-right: none; }
+            .sidebar.mobile-open { width: var(--sb-width-expanded) !important; }
+        }
+
+        @media (max-width: 576px) {
+            nav { padding: 0 0.75rem; }
+        }
+
+        /* ═══════════════════════════════════════════
+           SCROLL TO TOP
+        ═══════════════════════════════════════════ */
+        #scrollToTopBtn {
+            display: none;
+            position: fixed;
+            bottom: 90px; right: 28px;
+            z-index: 998;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102,126,234,0.45);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            line-height: 1;
+        }
+        #scrollToTopBtn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 28px rgba(102,126,234,0.55);
+        }
+
+        /* ═══════════════════════════════════════════
+           IMAGE MODAL
+        ═══════════════════════════════════════════ */
+        #imageModal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.92);
+            z-index: 2000;
+        }
+
+        #modalImage {
+            margin: auto;
+            display: block;
+            max-width: 95%;
+            max-height: 90vh;
+            object-fit: contain;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 8px;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 16px; right: 24px;
+            color: #e2e8f0;
+            font-size: 2.5rem;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        .close-modal:hover { color: #fff; }
+
+        /* ═══════════════════════════════════════════
+           UTILITY CLASSES
+        ═══════════════════════════════════════════ */
+        .efektivnost-value {
+            font-size: clamp(1.5rem, 5vw, 2.2rem);
+            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            min-width: 100px;
+            display: inline-block;
+            text-align: center;
+        }
+        .high   { background: #d1fae5; color: #065f46; }
+        .medium { background: #fef3c7; color: #92400e; }
+        .low    { background: #fee2e2; color: #991b1b; }
+
+        .module-card {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 1.25rem;
+            border-radius: 18px;
+            text-decoration: none;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+        }
+        .module-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 18px 45px rgba(0,0,0,0.18);
+            border-color: rgba(102,126,234,0.35);
+        }
+        .module-icon {
+            width:64px; height:64px; border-radius:16px;
+            display:flex; align-items:center; justify-content:center;
+            background: rgba(102,126,234,0.12); color: var(--primary);
+            font-size: 1.8rem; flex: 0 0 64px;
+        }
+        .module-text { flex:1; min-width:0; }
+        .module-title { font-weight:800; font-size:1.25rem; color:var(--text); line-height:1.2; }
+        .module-subtitle { margin-top:.25rem; color:var(--text-secondary); font-weight:600; }
+        .module-arrow {
+            width:44px; height:44px; border-radius:14px;
+            display:flex; align-items:center; justify-content:center;
+            background:rgba(102,126,234,0.10); color:var(--primary);
+            transition: transform .25s ease; flex:0 0 44px;
+        }
+        .module-card:hover .module-arrow { transform: translateX(4px); }
+
+        @media (max-width:576px) {
+            .module-card { padding:1.1rem 1rem; }
+            .module-icon { width:56px; height:56px; border-radius:14px; font-size:1.6rem; flex-basis:56px; }
+            .module-title { font-size:1.15rem; }
+        }
+
+        .alert-container {
+            position: fixed;
+            top: 74px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 1050;
+            max-width: 90%;
+            width: 500px;
+            pointer-events: none;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .alert {
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            pointer-events: auto;
+        }
+        .alert-success { background-color:#d4edda; color:#155724; border-color:#c3e6cb; }
+
+        /* ═══════════════════════════════════════════
+           PWA INSTALL BANNER
+        ═══════════════════════════════════════════ */
+        #pwaInstallBanner {
+            display: none;
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            z-index: 1300;
+            background: linear-gradient(135deg, #1e40af, #1e293b);
+            color: white;
+            padding: 14px 20px;
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.25);
+            animation: slideUp 0.35s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .pwa-banner-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 680px;
+            margin: 0 auto;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .pwa-banner-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pwa-banner-info img {
+            width: 46px; height: 46px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .pwa-banner-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            line-height: 1.2;
+        }
+
+        .pwa-banner-subtitle {
+            font-size: 0.78rem;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        .pwa-banner-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .pwa-btn-dismiss {
+            padding: 7px 16px;
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.2s;
+        }
+        .pwa-btn-dismiss:hover { background: rgba(255,255,255,0.1); }
+
+        .pwa-btn-install {
+            padding: 7px 18px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.85rem;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .pwa-btn-install:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 480px) {
+            .pwa-banner-inner { flex-direction: column; align-items: flex-start; }
+            .pwa-banner-actions { width: 100%; justify-content: flex-end; }
+        }
+    </style>
+</head>
+
+<body>
+
+<button id="scrollToTopBtn" title="Назад на врвот">
+    <i class="fas fa-arrow-up"></i>
+</button>
+
+<div id="imageModal">
+    <span class="close-modal">×</span>
+    <img id="modalImage" src="" alt="Зголемена слика">
+</div>
+
+<!-- ═══ PWA INSTALL BANNER ═══ -->
+<div id="pwaInstallBanner">
+    <div class="pwa-banner-inner">
+        <div class="pwa-banner-info">
+            <img src="/static/icons/icon-192.png" alt="Fersedo">
+            <div>
+                <div class="pwa-banner-title">Fersedo Sistem</div>
+                <div class="pwa-banner-subtitle">Инсталирај ја апликацијата за побрз пристап</div>
+            </div>
+        </div>
+        <div class="pwa-banner-actions">
+            <button class="pwa-btn-dismiss" onclick="dismissInstallBanner()">Не сега</button>
+            <button class="pwa-btn-install" onclick="installPWA()">
+                <i class="fas fa-download me-1"></i> Инсталирај
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ HEADER ═══ -->
+<header>
+    <nav>
+        <a href="{{ url_for('auth.index') }}" class="nav-brand">
+            <img src="{{ url_for('static', filename='logo.webp') }}" alt="Fersedo Лого">
+        </a>
+
+        <div style="display:flex; align-items:center; gap:0.75rem;">
+            {% if session.user %}
+                <span class="d-none d-md-flex align-items-center gap-2"
+                      style="color:var(--text-secondary); font-weight:500; font-size:0.875rem;">
+                    <i class="fas fa-circle-user" style="color:var(--primary);"></i>
+                    {{ session.user }}
+                </span>
+            {% endif %}
+            <button class="menu-toggle d-flex d-lg-none" onclick="toggleMobileSidebar()" aria-label="Мени">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+</header>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-inner" id="sidebar-inner">
+
+        {% if session.user %}
+            {% set allowed = (session.allowed_modules or '').split(',') | map('trim') | list %}
+
+            {% if session.is_admin %}
+
+                <div class="sb-group"><i class="fas fa-shield-halved" style="font-size:0.7rem;"></i> Админ</div>
+                <a class="sb-link" href="{{ url_for('admin.dashboard') }}" data-tooltip="Dashboard">
+                    <span class="sb-icon"><i class="fas fa-chart-line"></i></span>
+                    <span class="sb-label">Dashboard</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('admin.admin_users') }}" data-tooltip="Корисници">
+                    <span class="sb-icon"><i class="fas fa-users-cog"></i></span>
+                    <span class="sb-label">Корисници</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('admin.pregled_greski') }}" data-tooltip="Грешки">
+                    <span class="sb-icon"><i class="fas fa-triangle-exclamation"></i></span>
+                    <span class="sb-label">Грешки</span>
+                </a>
+
+                <div class="sb-group"><i class="fas fa-industry" style="font-size:0.7rem;"></i> Производство</div>
+                <a class="sb-link" href="{{ url_for('main.select_kamin') }}" data-tooltip="Нов запис">
+                    <span class="sb-icon"><i class="fas fa-plus-circle"></i></span>
+                    <span class="sb-label">Нов запис</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('artikli.add') }}" data-tooltip="Нов артикл">
+                    <span class="sb-icon"><i class="fas fa-box-open"></i></span>
+                    <span class="sb-label">Отвори нов артикл</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('main.moj_zapisi') }}" data-tooltip="Мои записи">
+                    <span class="sb-icon"><i class="fas fa-list"></i></span>
+                    <span class="sb-label">Мои записи</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('main.kalkulacija') }}" data-tooltip="Калкулација">
+                    <span class="sb-icon"><i class="fas fa-calculator"></i></span>
+                    <span class="sb-label">Калкулација</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('artikli.artikli') }}" data-tooltip="Артикли">
+                    <span class="sb-icon"><i class="fas fa-boxes-stacked"></i></span>
+                    <span class="sb-label">Артикли</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('main.plan_proizvodstvo') }}" data-tooltip="План">
+                    <span class="sb-icon"><i class="fas fa-calendar-check"></i></span>
+                    <span class="sb-label">План за производство</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('main.izvestaj') }}" data-tooltip="Извештај">
+                    <span class="sb-icon"><i class="fas fa-file-alt"></i></span>
+                    <span class="sb-label">Извештај</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('admin.procesni_cekori') }}" data-tooltip="Процесни чекори">
+                    <span class="sb-icon"><i class="fas fa-cogs"></i></span>
+                    <span class="sb-label">Процесни чекори</span>
+                </a>
+
+                <div class="sb-group"><i class="fas fa-warehouse" style="font-size:0.7rem;"></i> Залихи</div>
+                <a class="sb-link" href="{{ url_for('zalihi.zalihi') }}" data-tooltip="Залихи">
+                    <span class="sb-icon"><i class="fas fa-warehouse"></i></span>
+                    <span class="sb-label">Залихи</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('admin.email_recipients') }}" data-tooltip="Email примачи">
+                    <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
+                    <span class="sb-label">Email примачи</span>
+                </a>
+
+                <!-- ── КВАЛИТЕТ (Admin) ── -->
+                <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
+                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet') }}" data-tooltip="Квалитет">
+                    <span class="sb-icon"><i class="fas fa-check-circle"></i></span>
+                    <span class="sb-label">Квалитет</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_select_kamin') }}" data-tooltip="Нова контрола">
+                    <span class="sb-icon"><i class="fas fa-clipboard-check"></i></span>
+                    <span class="sb-label">Нова контрола</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_arhiva') }}" data-tooltip="Архива на контроли">
+                    <span class="sb-icon"><i class="fas fa-folder-open"></i></span>
+                    <span class="sb-label">Архива на контроли</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_template_manager') }}" data-tooltip="QC Шаблони">
+                    <span class="sb-icon"><i class="fas fa-sliders"></i></span>
+                    <span class="sb-label">QC Шаблони</span>
+                </a>
+
+                <div class="sb-group"><i class="fas fa-cart-shopping" style="font-size:0.7rem;"></i> Набавки</div>
+                <a class="sb-link" href="{{ url_for('nabavki.nabavki') }}" data-tooltip="Набавки">
+                    <span class="sb-icon"><i class="fas fa-shopping-cart"></i></span>
+                    <span class="sb-label">Набавки</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('nabavki.arhiva') }}" data-tooltip="Архива">
+                    <span class="sb-icon"><i class="fas fa-archive"></i></span>
+                    <span class="sb-label">Архива</span>
+                </a>
+
+                <!-- ── ОДМОРИ (Admin) ── -->
+                <div class="sb-group"><i class="fas fa-sun" style="font-size:0.7rem;"></i> Одмори</div>
+                <a class="sb-link" href="{{ url_for('main.odmori') }}" data-tooltip="Одмори">
+                    <span class="sb-icon"><i class="fas fa-umbrella-beach"></i></span>
+                    <span class="sb-label">Одмори</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('main.baranje_odmor') }}" data-tooltip="Барање за одмор">
+                    <span class="sb-icon"><i class="fas fa-file-signature"></i></span>
+                    <span class="sb-label">Барање за одмор</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('odmori.odmori_vraboteni') }}" data-tooltip="Вработени">
+                    <span class="sb-icon"><i class="fas fa-users"></i></span>
+                    <span class="sb-label">Вработени</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('odmori.odmori_kalendar') }}" data-tooltip="Календар">
+                    <span class="sb-icon"><i class="fas fa-calendar-alt"></i></span>
+                    <span class="sb-label">Календар</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('odmori.odmori_pregled_odmori') }}" data-tooltip="Преглед на одмори">
+                    <span class="sb-icon"><i class="fas fa-list-check"></i></span>
+                    <span class="sb-label">Преглед на одмори</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('odmori.odmori_sekojdnevni_otsustva') }}" data-tooltip="Отсуства">
+                    <span class="sb-icon"><i class="fas fa-user-clock"></i></span>
+                    <span class="sb-label">Секојдневни отсуства</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('odmori.odmori_manager_emails') }}" data-tooltip="Email за менаџери">
+                    <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
+                    <span class="sb-label">📧 Email за менаџери</span>
+                </a>
+
+            {% else %}
+
+                {% if 'select_kamin' in allowed %}
+                <a class="sb-link" href="{{ url_for('main.select_kamin') }}" data-tooltip="Нов запис">
+                    <span class="sb-icon"><i class="fas fa-plus-circle"></i></span>
+                    <span class="sb-label">Нов запис</span>
+                </a>
+                {% endif %}
+                {% if 'add_part' in allowed %}
+                <a class="sb-link" href="{{ url_for('artikli.add') }}" data-tooltip="Нов артикл">
+                    <span class="sb-icon"><i class="fas fa-box-open"></i></span>
+                    <span class="sb-label">Отвори нов артикл</span>
+                </a>
+                {% endif %}
+                {% if 'moj_zapisi' in allowed %}
+                <a class="sb-link" href="{{ url_for('main.moj_zapisi') }}" data-tooltip="Мои записи">
+                    <span class="sb-icon"><i class="fas fa-list"></i></span>
+                    <span class="sb-label">Мои записи</span>
+                </a>
+                {% endif %}
+                {% if 'kalkulacija' in allowed %}
+                <a class="sb-link" href="{{ url_for('main.kalkulacija') }}" data-tooltip="Калкулација">
+                    <span class="sb-icon"><i class="fas fa-calculator"></i></span>
+                    <span class="sb-label">Калкулација</span>
+                </a>
+                {% endif %}
+                {% if 'artikli' in allowed %}
+                <a class="sb-link" href="{{ url_for('artikli.artikli') }}" data-tooltip="Артикли">
+                    <span class="sb-icon"><i class="fas fa-boxes-stacked"></i></span>
+                    <span class="sb-label">Артикли</span>
+                </a>
+                {% endif %}
+                {% if 'plan_proizvodstvo' in allowed %}
+                <a class="sb-link" href="{{ url_for('main.plan_proizvodstvo') }}" data-tooltip="План">
+                    <span class="sb-icon"><i class="fas fa-calendar-check"></i></span>
+                    <span class="sb-label">План за производство</span>
+                </a>
+                {% endif %}
+                {% if 'izvestaj' in allowed %}
+                <a class="sb-link" href="{{ url_for('main.izvestaj') }}" data-tooltip="Извештај">
+                    <span class="sb-icon"><i class="fas fa-file-alt"></i></span>
+                    <span class="sb-label">Извештај</span>
+                </a>
+                {% endif %}
+                {% if 'procesni_cekori' in allowed %}
+                <a class="sb-link" href="{{ url_for('admin.procesni_cekori') }}" data-tooltip="Процесни чекори">
+                    <span class="sb-icon"><i class="fas fa-cogs"></i></span>
+                    <span class="sb-label">Процесни чекори</span>
+                </a>
+                {% endif %}
+
+                {% if 'zalihi' in allowed %}
+                <div class="sb-group"><i class="fas fa-warehouse" style="font-size:0.7rem;"></i> Залихи</div>
+                <a class="sb-link" href="{{ url_for('zalihi.zalihi') }}" data-tooltip="Залихи">
+                    <span class="sb-icon"><i class="fas fa-warehouse"></i></span>
+                    <span class="sb-label">Залихи</span>
+                </a>
+                {% endif %}
+
+                <!-- ── КВАЛИТЕТ (Non-admin) ── -->
+                {% if 'kvalitet_nova' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_template' in allowed %}
+                <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
+                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet') }}" data-tooltip="Квалитет">
+                    <span class="sb-icon"><i class="fas fa-check-circle"></i></span>
+                    <span class="sb-label">Квалитет</span>
+                </a>
+                {% endif %}
+                {% if 'kvalitet_nova' in allowed %}
+                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_select_kamin') }}" data-tooltip="Нова контрола">
+                    <span class="sb-icon"><i class="fas fa-clipboard-check"></i></span>
+                    <span class="sb-label">Нова контрола</span>
+                </a>
+                {% endif %}
+                {% if 'kvalitet_arhiva' in allowed %}
+                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_arhiva') }}" data-tooltip="Архива на контроли">
+                    <span class="sb-icon"><i class="fas fa-folder-open"></i></span>
+                    <span class="sb-label">Архива на контроли</span>
+                </a>
+                {% endif %}
+                {% if 'kvalitet_template' in allowed %}
+                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_template_manager') }}" data-tooltip="QC Шаблони">
+                    <span class="sb-icon"><i class="fas fa-sliders"></i></span>
+                    <span class="sb-label">QC Шаблони</span>
+                </a>
+                {% endif %}
+
+                {% if 'nabavki' in allowed %}
+                <div class="sb-group"><i class="fas fa-cart-shopping" style="font-size:0.7rem;"></i> Набавки</div>
+                <a class="sb-link" href="{{ url_for('nabavki.nabavki') }}" data-tooltip="Набавки">
+                    <span class="sb-icon"><i class="fas fa-shopping-cart"></i></span>
+                    <span class="sb-label">Набавки</span>
+                </a>
+                <a class="sb-link" href="{{ url_for('nabavki.arhiva') }}" data-tooltip="Архива">
+                    <span class="sb-icon"><i class="fas fa-archive"></i></span>
+                    <span class="sb-label">Архива</span>
+                </a>
+                {% endif %}
+
+                <!-- ── ОДМОРИ (Non-admin) ── -->
+                {% if 'odmori' in allowed or 'baranje_odmor' in allowed or 'odmori_vraboteni' in allowed or 'odmori_kalendar' in allowed or 'odmori_pregled_odmori' in allowed or 'odmori_sekojdnevni_otsustva' in allowed or 'odmori_manager_emails' in allowed %}
+                <div class="sb-group"><i class="fas fa-sun" style="font-size:0.7rem;"></i> Одмори</div>
+                {% endif %}
+                {% if 'odmori' in allowed %}
+                <a class="sb-link" href="{{ url_for('main.odmori') }}" data-tooltip="Одмори">
+                    <span class="sb-icon"><i class="fas fa-umbrella-beach"></i></span>
+                    <span class="sb-label">Одмори</span>
+                </a>
+                {% endif %}
+                {% if 'baranje_odmor' in allowed %}
+                <a class="sb-link" href="{{ url_for('main.baranje_odmor') }}" data-tooltip="Барање за одмор">
+                    <span class="sb-icon"><i class="fas fa-file-signature"></i></span>
+                    <span class="sb-label">Барање за одмор</span>
+                </a>
+                {% endif %}
+                {% if 'odmori_vraboteni' in allowed %}
+                <a class="sb-link" href="{{ url_for('odmori.odmori_vraboteni') }}" data-tooltip="Вработени">
+                    <span class="sb-icon"><i class="fas fa-users"></i></span>
+                    <span class="sb-label">Вработени</span>
+                </a>
+                {% endif %}
+                {% if 'odmori_kalendar' in allowed %}
+                <a class="sb-link" href="{{ url_for('odmori.odmori_kalendar') }}" data-tooltip="Календар">
+                    <span class="sb-icon"><i class="fas fa-calendar-alt"></i></span>
+                    <span class="sb-label">Календар</span>
+                </a>
+                {% endif %}
+                {% if 'odmori_pregled_odmori' in allowed %}
+                <a class="sb-link" href="{{ url_for('odmori.odmori_pregled_odmori') }}" data-tooltip="Преглед на одмори">
+                    <span class="sb-icon"><i class="fas fa-list-check"></i></span>
+                    <span class="sb-label">Преглед на одмори</span>
+                </a>
+                {% endif %}
+                {% if 'odmori_sekojdnevni_otsustva' in allowed %}
+                <a class="sb-link" href="{{ url_for('odmori.odmori_sekojdnevni_otsustva') }}" data-tooltip="Отсуства">
+                    <span class="sb-icon"><i class="fas fa-user-clock"></i></span>
+                    <span class="sb-label">Секојдневни отсуства</span>
+                </a>
+                {% endif %}
+                {% if 'odmori_manager_emails' in allowed %}
+                <a class="sb-link" href="{{ url_for('odmori.odmori_manager_emails') }}" data-tooltip="Email за менаџери">
+                    <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
+                    <span class="sb-label">📧 Email за менаџери</span>
+                </a>
+                {% endif %}
+
+            {% endif %}
+
+            <div style="height:1px; background:var(--sb-border); margin:0.75rem 0.75rem;"></div>
+            <a class="sb-link" href="{{ url_for('auth.logout') }}" data-tooltip="Одјави се"
+               style="color:#ef4444;">
+                <span class="sb-icon" style="color:#ef4444;"><i class="fas fa-right-from-bracket"></i></span>
+                <span class="sb-label">Одјави се</span>
+            </a>
+
+        {% else %}
+            <a class="sb-link" href="{{ url_for('auth.login') }}" data-tooltip="Најава">
+                <span class="sb-icon"><i class="fas fa-right-to-bracket"></i></span>
+                <span class="sb-label">Најава</span>
+            </a>
+        {% endif %}
+
+    </div>
+</aside>
+
+<div class="overlay" id="overlay" onclick="toggleMobileSidebar()"></div>
+
+<!-- ═══ MAIN ═══ -->
+<main class="container-fluid p-0" id="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</main>
+
+<!-- ═══ SCRIPTS ═══ -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    function toggleMobileSidebar() {
+        const sb = document.getElementById('sidebar');
+        const ov = document.getElementById('overlay');
+        sb.classList.toggle('mobile-open');
+        ov.classList.toggle('show');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const path = location.pathname;
+        document.querySelectorAll('.sb-link').forEach(link => {
+            if (link.getAttribute('href') === path) {
+                link.classList.add('active');
+            }
+        });
+
+        let scrollTick;
+        window.addEventListener('scroll', () => {
+            if (!scrollTick) {
+                scrollTick = setTimeout(() => {
+                    const btn = document.getElementById('scrollToTopBtn');
+                    if (btn) btn.style.display = window.scrollY > 300 ? 'flex' : 'none';
+                    scrollTick = null;
+                }, 100);
+            }
+        });
+
+        document.getElementById('scrollToTopBtn')?.addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+
+        document.querySelectorAll('.zoomable-img, img[data-full]').forEach(img => {
+            img.style.cursor = 'zoom-in';
+            img.addEventListener('click', () => {
+                modalImg.src = img.dataset.full || img.src;
+                modal.style.display = 'block';
+            });
+        });
+
+        document.querySelector('.close-modal')?.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        modal?.addEventListener('click', e => {
+            if (e.target === modal) modal.style.display = 'none';
+        });
+    });
+</script>
+
+<!-- ═══ PWA: Service Worker Registration ═══ -->
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then(r => console.log('[SW] Registered, scope:', r.scope))
+            .catch(e => console.error('[SW] Registration failed:', e));
+    });
+}
+</script>
+
+<!-- ═══ PWA: Install Banner ═══ -->
+<script>
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // Провери дали корисникот веќе одбил и дали поминале 3 дена
+    const dismissed = localStorage.getItem('pwaInstallDismissed');
+    if (dismissed && Date.now() < parseInt(dismissed)) return;
+
+    // Прикажи го банерот по 1 секунда
+    setTimeout(() => {
+        document.getElementById('pwaInstallBanner').style.display = 'block';
+    }, 1000);
+});
+
+function installPWA() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(choice => {
+        document.getElementById('pwaInstallBanner').style.display = 'none';
+        deferredPrompt = null;
+        if (choice.outcome === 'accepted') {
+            localStorage.removeItem('pwaInstallDismissed');
+        }
+    });
+}
+
+function dismissInstallBanner() {
+    document.getElementById('pwaInstallBanner').style.display = 'none';
+    // Не прикажувај 3 дена
+    const expiry = Date.now() + (3 * 24 * 60 * 60 * 1000);
+    localStorage.setItem('pwaInstallDismissed', expiry);
+}
+
+// Скриј го банерот ако е веќе инсталирана
+window.addEventListener('appinstalled', () => {
+    document.getElementById('pwaInstallBanner').style.display = 'none';
+    deferredPrompt = null;
+    localStorage.removeItem('pwaInstallDismissed');
+});
+</script>
+
+<!-- ═══ PWA: Push Notifications ═══ -->
+<script>
+const VAPID_PUBLIC_KEY = "{{ VAPID_PUBLIC_KEY }}";
+
+async function subscribeToPush() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    try {
+        const reg = await navigator.serviceWorker.ready;
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') return;
+        const sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+        await fetch('/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sub)
+        });
+    } catch(e) { console.error('Push subscription error:', e); }
+}
+
+function urlBase64ToUint8Array(b64) {
+    const pad = '='.repeat((4 - b64.length % 4) % 4);
+    const base64 = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from(raw, c => c.charCodeAt(0));
+}
+
+window.addEventListener('load', subscribeToPush);
+</script>
+
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js'></script>
+
+</body>
+</html>

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto; padding: 0 1rem;">
+    
+    <!-- Наслов + Export копче -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.3rem;">
+                Историја на извози
+            </h1>
+            <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary); margin: 0;">
+                Преглед на сите извезени артикли
+            </p>
+        </div>
+        
+        <a href="{{ url_for('zalihi.istorija_export') }}" 
+           class="btn btn-success btn-lg d-flex align-items-center gap-2 shadow">
+            <i class="fas fa-file-excel"></i> Export во Excel
+        </a>
+    </div>
+
+    {% if logovi %}
+    <div class="table-responsive">
+        <table class="table table-hover table-striped align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Датум</th>
+                    <th>Недела</th>
+                    <th>Корисник</th>
+                    <th>PN</th>
+                    <th>Име на артикл</th>
+                    <th class="text-center">Количина</th>
+                    <th>Тип</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logovi %}
+                <tr>
+                    <td>{{ log.datum[:16] }}</td>
+                    <td><span class="badge bg-primary">{{ log.nedela }}</span></td>
+                    <td><strong>{{ log.username }}</strong></td>
+                    <td class="fw-bold">{{ log.pn }}</td>
+                    <td>{{ log.ime or '—' }}</td>
+                    <td class="text-center fw-bold text-danger">{{ log.kolicina }}</td>
+                    <td>
+                        {% if 'Платена' in log.tip %}
+                            <span class="badge bg-success">{{ log.tip }}</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">{{ log.tip }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center py-5 shadow-lg rounded-4">
+        <i class="fas fa-inbox fa-3x mb-3 text-muted"></i>
+        <h4>Сè уште нема извози во историјата</h4>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('zalihi.izvoz') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Извоз
+        </a>
+    </div>
+</div>
+
+{% endblock %}

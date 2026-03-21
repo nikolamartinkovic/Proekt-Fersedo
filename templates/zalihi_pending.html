@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto; padding: 0 1rem;">
+
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.3rem;">
+                Pending Извози
+            </h1>
+            <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary); margin: 0;">
+                Извози што чекаат одобрување
+            </p>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if pending_items %}
+    <div class="table-responsive shadow rounded-4 overflow-hidden">
+        <table class="table table-hover table-striped align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Датум</th>
+                    <th>Корисник</th>
+                    <th>PN</th>
+                    <th>Ime на артикл</th>
+                    <th class="text-center">Количина</th>
+                    <th>Тип</th>
+                    <th class="text-center">Статус</th>
+                    <th class="text-center">Акции</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in pending_items %}
+                <tr>
+                    <td>{{ item.datum_izvoz[:16] }}</td>
+                    <td><strong>{{ item.username }}</strong></td>
+                    <td class="fw-bold">{{ item.pn }}</td>
+                    <td>{{ item.ime or '—' }}</td>
+                    <td class="text-center fw-bold text-danger">{{ item.kolicina }}</td>
+                    <td>
+                        {% if 'Платена' in item.tip %}
+                            <span class="badge bg-success">{{ item.tip }}</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">{{ item.tip }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-secondary fs-6">
+                            <i class="fas fa-hourglass-half me-1"></i> Pending
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-success btn-sm fw-bold px-3"
+                                    onclick="odobri({{ item.id }}, '{{ item.pn }}', {{ item.kolicina }})">
+                                <i class="fas fa-check me-1"></i> Одобри
+                            </button>
+                            <button class="btn btn-danger btn-sm fw-bold px-3"
+                                    onclick="odbij({{ item.id }}, '{{ item.pn }}', {{ item.kolicina }})">
+                                <i class="fas fa-times me-1"></i> Одбиј
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="text-center mt-4">
+        <button class="btn btn-success btn-lg px-5 py-3 fw-bold shadow"
+                onclick="odobriSite()">
+            <i class="fas fa-check-double me-2"></i> Одобри сите
+        </button>
+    </div>
+
+    {% else %}
+    <div class="alert alert-info text-center py-5 shadow-lg rounded-4">
+        <i class="fas fa-hourglass fa-3x mb-3 text-muted"></i>
+        <h4>Нема pending извози</h4>
+        <p class="text-muted">Сите извози се обработени.</p>
+    </div>
+    {% endif %}
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('zalihi.zalihi') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Залихи
+        </a>
+    </div>
+</div>
+
+<script>
+function odobri(pendingId, pn, kolicina) {
+    if (!confirm(`Одобри извоз на ${kolicina} единици од ${pn}?`)) return;
+
+    fetch('/zalihi/pending/odobri', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: pendingId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            location.reload();
+        } else {
+            alert('❌ ' + (data.message || 'Грешка при одобрување!'));
+        }
+    })
+    .catch(err => {
+        alert('❌ Грешка при комуникација со серверот!');
+        console.error(err);
+    });
+}
+
+function odbij(pendingId, pn, kolicina) {
+    if (!confirm(`Одбиј и врати ${kolicina} единици назад во залиха за ${pn}?`)) return;
+
+    fetch('/zalihi/pending/odbij', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: pendingId })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('↩️ ' + data.message);
+            location.reload();
+        } else {
+            alert('❌ ' + (data.message || 'Грешка при одбивање!'));
+        }
+    })
+    .catch(err => {
+        alert('❌ Грешка при комуникација со серверот!');
+        console.error(err);
+    });
+}
+
+function odobriSite() {
+    if (!confirm('Одобри ги СИТЕ pending извози?')) return;
+
+    fetch('/zalihi/pending/odobri_site', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('✅ ' + data.message);
+            location.reload();
+        } else {
+            alert('❌ ' + (data.message || 'Грешка!'));
+        }
+    })
+    .catch(err => {
+        alert('❌ Грешка при комуникација со серверот!');
+        console.error(err);
+    });
+}
+</script>
+
+{% endblock %}

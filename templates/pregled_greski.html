@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 3rem auto; padding: 0 1rem; text-align: center;">
+    <h1 style="font-weight: 700; color: var(--text); margin-bottom: 2rem; font-size: clamp(1.8rem, 5vw, 2.5rem);">Преглед на грешки</h1>
+
+    <!-- Филтер + копчиња -->
+    <div style="background: var(--surface); padding: clamp(1rem, 4vw, 1.5rem); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 2rem;">
+        <form method="POST">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.4rem; font-weight: 600; color: var(--text-secondary);">Од датум</label>
+                    <input type="date" name="datum_od" value="{{ datum_od }}" required 
+                           style="width: 100%; padding: 0.9rem; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.4rem; font-weight: 600; color: var(--text-secondary);">До датум</label>
+                    <input type="date" name="datum_do" value="{{ datum_do }}" required 
+                           style="width: 100%; padding: 0.9rem; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.4rem; font-weight: 600; color: var(--text-secondary);">Оддел</label>
+                    <select name="oddel" style="width: 100%; padding: 0.9rem; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem;">
+                        <option value="">Сите оддели</option>
+                        <option>Заварување</option>
+                        <option>Брусење</option>
+                        <option>Сачмарење</option>
+                        <option>Фарбање</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 500; cursor: pointer; min-height: 52px; font-size: 1.1rem;">
+                Филтрирај
+            </button>
+        </form>
+
+        <!-- Копчиња -->
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1.5rem; justify-content: center;">
+            {% if datum_od and datum_do %}
+            <a href="{{ url_for('admin.export_greski', datum_od=datum_od, datum_do=datum_do) }}" class="btn btn-success" style="padding: 1rem 1.5rem; background: #16a34a; color: white; border: none; border-radius: 8px; text-decoration: none; font-weight: 500; min-height: 52px; min-width: 160px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-download"></i> Извоз во Excel
+            </a>
+
+            <!-- Форма за бришење -->
+            <form method="POST" action="{{ url_for('admin.pregled_greski') }}" style="margin: 0; flex: 1; min-width: 220px;">
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="datum_od" value="{{ datum_od }}">
+                <input type="hidden" name="datum_do" value="{{ datum_do }}">
+                <input type="password" name="admin_password" placeholder="Внеси лозинка" required 
+                       style="width: 100%; padding: 0.9rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.8rem; font-size: 1rem;">
+
+                <button type="submit" 
+                        onclick="return confirm('Сигурно сакаш да ги избришеш сите записи за периодот {{ datum_od }} до {{ datum_do }}? Ова е неповратно!');"
+                        class="btn btn-delete" style="width: 100%; padding: 1rem; background: #dc2626; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; min-height: 52px; font-size: 1.1rem;">
+                    <i class="fas fa-trash-alt"></i> Избриши
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- Undo -->
+            {% if has_undo %}
+            <form method="POST" action="{{ url_for('admin.pregled_greski') }}" style="margin: 0; flex: 1; min-width: 220px;">
+                <input type="hidden" name="action" value="undo">
+                <button type="submit" class="btn btn-undo" style="width: 100%; padding: 1rem; background: #eab308; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; min-height: 52px; font-size: 1.1rem;">
+                    <i class="fas fa-undo"></i> Undo
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Табела -->
+    {% if records %}
+    <div class="table-container" style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-height: 400px; overflow-y: auto; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border);">
+        <table id="greskiTable" style="width: 100%; min-width: 800px; border-collapse: collapse; font-size: 0.95rem; color: var(--text);">
+            <thead>
+                <tr style="background: #f1f5f9; color: var(--text-secondary);">
+                    <th style="padding: 0.9rem 1rem; text-align: center;">Датум</th>
+                    <th style="padding: 0.9rem 1rem; text-align: center;">Време</th>
+                    <th style="padding: 0.9rem 1rem; text-align: center;">Оддел</th>
+                    <th style="padding: 0.9rem 1rem; text-align: center;">Производ</th>
+                    <th style="padding: 0.9rem 1rem; text-align: center;">Грешки</th>
+                    <th style="padding: 0.9rem 1rem; text-align: center;">Произведени</th>
+                    <th style="padding: 0.9rem 1rem; text-align: center;">Тип на грешка</th>
+                    <th style="padding: 0.9rem 1rem; text-align: center;">Забелешка</th>
+                    <th style="padding: 0.9rem 1rem; text-align: center;">Корисник</th>
+                    <th style="padding: 0.9rem 1rem; text-align: center;">Part number</th>
+                </tr>
+            </thead>
+            <tbody id="greskiTableBody">
+                {% for r in records %}
+                <tr style="border-bottom: 1px solid var(--border); background: white; transition: background 0.2s;">
+                    <td style="padding: 0.8rem 1rem; text-align: center;">{{ r['datum'] }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: center;">{{ r['timestamp'] }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: center;">{{ r['oddel'] }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: center;">{{ r['proizvod'] or '-' }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: center; font-weight: bold; color: {% if r['greski'] >= 5 %}#dc2626{% elif r['greski'] >= 2 %}#ca8a04{% else %}#16a34a{% endif %};">
+                        {{ r['greski'] }}
+                    </td>
+                    <td style="padding: 0.8rem 1rem; text-align: center; font-weight: 500;">{{ r['proizvedeni'] or '0' }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: center;">{{ r['vid_greska'] or '-' }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: center;">{{ r['zabeleska'] or '-' }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: center;">{{ r['username'] or 'Непознат' }}</td>
+                    <td style="padding: 0.8rem 1rem; text-align: center;">{{ r['part_number'] or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 5rem 1rem; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);">
+        <i class="fas fa-search" style="font-size: 3.5rem; color: var(--text-secondary); opacity: 0.4; margin-bottom: 1rem;"></i>
+        <h3 style="margin: 0.5rem 0; color: var(--text-secondary);">Нема грешки во избраниот период</h3>
+        <p style="color: var(--text-secondary);">Пробај со друг период</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Live search -->
+<script>
+    document.getElementById('searchInput')?.addEventListener('keyup', function() {
+        const filter = this.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('#greskiTableBody tr');
+        rows.forEach(row => {
+            const oddelCell = row.querySelector('td:nth-child(3)');
+            const oddelText = oddelCell ? oddelCell.textContent.toLowerCase() : '';
+            row.style.display = oddelText.includes(filter) ? '' : 'none';
+        });
+    });
+</script>
+
+<style>
+    .table-container {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        max-height: 400px;
+        overflow-y: auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    table {
+        width: 100%;
+        min-width: 900px;
+        border-collapse: separate;
+        border-spacing: 0 0.5rem;
+    }
+    th, td {
+        padding: 1rem;
+        text-align: center;
+        white-space: nowrap;
+    }
+    thead tr {
+        background: #f1f5f9;
+        font-weight: 600;
+    }
+    tbody tr {
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border-radius: 8px;
+    }
+    tbody tr:hover {
+        background: rgba(220, 38, 38, 0.1);
+    }
+    .btn-delete {
+        background: #dc2626 !important;
+        width: 100%;
+        padding: 1rem;
+        min-height: 52px;
+        font-size: 1.1rem;
+    }
+    .btn-delete:hover {
+        background: #b91c1c !important;
+        transform: translateY(-2px);
+    }
+
+    @media (max-width: 768px) {
+        .container { padding: 0 0.8rem; margin-top: 2rem; }
+        h1 { font-size: 2rem; }
+        .table-container { margin: 0 -0.8rem; }
+        table { min-width: 900px !important; }
+        th, td { 
+            padding: 0.7rem 0.6rem; 
+            font-size: 0.92rem; 
+            white-space: nowrap !important;
+        }
+        .alert { font-size: 0.95rem; padding: 0.8rem; }
+        .btn { width: 100%; margin-bottom: 0.8rem; padding: 0.9rem; font-size: 1rem; }
+    }
+
+    @media (max-width: 480px) {
+        .container { padding: 0 0.6rem; }
+        h1 { font-size: 1.6rem; }
+        table { min-width: 800px !important; }
+        th, td { 
+            padding: 0.6rem 0.5rem; 
+            font-size: 0.85rem; 
+        }
+        .btn { font-size: 0.95rem; padding: 0.8rem; }
+    }
+</style>
+
+{% endblock %}

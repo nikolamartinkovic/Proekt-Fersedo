@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Процесни чекори – Избери камин{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-5">
+        <h1 class="mb-0 fw-bold" style="font-size: clamp(1.8rem, 6vw, 2.5rem);">
+            Процесни чекори
+        </h1>
+        <div class="d-flex gap-3 flex-wrap">
+            <a href="{{ url_for('main.add_kamin') }}" class="btn btn-primary btn-lg px-4 py-3">
+                <i class="fas fa-plus me-2"></i> Додади камин
+            </a>
+            <a href="{{ url_for('main.delete_kamin') }}" class="btn btn-danger btn-lg px-4 py-3">
+                <i class="fas fa-trash-alt me-2"></i> Избриши камин
+            </a>
+        </div>
+    </div>
+
+    <p class="lead text-muted mb-4 text-center">
+        Избери камин за кој сакаш да ги видиш/додаваш процесните чекори
+    </p>
+
+    {% if kamini %}
+        <div class="row g-4">
+            {% for kamin in kamini %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-lg border-0 rounded-4 overflow-hidden hover-lift">
+                        <a href="{{ url_for('admin.pozicii_kamin', kamin=kamin) }}" class="text-decoration-none">
+                            <img src="{{ url_for('main.kamin_static', filename=kamin ~ '.png') }}"
+                                 class="card-img-top"
+                                 alt="{{ kamin }}"
+                                 onerror="this.src='{{ url_for('main.kamin_static', filename='default-kamin.png') }}'"
+                                 style="height: 220px; object-fit: cover; transition: transform 0.4s;">
+                            <div class="card-body text-center py-4">
+                                <h3 class="card-title fw-bold mb-0" style="font-size: clamp(1.25rem, 4vw, 1.5rem); color: var(--text);">
+                                    {{ kamin }}
+                                </h3>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5 my-5">
+            <i class="fas fa-layer-group fa-5x text-muted mb-4"></i>
+            <h4 class="text-muted">Сè уште нема дефинирани камини</h4>
+            <p class="lead text-muted">Кликни на „Додади камин" за да почнеш</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .hover-lift:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
+    }
+    .card-img-top {
+        transition: transform 0.4s ease;
+    }
+    .card:hover .card-img-top {
+        transform: scale(1.08);
+    }
+    @media (max-width: 768px) {
+        .row.g-4 { gap: 1.25rem !important; }
+        .card-img-top { height: 180px !important; }
+    }
+</style>
+
+{% endblock %}

@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 1400px; margin: 4rem auto; padding: 0 1rem;">
+    
+    <!-- Наслов -->
+    <div class="text-center mb-5 pb-4">
+        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.3rem;">
+            Залихи
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary); margin: 0;">
+            Управување со залихи на артикли
+        </p>
+    </div>
+
+    <div class="row g-4 justify-content-center mb-5">
+
+        <!-- Додади залиха -->
+        <div class="col-lg-4 col-md-6 col-12">
+            <a href="{{ url_for('zalihi.dodadi') }}" class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all" style="background: var(--surface); transition: all 0.3s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center" style="min-height: 280px;">
+                    <i class="fas fa-plus-circle fa-5x mb-4" style="color: #16a34a;"></i>
+                    <h3 class="fw-bold mb-3" style="font-size: clamp(1.4rem, 4vw, 1.8rem);">Додади залиха</h3>
+                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Внеси нов артикл или додај количина</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Извоз -->
+        <div class="col-lg-4 col-md-6 col-12">
+            <a href="{{ url_for('zalihi.izvoz') }}" class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all" style="background: var(--surface); transition: all 0.3s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center" style="min-height: 280px;">
+                    <i class="fas fa-truck-loading fa-5x mb-4" style="color: #f59e0b;"></i>
+                    <h3 class="fw-bold mb-3" style="font-size: clamp(1.4rem, 4vw, 1.8rem);">Извоз</h3>
+                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Одземање од залиха</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Pending Извози -->
+        <div class="col-lg-4 col-md-6 col-12">
+            <a href="{{ url_for('zalihi.pending') }}" class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all" style="background: var(--surface); transition: all 0.3s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center" style="min-height: 280px;">
+                    <i class="fas fa-hourglass-half fa-5x mb-4" style="color: #8b5cf6;"></i>
+                    <h3 class="fw-bold mb-3" style="font-size: clamp(1.4rem, 4vw, 1.8rem);">Pending Извози</h3>
+                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Извози што чекаат одобрување</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Нова Профактура -->
+        <div class="col-lg-4 col-md-6 col-12">
+            <a href="{{ url_for('zalihi.profakturi_nova') }}"
+               class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all"
+               style="background: var(--surface); transition: all 0.3s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center"
+                     style="min-height: 280px;">
+                    <i class="fas fa-file-invoice fa-5x mb-4" style="color: #6366f1;"></i>
+                    <h3 class="fw-bold mb-3" style="font-size: clamp(1.4rem, 4vw, 1.8rem);">Профактура</h3>
+                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Креирај профактура од неплатена залиха</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Профактури на чекање -->
+        <div class="col-lg-4 col-md-6 col-12">
+            <a href="{{ url_for('zalihi.profakturi_pending') }}"
+               class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all"
+               style="background: var(--surface); transition: all 0.3s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center"
+                     style="min-height: 280px;">
+                    <i class="fas fa-file-invoice-dollar fa-5x mb-4" style="color: #a855f7;"></i>
+                    <h3 class="fw-bold mb-3" style="font-size: clamp(1.4rem, 4vw, 1.8rem);">Профактури на чекање</h3>
+                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Одобри → префрли во Платена залиха</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Преглед по PN -->
+        <div class="col-lg-4 col-md-6 col-12">
+            <a href="{{ url_for('zalihi.pregled') }}" class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all" style="background: var(--surface); transition: all 0.3s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center" style="min-height: 280px;">
+                    <i class="fas fa-search fa-5x mb-4" style="color: #0dcaf0;"></i>
+                    <h3 class="fw-bold mb-3" style="font-size: clamp(1.4rem, 4vw, 1.8rem);">Преглед по PN</h3>
+                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Провери платена/неплатена</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Историја на извози -->
+        <div class="col-lg-4 col-md-6 col-12">
+            <a href="{{ url_for('zalihi.istorija') }}" class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all" style="background: var(--surface); transition: all 0.3s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center" style="min-height: 280px;">
+                    <i class="fas fa-history fa-5x mb-4" style="color: #06b6d4;"></i>
+                    <h3 class="fw-bold mb-3" style="font-size: clamp(1.4rem, 4vw, 1.8rem);">Историја</h3>
+                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Одобрени извози + export</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Извози по недели -->
+        <div class="col-lg-4 col-md-6 col-12">
+            <a href="{{ url_for('zalihi.izvozi_po_nedeli') }}" class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all" style="background: var(--surface); transition: all 0.3s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center" style="min-height: 280px;">
+                    <i class="fas fa-chart-bar fa-5x mb-4" style="color: #f97316;"></i>
+                    <h3 class="fw-bold mb-3" style="font-size: clamp(1.4rem, 4vw, 1.8rem);">Извози по недели</h3>
+                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Сумирани извози по календарска недела</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Добавени по недели -->
+        <div class="col-lg-4 col-md-6 col-12">
+            <a href="{{ url_for('zalihi.dodadeni_po_nedeli') }}" class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all" style="background: var(--surface); transition: all 0.3s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center" style="min-height: 280px;">
+                    <i class="fas fa-calendar-week fa-5x mb-4" style="color: #ec4899;"></i>
+                    <h3 class="fw-bold mb-3" style="font-size: clamp(1.4rem, 4vw, 1.8rem);">По недели</h3>
+                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Добавени артикли по недели</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+             СТОРНО
+        ══════════════════════════════════════════════════════ -->
+        <div class="col-lg-4 col-md-6 col-12">
+            <a href="{{ url_for('zalihi.storno') }}"
+               class="card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 transition-all"
+               style="background: var(--surface); transition: all 0.3s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center"
+                     style="min-height: 280px;">
+                    <i class="fas fa-undo-alt fa-5x mb-4" style="color: #ef4444;"></i>
+                    <h3 class="fw-bold mb-3" style="font-size: clamp(1.4rem, 4vw, 1.8rem);">Сторно</h3>
+                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Поништи залиха со задолжителна забелешка</p>
+                </div>
+            </a>
+        </div>
+
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Dashboard
+        </a>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: var(--radius);
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+    }
+    .btn-lg {
+        font-size: clamp(1.1rem, 4vw, 1.3rem);
+        padding: clamp(0.9rem, 4vw, 1.2rem) clamp(2rem, 6vw, 3rem);
+        min-height: 60px;
+    }
+    @media (max-width: 992px) { .row.g-4 { row-gap: 1.5rem; } }
+    @media (max-width: 576px) {
+        .container { padding: 0 1rem; margin-top: 3rem; }
+        h1 { font-size: clamp(1.8rem, 7vw, 2.5rem); }
+        .card-body { padding: 2rem 1.5rem !important; }
+        .btn-lg { width: 100%; margin-bottom: 1rem; }
+    }
+</style>
+
+{% endblock %}

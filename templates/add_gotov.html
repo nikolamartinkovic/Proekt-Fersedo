@@ -1,0 +1,177 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 800px; margin: 4rem auto; padding: 0 1rem;">
+    <h2 style="margin-bottom: 2.5rem; font-weight: 700; color: var(--text); font-size: clamp(1.8rem, 6vw, 2.4rem); text-align: center;">
+        Готов производ за камин: <strong>{{ kamin }}</strong>
+    </h2>
+
+    {% if not has_plan %}
+    <div class="alert alert-warning shadow-sm text-center p-4 mb-4" role="alert" style="border-radius: var(--radius);">
+        <h4 class="alert-heading mb-3" style="font-size: 1.4rem; font-weight: 600;">
+            <i class="fas fa-exclamation-triangle me-2"></i> Нема план за производство!
+        </h4>
+        <p class="mb-2">
+            Прво мора да се постави план за овој камин во 
+            <a href="{{ url_for('main.plan_proizvodstvo') }}" class="alert-link fw-bold">План за производство</a>.
+        </p>
+    </div>
+
+    <!-- Disabled форма за визуелен ефект -->
+    <div class="card shadow-lg border-0" style="opacity: 0.6; pointer-events: none;">
+    {% else %}
+    <div class="card shadow-lg border-0">
+        <div class="card-body p-4 p-md-5">
+            <form method="post" id="gotovForm" novalidate>
+                <input type="hidden" name="kamin" value="{{ kamin }}">
+                <input type="hidden" name="current_time" value="{{ current_time }}">
+
+                <!-- Датум и време (readonly) -->
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <label for="datum" class="form-label fw-bold">Датум</label>
+                        <input type="date" id="datum" name="datum" class="form-control form-control-lg" 
+                               value="{{ today }}" readonly>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="vreme" class="form-label fw-bold">Време</label>
+                        <input type="text" id="vreme" class="form-control form-control-lg" 
+                               value="{{ current_time }}" readonly>
+                    </div>
+                </div>
+
+                <!-- Part Number + Preview -->
+                <div class="mb-4">
+                    <label for="part_number" class="form-label fw-bold">Part Number</label>
+                    <input type="text" id="part_number" name="part_number" class="form-control form-control-lg" 
+                           placeholder="Внеси Part Number" autocomplete="off">
+                    <div id="part_preview" class="mt-3 text-center" style="min-height: 140px;"></div>
+                </div>
+
+                <!-- Произведена количина -->
+                <div class="mb-4">
+                    <label for="proizvedeni" class="form-label fw-bold">Произведена количина</label>
+                    <input type="number" id="proizvedeni" name="proizvedeni" min="1" required 
+                           class="form-control form-control-lg text-center fs-4 fw-bold" 
+                           placeholder="Внеси количина" style="max-width: 300px; margin: 0 auto;">
+                </div>
+
+                <!-- Забелешка -->
+                <div class="mb-4">
+                    <label for="zabeleska" class="form-label fw-bold">Забелешка</label>
+                    <textarea id="zabeleska" name="zabeleska" rows="4" class="form-control form-control-lg" 
+                              placeholder="Дополнителни коментари, забелешки..."></textarea>
+                </div>
+
+                <!-- Акции -->
+                <div class="d-grid gap-3 d-md-flex justify-content-md-center mt-5">
+                    <button type="submit" id="submitBtn" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow">
+                        <span id="btnText"><i class="fas fa-save me-2"></i> Зачувај</span>
+                        <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+
+                    <a href="{{ url_for('main.select_kamin') }}" class="btn btn-outline-secondary btn-lg px-5 py-3">
+                        <i class="fas fa-arrow-left me-2"></i> Назад
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- JavaScript -->
+<script>
+// Part Number preview + zoom
+document.getElementById('part_number')?.addEventListener('input', function() {
+    const partNum = this.value.trim();
+    const preview = document.getElementById('part_preview');
+    preview.innerHTML = '';
+
+    if (partNum.length < 3) return;
+
+    fetch(`/api/part_info?part_number=${encodeURIComponent(partNum)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.slika) {
+                const img = document.createElement('img');
+                img.src = data.slika;
+                img.alt = data.ime || 'Part Number слика';
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = 'clamp(160px, 40vw, 240px)';
+                img.style.borderRadius = '12px';
+                img.style.boxShadow = '0 6px 20px rgba(0,0,0,0.15)';
+                img.style.cursor = 'pointer';
+                img.classList.add('zoomable-img');
+                img.dataset.full = data.slika;
+                preview.appendChild(img);
+            } else {
+                preview.innerHTML = '<p class="text-danger mt-2">Part Number не е најден</p>';
+            }
+        })
+        .catch(() => {
+            preview.innerHTML = '<p class="text-danger mt-2">Грешка при проверка</p>';
+        });
+});
+
+// Loader при submit
+document.getElementById('gotovForm')?.addEventListener('submit', function(e) {
+    const btn = document.getElementById('submitBtn');
+    const text = document.getElementById('btnText');
+    const spinner = document.getElementById('loadingSpinner');
+
+    if (!this.checkValidity()) {
+        e.preventDefault();
+        this.classList.add('was-validated');
+        return;
+    }
+
+    text.classList.add('d-none');
+    spinner.classList.remove('d-none');
+    btn.disabled = true;
+});
+</script>
+
+<style>
+    .card {
+        border-radius: var(--radius);
+        overflow: hidden;
+    }
+
+    .form-control-lg {
+        font-size: clamp(1rem, 3.5vw, 1.2rem);
+        padding: 0.75rem 1.25rem;
+    }
+
+    .form-label {
+        font-size: clamp(1rem, 3vw, 1.1rem);
+    }
+
+    .btn-lg {
+        font-size: clamp(1.1rem, 3.5vw, 1.25rem);
+        padding: clamp(0.8rem, 4vw, 1.1rem) clamp(1.5rem, 6vw, 2.5rem);
+        min-height: 56px;
+    }
+
+    #part_preview img:hover {
+        transform: scale(1.04);
+        transition: transform 0.3s ease;
+    }
+
+    /* Tablet & Mobile responsive */
+    @media (max-width: 992px) {
+        .container { padding: 0 1.5rem; }
+        h2 { font-size: clamp(1.6rem, 6vw, 2.2rem); }
+        .d-md-flex { flex-direction: column !important; gap: 1rem !important; }
+        .btn-lg { width: 100%; }
+    }
+
+    @media (max-width: 576px) {
+        .card-body { padding: 1.5rem !important; }
+        .form-control-lg { font-size: 1.05rem; }
+        .btn-lg { font-size: 1.1rem; padding: 0.9rem 1.5rem; }
+    }
+</style>
+
+{% endblock %}

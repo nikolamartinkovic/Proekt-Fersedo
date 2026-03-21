@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Нов артикл – Fersedo{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+    <h1 class="text-center mb-5 fw-bold" style="color: var(--primary);">Додади нов артикл</h1>
+
+    <div class="card shadow-lg border-0 rounded-4 mx-auto" style="max-width: 600px;">
+        <div class="card-body p-5">
+            <form method="POST" enctype="multipart/form-data" id="addPartForm" novalidate>
+                
+                <!-- Part Number -->
+                <div class="mb-4">
+                    <label for="part_number" class="form-label fw-bold fs-5">Part Number *</label>
+                    <input type="text" id="part_number" name="part_number" class="form-control form-control-lg text-uppercase" 
+                           required placeholder="На пр. 734566 или KN-12345" autocomplete="off" autofocus>
+                </div>
+
+                <!-- Име на артикл -->
+                <div class="mb-4">
+                    <label for="ime" class="form-label fw-bold fs-5">Име на артикл *</label>
+                    <input type="text" id="ime" name="ime" class="form-control form-control-lg" 
+                           required placeholder="На пр. Ласерска глава за CNC">
+                </div>
+
+                <!-- Камин -->
+                <div class="mb-4">
+                    <label for="kamin" class="form-label fw-bold fs-5">Во кој камин влегува *</label>
+                    <select id="kamin" name="kamin" class="form-select form-select-lg" required>
+                        <option value="" disabled selected>Избери камин...</option>
+                        {% for k in kamini %}
+                            <option>{{ k.ime }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Вид на артикл -->
+                <div class="mb-4">
+                    <label for="vid_artikal" class="form-label fw-bold fs-5">Вид на артикл *</label>
+                    <select id="vid_artikal" name="vid_artikal" class="form-select form-select-lg" required>
+                        <option value="" disabled selected>Избери вид...</option>
+                        <option value="Poluproizvod">Полупроизвод</option>
+                        <option value="Gotov proizvod">Готов производ</option>
+                    </select>
+                </div>
+
+                <!-- Слика секција -->
+                <div class="mb-5">
+                    <label class="form-label fw-bold fs-5">Слика на артиклот (опционално)</label>
+                    <div class="row g-3 align-items-center">
+                        <div class="col-12 col-md-6">
+                            <label class="btn btn-outline-primary btn-lg w-100 py-4 d-flex align-items-center justify-content-center" for="slika">
+                                <input type="file" id="slika" name="slika" accept="image/*" class="d-none">
+                                <i class="fas fa-images me-2 fs-4"></i> Избери од галерија
+                            </label>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <button type="button" id="cameraBtn" class="btn btn-outline-success btn-lg w-100 py-4 d-flex align-items-center justify-content-center">
+                                <i class="fas fa-camera me-2 fs-4"></i> Сликај со камера
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Камера -->
+                    <div class="position-relative mt-4">
+                        <video id="video" autoplay playsinline muted style="display:none; width:100%; max-height:480px; border-radius:16px; background:#000;"></video>
+                        
+                        <div id="cameraControls" class="d-flex gap-3 justify-content-center mt-3" style="display:none;">
+                            <button type="button" id="captureBtn" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-camera"></i> Сними
+                            </button>
+                            <button type="button" id="closeCameraBtn" class="btn btn-outline-danger btn-lg px-5">
+                                <i class="fas fa-times"></i> Откажи
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div id="previewContainer" class="mt-4 text-center" style="display:none;">
+                        <img id="preview" style="max-height:380px; border-radius:16px; box-shadow:var(--shadow);">
+                        <button type="button" id="retakeBtn" class="btn btn-danger mt-3">
+                            <i class="fas fa-redo me-2"></i> Сними повторно
+                        </button>
+                    </div>
+
+                    <input type="hidden" name="camera_slika_filename" id="cameraSlikaFilename">
+                </div>
+
+                <button type="submit" id="submitBtn" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow">
+                    <span id="btnText"><i class="fas fa-save me-2"></i> Зачувај артикл</span>
+                    <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Камера логика
+let stream = null;
+const video = document.getElementById('video');
+const cameraBtn = document.getElementById('cameraBtn');
+const cameraControls = document.getElementById('cameraControls');
+const captureBtn = document.getElementById('captureBtn');
+const closeCameraBtn = document.getElementById('closeCameraBtn');
+const previewContainer = document.getElementById('previewContainer');
+const preview = document.getElementById('preview');
+const retakeBtn = document.getElementById('retakeBtn');
+const fileInput = document.getElementById('slika');
+const hiddenCameraField = document.getElementById('cameraSlikaFilename');
+
+cameraBtn.addEventListener('click', async () => {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+        video.style.display = 'block';
+        cameraControls.style.display = 'flex';
+        cameraBtn.style.display = 'none';
+    } catch (err) {
+        alert("Не можам да ја отворам камерата.\nПровери дозволи за камера.");
+    }
+});
+
+closeCameraBtn.addEventListener('click', () => {
+    if (stream) stream.getTracks().forEach(track => track.stop());
+    video.style.display = 'none';
+    cameraControls.style.display = 'none';
+    cameraBtn.style.display = 'block';
+});
+
+captureBtn.addEventListener('click', () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+
+    preview.src = canvas.toDataURL('image/jpeg', 0.9);
+    previewContainer.style.display = 'block';
+
+    canvas.toBlob(blob => {
+        const file = new File([blob], `camera_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        fileInput.files = dt.files;
+        hiddenCameraField.value = file.name;
+    }, 'image/jpeg', 0.9);
+
+    closeCameraBtn.click();
+});
+
+retakeBtn.addEventListener('click', () => {
+    previewContainer.style.display = 'none';
+    fileInput.value = '';
+    hiddenCameraField.value = '';
+    cameraBtn.click();
+});
+
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) closeCameraBtn.click();
+});
+
+// Loader
+document.getElementById('addPartForm')?.addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    document.getElementById('btnText').classList.add('d-none');
+    document.getElementById('loadingSpinner').classList.remove('d-none');
+    btn.disabled = true;
+});
+</script>
+
+{% endblock %}

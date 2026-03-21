@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container" style="max-width: 900px; margin: 4rem auto; padding: 0 1rem; text-align: center;">
+    <div class="text-center mb-5 pb-4">
+        <h1 style="margin-bottom: 1rem; font-weight: 800; color: var(--primary); font-size: clamp(2rem, 7vw, 3rem);">
+            {{ kamin }}
+        </h1>
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary); margin-bottom: 2.5rem;">
+            Избери тип на производство што го внесуваш
+        </p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Готов производ -->
+        <div class="col-md-6 col-12">
+            <a href="{{ url_for('main.add_gotov', kamin=kamin) }}" 
+               class="type-card card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 d-block transition-all" 
+               style="background: var(--surface); transition: all 0.4s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center" style="min-height: 320px;">
+                    <div class="type-icon mb-4" style="font-size: 5rem; color: #16a34a; opacity: 0.9;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="fw-bold mb-3" style="font-size: clamp(1.6rem, 5vw, 2rem); color: var(--text);">
+                        Готов производ
+                    </h2>
+                    <p class="text-muted mb-4" style="font-size: clamp(1rem, 4vw, 1.1rem);">
+                        Целосно завршен камин
+                    </p>
+                    <span class="type-action btn btn-primary btn-lg px-5 py-3 fw-bold shadow" style="margin-top: auto;">
+                        Внеси готов →
+                    </span>
+                </div>
+            </a>
+        </div>
+
+        <!-- Полуготов производ -->
+        <div class="col-md-6 col-12">
+            <a href="{{ url_for('main.add_polugotov', kamin=kamin) }}" 
+               class="type-card card shadow-xl border-0 rounded-4 overflow-hidden text-decoration-none h-100 d-block transition-all" 
+               style="background: var(--surface); transition: all 0.4s ease;">
+                <div class="card-body text-center p-5 d-flex flex-column justify-content-center align-items-center" style="min-height: 320px;">
+                    <div class="type-icon mb-4" style="font-size: 5rem; color: #f59e0b; opacity: 0.9;">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <h2 class="fw-bold mb-3" style="font-size: clamp(1.6rem, 5vw, 2rem); color: var(--text);">
+                        Полуготов производ
+                    </h2>
+                    <p class="text-muted mb-4" style="font-size: clamp(1rem, 4vw, 1.1rem);">
+                        Делумно завршен (во процес)
+                    </p>
+                    <span class="type-action btn btn-primary btn-lg px-5 py-3 fw-bold shadow" style="margin-top: auto;">
+                        Внеси полуготов →
+                    </span>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('main.select_kamin') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на избор на камин
+        </a>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.transition-all').forEach(card => {
+    card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-12px)';
+        card.style.boxShadow = '0 25px 60px rgba(0,0,0,0.18)';
+    });
+    card.addEventListener('mouseleave', () => {
+        card.style.transform = 'translateY(0)';
+        card.style.boxShadow = 'var(--shadow)';
+    });
+});
+</script>
+
+<style>
+    .transition-all {
+        transition: transform 0.4s ease, box-shadow 0.4s ease;
+        background: var(--surface);
+        border-radius: var(--radius);
+        overflow: hidden;
+    }
+    .type-action {
+        background: var(--primary);
+        color: white;
+        padding: 0.8rem 2rem;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 600;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+    }
+    .type-action:hover {
+        background: var(--primary-dark);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(102,126,234,0.45);
+    }
+    @media (max-width: 768px) {
+        .container { padding: 0 0.8rem; margin-top: 3rem; }
+        h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); }
+        .row.g-4 { row-gap: 1.5rem; }
+        .type-card { min-height: 280px; }
+        .type-icon { font-size: 4.5rem; }
+        .btn-lg { width: 100%; margin-bottom: 1rem; padding: 0.9rem 1.5rem; font-size: 1rem; }
+    }
+    @media (max-width: 480px) {
+        .container { padding: 0 0.6rem; }
+        h1 { font-size: clamp(1.6rem, 7vw, 2.2rem); }
+        .type-card { min-height: 260px; padding: 2rem 1rem; }
+        .type-icon { font-size: 4rem; }
+        .type-action { padding: 0.7rem 1.5rem; font-size: 0.95rem; }
+    }
+</style>
+
+{% endblock %}

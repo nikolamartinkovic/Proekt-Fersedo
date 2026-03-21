@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Преглед на залиха – Fersedo{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-5" style="max-width:1700px;">
+    <h1 class="text-center mb-2 fw-bold" style="color: var(--primary);">Преглед по PN</h1>
+    <p class="text-center text-muted mb-5">Платена · Неплатена · Залиха за профактура</p>
+
+    <div class="row g-4">
+
+        <!-- ══════════════════════════════════════════
+             1. ПЛАТЕНА ЗАЛИХА
+        ══════════════════════════════════════════ -->
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden h-100">
+                <div class="card-header py-4 text-center fw-bold fs-5 text-white"
+                     style="background:linear-gradient(135deg,#16a34a,#15803d);">
+                    <i class="fas fa-check-circle me-2"></i>Платена залиха
+                    <span class="badge rounded-pill ms-2"
+                          style="background:rgba(255,255,255,.25);font-size:.85rem;">
+                        {{ plateni|length }}
+                    </span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>PN</th>
+                                    <th>Ime</th>
+                                    <th class="text-center">Кол.</th>
+                                    <th>Префрли</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for art in plateni %}
+                                <tr>
+                                    <td class="fw-bold">{{ art.part_number }}</td>
+                                    <td class="text-muted small">{{ art.ime or '—' }}</td>
+                                    <td class="text-center">
+                                        <span class="badge rounded-pill fw-bold"
+                                              style="background:#d1fae5;color:#065f46;font-size:.9rem;padding:.3rem .75rem;">
+                                            {{ art.kolicina_platena }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control text-center"
+                                                   id="premesti_platena_{{ art.part_number }}"
+                                                   min="1" max="{{ art.kolicina_platena }}"
+                                                   placeholder="кол.">
+                                            <button class="btn btn-outline-warning btn-sm fw-bold"
+                                                    onclick="premestiZaliha('{{ art.part_number }}', {{ art.id }}, 1, 0)">
+                                                → Неплат.
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not plateni %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-5">
+                                        <i class="fas fa-inbox fa-2x mb-2 d-block opacity-30"></i>
+                                        Нема платена залиха
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             2. НЕПЛАТЕНА ЗАЛИХА
+        ══════════════════════════════════════════ -->
+        <div class="col-xl-4 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden h-100">
+                <div class="card-header py-4 text-center fw-bold fs-5 text-white"
+                     style="background:linear-gradient(135deg,#f59e0b,#d97706);">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Неплатена залиха
+                    <span class="badge rounded-pill ms-2"
+                          style="background:rgba(255,255,255,.25);font-size:.85rem;">
+                        {{ neplateni|length }}
+                    </span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>PN</th>
+                                    <th>Ime</th>
+                                    <th class="text-center">Кол.</th>
+                                    <th>Префрли</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for art in neplateni %}
+                                <tr>
+                                    <td class="fw-bold">{{ art.part_number }}</td>
+                                    <td class="text-muted small">{{ art.ime or '—' }}</td>
+                                    <td class="text-center">
+                                        <span class="badge rounded-pill fw-bold"
+                                              style="background:#fef3c7;color:#92400e;font-size:.9rem;padding:.3rem .75rem;">
+                                            {{ art.kolicina_neplatena }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control text-center"
+                                                   id="premesti_neplatena_{{ art.part_number }}"
+                                                   min="1" max="{{ art.kolicina_neplatena }}"
+                                                   placeholder="кол.">
+                                            <button class="btn btn-outline-success btn-sm fw-bold"
+                                                    onclick="premestiZaliha('{{ art.part_number }}', {{ art.id }}, 0, 1)">
+                                                → Платена
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not neplateni %}
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-5">
+                                        <i class="fas fa-inbox fa-2x mb-2 d-block opacity-30"></i>
+                                        Нема неплатена залиха
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             3. ЗАЛИХА ЗА ПРОФАКТУРА (pending)
+        ══════════════════════════════════════════ -->
+        <div class="col-xl-4 col-lg-12">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden h-100">
+                <div class="card-header py-4 text-center fw-bold fs-5 text-white"
+                     style="background:linear-gradient(135deg,#6366f1,#8b5cf6);">
+                    <i class="fas fa-file-invoice me-2"></i>Залиха за профактура
+                    <span class="badge rounded-pill ms-2"
+                          style="background:rgba(255,255,255,.25);font-size:.85rem;">
+                        {{ profaktura_zaliha|length }}
+                    </span>
+                </div>
+
+                <div class="px-4 py-2"
+                     style="background:#f5f3ff;border-bottom:1px solid #e0e0f0;">
+                    <small style="color:#6366f1;">
+                        <i class="fas fa-lock me-1"></i>
+                        Резервирано · чека одобрување на профактура
+                    </small>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>PN</th>
+                                    <th>Ime</th>
+                                    <th class="text-center">Кол.</th>
+                                    <th>Профактура(и)</th>
+                                    <th>Корисник</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in profaktura_zaliha %}
+                                <tr>
+                                    <td class="fw-bold">{{ item.pn }}</td>
+                                    <td class="text-muted small">{{ item.ime or '—' }}</td>
+                                    <td class="text-center">
+                                        <span class="badge rounded-pill fw-bold"
+                                              style="background:#ede9fe;color:#4c1d95;font-size:.9rem;padding:.3rem .75rem;">
+                                            <i class="fas fa-lock me-1" style="font-size:.65rem;"></i>
+                                            {{ item.kolicina_reserved }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if item.profakturi_broevi %}
+                                            {% for br in item.profakturi_broevi.split(', ') %}
+                                            <span class="badge me-1 mb-1"
+                                                  style="background:#6366f1;color:#fff;font-size:.72rem;border-radius:5px;">
+                                                {{ br }}
+                                            </span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="small text-muted">{{ item.korisnici }}</td>
+                                </tr>
+                                {% endfor %}
+                                {% if not profaktura_zaliha %}
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-5">
+                                        <i class="fas fa-file-invoice fa-2x mb-2 d-block opacity-30"></i>
+                                        Нема залиха на чекање
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {% if profaktura_zaliha %}
+                <div class="card-footer text-center py-3"
+                     style="background:#f5f3ff;border-top:1px solid #e0e0f0;">
+                    <a href="{{ url_for('zalihi.profakturi_pending') }}"
+                       class="btn fw-bold px-4 py-2 shadow-sm"
+                       style="background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;">
+                        <i class="fas fa-check me-2"></i>Одобри профактури
+                    </a>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+    </div><!-- /row -->
+
+    <div class="text-center mt-5">
+        <a href="{{ url_for('zalihi.zalihi') }}"
+           class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-arrow-left me-2"></i> Назад на Залихи
+        </a>
+    </div>
+</div>
+
+<script>
+function premestiZaliha(pn, artikl_id, od_plateno, na_plateno) {
+    od_plateno = parseInt(od_plateno);
+    na_plateno = parseInt(na_plateno);
+    artikl_id  = parseInt(artikl_id);
+
+    const inputId = od_plateno === 1
+        ? `premesti_platena_${pn}`
+        : `premesti_neplatena_${pn}`;
+    const kolicina = parseInt(document.getElementById(inputId)?.value) || 0;
+
+    if (kolicina <= 0) { alert('Внеси валидна количина!'); return; }
+    if (!confirm(
+        `Префрли ${kolicina} единици од ` +
+        `${od_plateno === 1 ? 'платена' : 'неплатена'} во ` +
+        `${na_plateno === 1 ? 'платена' : 'неплатена'}?`
+    )) return;
+
+    fetch('/zalihi/premesti', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ pn, artikl_id, kolicina, od_plateno, na_plateno })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) { showToast(data.message, 'success'); setTimeout(() => location.reload(), 900); }
+        else              { showToast(data.message || 'Грешка!', 'danger'); }
+    })
+    .catch(() => showToast('Грешка при комуникација!', 'danger'));
+}
+
+function showToast(msg, type = 'success') {
+    const wrap = document.getElementById('toastWrap') || (() => {
+        const d = document.createElement('div');
+        d.id = 'toastWrap';
+        d.style.cssText =
+            'position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;' +
+            'display:flex;flex-direction:column;gap:.5rem;';
+        document.body.appendChild(d);
+        return d;
+    })();
+    const t = document.createElement('div');
+    t.className = `alert alert-${type} shadow rounded-3 mb-0 py-2 px-3 fw-bold`;
+    t.style.cssText = 'min-width:260px;max-width:380px;animation:fadeIn .3s ease;';
+    t.textContent = msg;
+    wrap.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+</script>
+
+<style>
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+</style>
+
+{% endblock %}
