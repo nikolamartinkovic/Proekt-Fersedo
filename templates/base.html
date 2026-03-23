@@ -82,9 +82,6 @@
         html, body { height:100%; font-family:system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
         body { min-height:100vh; touch-action:manipulation; }
 
-        /* ═══════════════════════════════════════════
-           HEADER
-        ═══════════════════════════════════════════ */
         header {
             position: fixed;
             top: 0; left: 0; width: 100%;
@@ -132,10 +129,6 @@
             background: rgba(102,126,234,0.1);
             color: var(--primary);
         }
-
-        /* ═══════════════════════════════════════════
-           SIDEBAR
-        ═══════════════════════════════════════════ */
 
         #sb-trigger {
             position: fixed;
@@ -327,9 +320,6 @@
             }
         }
 
-        /* ═══════════════════════════════════════════
-           OVERLAY (mobile)
-        ═══════════════════════════════════════════ */
         .overlay {
             position: fixed;
             inset: 0;
@@ -342,9 +332,6 @@
         }
         .overlay.show { opacity: 1; visibility: visible; }
 
-        /* ═══════════════════════════════════════════
-           MAIN CONTENT
-        ═══════════════════════════════════════════ */
         main {
             margin-top: 64px;
             margin-left: var(--sb-width-collapsed);
@@ -363,9 +350,6 @@
             nav { padding: 0 0.75rem; }
         }
 
-        /* ═══════════════════════════════════════════
-           SCROLL TO TOP
-        ═══════════════════════════════════════════ */
         #scrollToTopBtn {
             display: none;
             position: fixed;
@@ -390,9 +374,6 @@
             box-shadow: 0 8px 28px rgba(102,126,234,0.55);
         }
 
-        /* ═══════════════════════════════════════════
-           IMAGE MODAL
-        ═══════════════════════════════════════════ */
         #imageModal {
             display: none;
             position: fixed;
@@ -424,9 +405,6 @@
         }
         .close-modal:hover { color: #fff; }
 
-        /* ═══════════════════════════════════════════
-           UTILITY CLASSES
-        ═══════════════════════════════════════════ */
         .efektivnost-value {
             font-size: clamp(1.5rem, 5vw, 2.2rem);
             font-weight: bold;
@@ -497,9 +475,6 @@
         }
         .alert-success { background-color:#d4edda; color:#155724; border-color:#c3e6cb; }
 
-        /* ═══════════════════════════════════════════
-           PWA INSTALL BANNER
-        ═══════════════════════════════════════════ */
         #pwaInstallBanner {
             display: none;
             position: fixed;
@@ -603,7 +578,7 @@
     <img id="modalImage" src="" alt="Зголемена слика">
 </div>
 
-<!-- ═══ PWA INSTALL BANNER ═══ -->
+<!-- PWA INSTALL BANNER -->
 <div id="pwaInstallBanner">
     <div class="pwa-banner-inner">
         <div class="pwa-banner-info">
@@ -622,7 +597,7 @@
     </div>
 </div>
 
-<!-- ═══ HEADER ═══ -->
+<!-- HEADER -->
 <header>
     <nav>
         <a href="{{ url_for('auth.index') }}" class="nav-brand">
@@ -644,7 +619,7 @@
     </nav>
 </header>
 
-<!-- ═══ SIDEBAR ═══ -->
+<!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-inner" id="sidebar-inner">
 
@@ -711,7 +686,6 @@
                     <span class="sb-label">Email примачи</span>
                 </a>
 
-                <!-- ── КВАЛИТЕТ (Admin) ── -->
                 <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
                 <a class="sb-link" href="{{ url_for('kvalitet.kvalitet') }}" data-tooltip="Квалитет">
                     <span class="sb-icon"><i class="fas fa-check-circle"></i></span>
@@ -740,7 +714,13 @@
                     <span class="sb-label">Архива</span>
                 </a>
 
-                <!-- ── ОДМОРИ (Admin) ── -->
+                <!-- ═══ СОСТАНОЦИ (Admin) ═══ -->
+                <div class="sb-group"><i class="fas fa-microphone" style="font-size:0.7rem;"></i> Состаноци</div>
+                <a class="sb-link" href="{{ url_for('sostanoci.lista') }}" data-tooltip="Состаноци">
+                    <span class="sb-icon"><i class="fas fa-microphone"></i></span>
+                    <span class="sb-label">Состаноци</span>
+                </a>
+
                 <div class="sb-group"><i class="fas fa-sun" style="font-size:0.7rem;"></i> Одмори</div>
                 <a class="sb-link" href="{{ url_for('main.odmori') }}" data-tooltip="Одмори">
                     <span class="sb-icon"><i class="fas fa-umbrella-beach"></i></span>
@@ -830,7 +810,6 @@
                 </a>
                 {% endif %}
 
-                <!-- ── КВАЛИТЕТ (Non-admin) ── -->
                 {% if 'kvalitet_nova' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_template' in allowed %}
                 <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
                 <a class="sb-link" href="{{ url_for('kvalitet.kvalitet') }}" data-tooltip="Квалитет">
@@ -869,7 +848,13 @@
                 </a>
                 {% endif %}
 
-                <!-- ── ОДМОРИ (Non-admin) ── -->
+                <!-- ═══ СОСТАНОЦИ (Non-admin) ═══ -->
+                <div class="sb-group"><i class="fas fa-microphone" style="font-size:0.7rem;"></i> Состаноци</div>
+                <a class="sb-link" href="{{ url_for('sostanoci.lista') }}" data-tooltip="Состаноци">
+                    <span class="sb-icon"><i class="fas fa-microphone"></i></span>
+                    <span class="sb-label">Состаноци</span>
+                </a>
+
                 {% if 'odmori' in allowed or 'baranje_odmor' in allowed or 'odmori_vraboteni' in allowed or 'odmori_kalendar' in allowed or 'odmori_pregled_odmori' in allowed or 'odmori_sekojdnevni_otsustva' in allowed or 'odmori_manager_emails' in allowed %}
                 <div class="sb-group"><i class="fas fa-sun" style="font-size:0.7rem;"></i> Одмори</div>
                 {% endif %}
@@ -937,7 +922,7 @@
 
 <div class="overlay" id="overlay" onclick="toggleMobileSidebar()"></div>
 
-<!-- ═══ MAIN ═══ -->
+<!-- MAIN -->
 <main class="container-fluid p-0" id="main-content">
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -954,7 +939,7 @@
     {% block content %}{% endblock %}
 </main>
 
-<!-- ═══ SCRIPTS ═══ -->
+<!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
@@ -1009,7 +994,6 @@
     });
 </script>
 
-<!-- ═══ PWA: Service Worker Registration ═══ -->
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -1020,7 +1004,6 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<!-- ═══ PWA: Install Banner ═══ -->
 <script>
 let deferredPrompt = null;
 
@@ -1028,11 +1011,9 @@ window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
 
-    // Провери дали корисникот веќе одбил и дали поминале 3 дена
     const dismissed = localStorage.getItem('pwaInstallDismissed');
     if (dismissed && Date.now() < parseInt(dismissed)) return;
 
-    // Прикажи го банерот по 1 секунда
     setTimeout(() => {
         document.getElementById('pwaInstallBanner').style.display = 'block';
     }, 1000);
@@ -1052,12 +1033,10 @@ function installPWA() {
 
 function dismissInstallBanner() {
     document.getElementById('pwaInstallBanner').style.display = 'none';
-    // Не прикажувај 3 дена
     const expiry = Date.now() + (3 * 24 * 60 * 60 * 1000);
     localStorage.setItem('pwaInstallDismissed', expiry);
 }
 
-// Скриј го банерот ако е веќе инсталирана
 window.addEventListener('appinstalled', () => {
     document.getElementById('pwaInstallBanner').style.display = 'none';
     deferredPrompt = null;
@@ -1065,7 +1044,6 @@ window.addEventListener('appinstalled', () => {
 });
 </script>
 
-<!-- ═══ PWA: Push Notifications ═══ -->
 <script>
 const VAPID_PUBLIC_KEY = "{{ VAPID_PUBLIC_KEY }}";
 

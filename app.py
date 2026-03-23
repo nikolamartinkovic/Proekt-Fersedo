@@ -61,6 +61,7 @@ from config import Config
 from utils.db import init_db, get_db
 from utils.config import STATIC_FOLDER, POZICII_FOLDER, FONT_DIR, PROJECT_ROOT, PARTS_EXCEL, TEMPLATE_FOLDER
 from utils.decorators import login_required, admin_required, worker_required
+from routes.sostanoci import sostanoci_bp 
 
 
 # ─────────────────────────────────────────────────────────────
@@ -106,6 +107,7 @@ app.register_blueprint(nabavki_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(odmori_bp)
 app.register_blueprint(kvalitet_bp)
+app.register_blueprint(sostanoci_bp) 
 
 app.config["DATABASE_PATH"] = DATABASE_PATH
 app.config.from_object(Config)
@@ -113,6 +115,7 @@ db.init_app(app)
 migrate.init_app(app, db)
 
 app.secret_key = "твоја_многу_тајна_шифра_2025!@#"
+app.config['MAX_CONTENT_LENGTH'] = 400 * 1024 * 1024
 app.config["VAPID_PUBLIC_KEY"]  = VAPID_PUBLIC_KEY
 app.config["VAPID_PRIVATE_KEY"] = VAPID_PRIVATE_KEY
 app.config["VAPID_SUBJECT"]     = VAPID_SUBJECT
