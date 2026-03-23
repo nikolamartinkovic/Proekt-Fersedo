@@ -636,9 +636,6 @@ print("[SCHEDULER] Otsustva nedelen started – every Friday at 15:00")
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
-        port=5001,
-        ssl_context=(
-            "desktop-qgi3e6u.tail4e3475.ts.net.crt",
-            "desktop-qgi3e6u.tail4e3475.ts.net.key"
-        )
+        port=80,        # ← смени од 5001 на 80
+        debug=False,
     )
