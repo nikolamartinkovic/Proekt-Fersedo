@@ -1773,3 +1773,110 @@ def odmori_sekojdnevni_otsustva():
         week_start=week_start.strftime("%d.%m.%Y"), week_end=week_end.strftime("%d.%m.%Y"),
         today=today.strftime("%d.%m.%Y"), today_str=today_str,
         odmori_denes=odmori_denes, odmori_nedela=odmori_nedela)
+    
+@odmori_bp.route("/nedeli")
+@login_required
+@module_required("odmori_sekojdnevni_otsustva")
+def odmori_nedeli():
+    import datetime as dt
+    from collections import defaultdict
+
+    conn    = get_db()
+    cursor  = conn.cursor()
+
+    otsustva = cursor.execute("""
+        SELECT o.id, o.datum, o.tip, o.casovi, o.plateno, o.zabeleska,
+               v.ime, v.prezime, o.vraboten_id
+        FROM sekojdnevni_otsustva o
+        JOIN vraboteni v ON o.vraboten_id = v.id
+        ORDER BY o.datum DESC
+    """).fetchall()
+
+    praznici = {r["datum"] for r in cursor.execute("SELECT datum FROM nerabotni_deni").fetchall()}
+
+    odmori_all = cursor.execute("""
+        SELECT v.ime, v.prezime, b.datum_od, b.datum_do, b.zabeleska
+        FROM baranja_odmor b
+        JOIN vraboteni v ON b.vraboten_id = v.id
+        WHERE b.status = 'approved'
+        ORDER BY b.datum_od DESC
+    """).fetchall()
+
+    conn.close()
+
+    nedeli = {}
+
+    for o in otsustva:
+        try:
+            d          = dt.datetime.strptime(o["datum"], "%Y-%m-%d").date()
+            week_start = d - dt.timedelta(days=d.weekday())
+            week_end   = week_start + dt.timedelta(days=4)
+            kn         = d.isocalendar()[1]
+            godina     = d.year
+            key        = f"{godina}-{kn:02d}"
+
+            if key not in nedeli:
+                nedeli[key] = {
+                    "kn":       kn,
+                    "godina":   godina,
+                    "datum_od": week_start.strftime("%d.%m.%Y"),
+                    "datum_do": week_end.strftime("%d.%m.%Y"),
+                    "otsustva": [],
+                    "odmori":   [],
+                }
+            nedeli[key]["otsustva"].append(dict(o))
+        except Exception as e:
+            print(f"[NEDELI] грешка отсуство: {e}")
+            continue
+
+    for o in odmori_all:
+        try:
+            start      = dt.datetime.strptime(o["datum_od"], "%Y-%m-%d").date()
+            end        = dt.datetime.strptime(o["datum_do"], "%Y-%m-%d").date()
+            cur        = start - dt.timedelta(days=start.weekday())
+
+            while cur <= end:
+                kn     = cur.isocalendar()[1]
+                godina = cur.year
+                key    = f"{godina}-{kn:02d}"
+                week_end_d = cur + dt.timedelta(days=4)
+
+                if key not in nedeli:
+                    nedeli[key] = {
+                        "kn":       kn,
+                        "godina":   godina,
+                        "datum_od": cur.strftime("%d.%m.%Y"),
+                        "datum_do": week_end_d.strftime("%d.%m.%Y"),
+                        "otsustva": [],
+                        "odmori":   [],
+                    }
+
+                wd = calc_working_days(o["datum_od"], o["datum_do"], praznici)
+                entry = {
+                    "ime":          o["ime"],
+                    "prezime":      o["prezime"],
+                    "datum_od":     o["datum_od"],
+                    "datum_do":     o["datum_do"],
+                    "zabeleska":    o["zabeleska"] or "",
+                    "working_days": wd,
+                }
+                if entry not in nedeli[key]["odmori"]:
+                    nedeli[key]["odmori"].append(entry)
+
+                cur += dt.timedelta(days=7)
+        except Exception as e:
+            print(f"[NEDELI] грешка одмор: {e}")
+            continue
+
+    nedeli_sorted = sorted(nedeli.items(), key=lambda x: x[0], reverse=True)
+    selected_kn   = request.args.get("kn", None)
+    selected_ned  = nedeli.get(selected_kn) if selected_kn else None
+
+    return render_template(
+        "odmori_nedeli.html",
+        nedeli=nedeli_sorted,
+        selected_kn=selected_kn,
+        selected_ned=selected_ned,
+        TIP_COLORS=TIP_COLORS,
+        TIP_LABELS=TIP_LABELS,
+    )

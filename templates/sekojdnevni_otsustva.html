@@ -10,7 +10,13 @@
         <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
             Управување со боледувања, доцнења, слободни денови и рано заминување
         </p>
+        <a href="{{ url_for('odmori.odmori_nedeli') }}"
+   class="btn btn-lg fw-bold mt-3 shadow"
+   style="background:linear-gradient(135deg,#6f42c1,#4b2b9e); color:#fff; border:none; padding:0.8rem 2.5rem; border-radius:12px;">
+    <i class="fas fa-calendar-week me-2"></i> Преглед по недели
+</a>
     </div>
+    
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}

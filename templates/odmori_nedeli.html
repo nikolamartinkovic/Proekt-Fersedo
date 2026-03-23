@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container" style="max-width:1400px; margin:4rem auto 5rem; padding:0 1rem;">
+
+    <div class="text-center mb-5">
+        <h1 style="font-weight:900; background:linear-gradient(90deg,#6f42c1,#4b2b9e);
+                   -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+                   font-size:clamp(2.2rem,7vw,3.2rem);">
+            Преглед по недели
+        </h1>
+        <p class="text-muted" style="font-size:1.2rem;">
+            Отсуства и одмори групирани по календарска недела
+        </p>
+        <a href="{{ url_for('odmori.odmori_sekojdnevni_otsustva') }}"
+           class="btn btn-outline-secondary mt-2">
+            <i class="fas fa-arrow-left me-2"></i> Назад
+        </a>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- ══ ЛЕВА КОЛОНА: листа на недели ══ -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden sticky-top" style="top:80px;">
+                <div class="card-header text-white py-3 px-4 fw-bold"
+                     style="background:linear-gradient(135deg,#6f42c1,#4b2b9e);">
+                    <i class="fas fa-calendar-week me-2"></i>
+                    Недели ({{ nedeli | length }})
+                </div>
+                <div class="card-body p-0" style="max-height:75vh; overflow-y:auto;">
+                    {% if nedeli %}
+                        {% for key, ned in nedeli %}
+                        {% set ots_count    = ned.otsustva | length %}
+                        {% set odmori_count = ned.odmori   | length %}
+                        {% set vtora_count  = ned.otsustva | selectattr('tip','equalto','втора смена') | list | length %}
+                        {% set is_selected  = selected_kn == key %}
+
+                        <a href="{{ url_for('odmori.odmori_nedeli', kn=key) }}#detalji"
+                           class="d-block text-decoration-none border-bottom"
+                           style="padding:14px 18px;
+                                  background:{% if is_selected %}#ede9fe{% else %}#fff{% endif %};
+                                  border-left:4px solid {% if is_selected %}#6f42c1{% else %}transparent{% endif %} !important;
+                                  transition:all 0.15s;">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div>
+                                    <span class="fw-bold fs-5" style="color:#4b2b9e;">
+                                        КН {{ ned.kn }}
+                                    </span>
+                                    <span class="text-muted small ms-2">{{ ned.godina }}</span>
+                                    <div class="small text-muted mt-1">
+                                        {{ ned.datum_od }} – {{ ned.datum_do }}
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-column align-items-end gap-1">
+                                    {% if ots_count > 0 %}
+                                    <span class="badge bg-danger" style="font-size:0.75rem;">
+                                        {{ ots_count }} отсуства
+                                    </span>
+                                    {% endif %}
+                                    {% if vtora_count > 0 %}
+                                    <span class="badge" style="background:#7c3aed; font-size:0.75rem;">
+                                        🌙 {{ vtora_count }} втора смена
+                                    </span>
+                                    {% endif %}
+                                    {% if odmori_count > 0 %}
+                                    <span class="badge" style="background:#10b981; font-size:0.75rem;">
+                                        🏖 {{ odmori_count }} одмори
+                                    </span>
+                                    {% endif %}
+                                    {% if ots_count == 0 and odmori_count == 0 %}
+                                    <span class="badge bg-secondary" style="font-size:0.75rem;">
+                                        Без отсуства
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-calendar-times fa-3x mb-3 opacity-30"></i>
+                            <p>Нема запишани отсуства</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ ДЕСНА КОЛОНА: детали ══ -->
+        <div class="col-lg-8" id="detalji">
+            {% if selected_kn and selected_ned %}
+
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden mb-4">
+                <div class="card-header text-white py-4 px-5"
+                     style="background:linear-gradient(135deg,#6f42c1,#4b2b9e);">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <h4 class="mb-0 fw-bold">
+                            <i class="fas fa-calendar-week me-2"></i>
+                            КН {{ selected_ned.kn }} — {{ selected_ned.godina }}
+                        </h4>
+                        <span class="badge bg-white text-dark fs-6 px-3 py-2">
+                            {{ selected_ned.datum_od }} – {{ selected_ned.datum_do }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+
+                    {% set reg_ots   = selected_ned.otsustva | rejectattr('tip','equalto','втора смена') | list %}
+                    {% set vtora_ots = selected_ned.otsustva | selectattr('tip','equalto','втора смена') | list %}
+
+                    <!-- Резиме -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-4">
+                            <div class="text-center p-3 rounded-3" style="background:#fef2f2; border:1px solid #fecaca;">
+                                <div class="fs-2 fw-bold text-danger">{{ reg_ots | length }}</div>
+                                <div class="small text-muted">Отсуства</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-center p-3 rounded-3" style="background:#f5f3ff; border:1px solid #ddd6fe;">
+                                <div class="fs-2 fw-bold" style="color:#7c3aed;">{{ vtora_ots | length }}</div>
+                                <div class="small text-muted">Втора смена</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-center p-3 rounded-3" style="background:#d1fae5; border:1px solid #6ee7b7;">
+                                <div class="fs-2 fw-bold" style="color:#065f46;">{{ selected_ned.odmori | length }}</div>
+                                <div class="small text-muted">На одмор</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Табела отсуства -->
+                    {% set tip_colors = {
+                        'боледување':      '#ef4444',
+                        'слободен ден':    '#16a34a',
+                        'доцнење':         '#ca8a04',
+                        'рано заминување': '#ea580c',
+                        'втора смена':     '#7c3aed',
+                        'друго':           '#64748b',
+                    } %}
+
+                    <h6 class="fw-bold text-muted mb-3 text-uppercase" style="letter-spacing:1px; font-size:0.78rem;">
+                        <i class="fas fa-user-times me-2"></i>Отсуства
+                    </h6>
+
+                    {% if selected_ned.otsustva %}
+                    <div class="table-responsive mb-4">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead style="background:#6f42c1; color:#fff;">
+                                <tr>
+                                    <th class="px-3 py-2">Вработен</th>
+                                    <th class="px-3 py-2">Датум</th>
+                                    <th class="px-3 py-2">Тип</th>
+                                    <th class="px-3 py-2 text-center">Часови</th>
+                                    <th class="px-3 py-2 text-center">Платено</th>
+                                    <th class="px-3 py-2">Забелешка</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for o in selected_ned.otsustva | sort(attribute='datum') %}
+                                <tr style="{% if o.tip == 'втора смена' %}background:#faf5ff;{% endif %}">
+                                    <td class="px-3 fw-medium">{{ o.prezime }} {{ o.ime }}</td>
+                                    <td class="px-3">
+                                        <span class="badge bg-light text-dark border">
+                                            {{ o.datum | replace('-','.') }}
+                                        </span>
+                                    </td>
+                                    <td class="px-3">
+                                        <span class="badge"
+                                              style="background:{{ tip_colors.get(o.tip, '#64748b') }};">
+                                            {{ o.tip }}
+                                        </span>
+                                    </td>
+                                    <td class="px-3 text-center fw-bold">{{ o.casovi }}</td>
+                                    <td class="px-3 text-center">
+                                        {% if o.plateno %}
+                                            <span class="badge bg-success">Да</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Не</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-3 text-muted small">{{ o.zabeleska or '—' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4 text-muted rounded-3 mb-4"
+                         style="background:#f9fafb; border:1px dashed #e5e7eb;">
+                        <p class="mb-0">Нема отсуства оваа недела</p>
+                    </div>
+                    {% endif %}
+
+                    <!-- Одмори -->
+                    <h6 class="fw-bold mb-3 text-uppercase" style="letter-spacing:1px; font-size:0.78rem; color:#065f46;">
+                        <i class="fas fa-umbrella-beach me-2"></i>На одмор оваа недела
+                    </h6>
+
+                    {% if selected_ned.odmori %}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead style="background:#10b981; color:#fff;">
+                                <tr>
+                                    <th class="px-3 py-2">Вработен</th>
+                                    <th class="px-3 py-2">Период</th>
+                                    <th class="px-3 py-2 text-center">Раб. денови</th>
+                                    <th class="px-3 py-2">Забелешка</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for o in selected_ned.odmori %}
+                                <tr style="background:#f0fdf4;">
+                                    <td class="px-3 fw-medium" style="color:#065f46;">{{ o.prezime }} {{ o.ime }}</td>
+                                    <td class="px-3">
+                                        <span class="badge" style="background:#10b981; padding:5px 10px;">
+                                            {{ o.datum_od | replace('-','.') }} – {{ o.datum_do | replace('-','.') }}
+                                        </span>
+                                    </td>
+                                    <td class="px-3 text-center fw-bold" style="color:#10b981;">{{ o.working_days }}</td>
+                                    <td class="px-3 text-muted small">{{ o.zabeleska or '—' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-3 text-muted rounded-3"
+                         style="background:#f0fdf4; border:1px dashed #6ee7b7;">
+                        <p class="mb-0 small">Нема одобрени одмори оваа недела</p>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+            {% else %}
+            <div class="text-center py-5 text-muted" style="margin-top:80px;">
+                <i class="fas fa-hand-point-left fa-4x mb-4 opacity-30" style="color:#6f42c1;"></i>
+                <h4 class="fw-light">Избери недела од листата</h4>
+                <p>Кликни на некоја недела лево за да ги видиш деталите</p>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<style>
+    .card { border-radius: 14px; }
+    a.d-block:hover { background: #f5f3ff !important; }
+</style>
+
+{% endblock %}

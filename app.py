@@ -636,6 +636,9 @@ print("[SCHEDULER] Otsustva nedelen started – every Friday at 15:00")
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
-        port=80,        # ← смени од 5001 на 80
+        port=443,
+        ssl_context=("192.168.0.20.pem", "192.168.0.20-key.pem"),
         debug=False,
+        use_reloader=False,
+        threaded=True,    # ← само додај ја оваа линија
     )
