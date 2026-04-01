@@ -5,10 +5,10 @@
 
     <div class="text-center mb-5">
         <h1 style="font-weight:800;color:var(--primary);font-size:clamp(1.8rem,6vw,2.6rem);margin-bottom:.5rem;">
-            <i class="fas fa-envelope-open-text me-2"></i> Email примачи — Отсуства
+            <i class="fas fa-envelope-open-text me-2"></i> Email примачи за отсуства
         </h1>
         <p style="font-size:1.1rem;color:var(--text-secondary);">
-            Менаџери кои ги добиваат дневните и неделните извештаи за отсуства
+            Менаџери кои ги добиваат дневните и неделните извештаи за отсуства.
         </p>
     </div>
 
@@ -26,7 +26,6 @@
         {% endif %}
     {% endwith %}
 
-    <!-- ── Распоред на испраќање ── -->
     <div class="row g-3 mb-4">
         <div class="col-sm-6">
             <div class="card border-0 shadow-sm text-center py-4" style="background:linear-gradient(135deg,#1e40af,#1d4ed8);color:#fff;border-radius:14px;">
@@ -39,12 +38,11 @@
             <div class="card border-0 shadow-sm text-center py-4" style="background:linear-gradient(135deg,#065f46,#059669);color:#fff;border-radius:14px;">
                 <div class="fs-2 mb-1"><i class="fas fa-calendar-week"></i></div>
                 <div class="fw-bold fs-6">Неделен извештај</div>
-                <div class="opacity-75 mt-1" style="font-size:.9rem;">Секој <strong>Петок</strong> во <strong>15:00</strong></div>
+                <div class="opacity-75 mt-1" style="font-size:.9rem;">Секој <strong>петок</strong> во <strong>15:00</strong></div>
             </div>
         </div>
     </div>
 
-    <!-- ── Додади менаџер ── -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-header text-white py-3 px-4 fw-bold rounded-top-4"
              style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));">
@@ -55,7 +53,7 @@
                 <input type="hidden" name="action" value="add">
                 <div class="row g-3">
                     <div class="col-sm-5">
-                        <label class="form-label fw-semibold">Ime и презиме</label>
+                        <label class="form-label fw-semibold">Име и презиме</label>
                         <input type="text" name="ime" class="form-control rounded-3"
                                placeholder="пр. Никола Мартинковиќ">
                     </div>
@@ -74,7 +72,6 @@
         </div>
     </div>
 
-    <!-- ── Листа на менаџери ── -->
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-header py-3 px-4 fw-bold rounded-top-4"
              style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
@@ -87,7 +84,7 @@
             <table class="table table-hover mb-0 align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th class="px-4">Ime</th>
+                        <th class="px-4">Име</th>
                         <th>Email</th>
                         <th class="text-center">Статус</th>
                         <th class="text-center">Акции</th>
@@ -114,7 +111,6 @@
                         </td>
                         <td class="text-center">
                             <div class="d-flex gap-1 justify-content-center">
-                                <!-- Вклучи/исклучи -->
                                 <form method="POST" class="d-inline">
                                     <input type="hidden" name="action" value="toggle">
                                     <input type="hidden" name="manager_id" value="{{ m.id }}">
@@ -124,7 +120,6 @@
                                         {% if m.aktiven %}Исклучи{% else %}Вклучи{% endif %}
                                     </button>
                                 </form>
-                                <!-- Избриши -->
                                 <form method="POST" class="d-inline"
                                       onsubmit="return confirm('Дали сте сигурни дека сакате да го избришете {{ m.email }}?')">
                                     <input type="hidden" name="action" value="delete">
@@ -143,18 +138,17 @@
             <div class="text-center text-muted py-5">
                 <i class="fas fa-envelope fa-3x mb-3 opacity-30"></i><br>
                 Нема регистрирани менаџери.<br>
-                <small>Додајте email адреса за да почнат да пристигнуваат извештаите.</small>
+                <small>Додадете email адреса за да почнат да пристигнуваат извештаите.</small>
             </div>
             {% endif %}
         </div>
     </div>
 
-    <!-- ── Тест копчиња ── -->
     <div class="card border-0 shadow-sm rounded-4 mb-4" style="border:2px dashed #e2e8f0!important;">
         <div class="card-body p-4">
-            <div class="fw-bold mb-1"><i class="fas fa-flask me-2 text-warning"></i>Тест — испрати извештај веднаш</div>
+            <div class="fw-bold mb-1"><i class="fas fa-flask me-2 text-warning"></i>Тест испраќање</div>
             <p class="text-muted mb-3" style="font-size:.9rem;">
-                Корисно за проверка дека email-овите работат правилно пред следниот автоматски испратен.
+                Користи го ова за брза проверка на SMTP и примачите пред следното автоматско испраќање.
             </p>
             <div class="d-flex gap-3 flex-wrap">
                 <form method="POST" class="d-inline">
@@ -173,10 +167,66 @@
         </div>
     </div>
 
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-header py-3 px-4 fw-bold rounded-top-4"
+             style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+            <i class="fas fa-clock-rotate-left me-2 text-primary"></i>
+            Историја на испраќања
+            <span class="badge bg-primary ms-2">{{ email_log | length }}</span>
+        </div>
+        <div class="card-body p-0">
+            {% if email_log %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-4">Време</th>
+                            <th>Тип</th>
+                            <th>Наслов</th>
+                            <th>Примачи</th>
+                            <th class="text-center">Статус</th>
+                            <th>Порака</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in email_log %}
+                        <tr>
+                            <td class="px-4 text-nowrap">{{ item.created_at }}</td>
+                            <td>
+                                {% if item.tip == 'dneven' %}
+                                <span class="badge text-bg-primary">Дневен</span>
+                                {% else %}
+                                <span class="badge text-bg-success">Неделен</span>
+                                {% endif %}
+                            </td>
+                            <td style="min-width:220px;">{{ item.subject }}</td>
+                            <td style="min-width:200px;">{{ item.recipients or '—' }}</td>
+                            <td class="text-center">
+                                {% if item.status == 'success' %}
+                                <span class="badge bg-success px-3 py-2">Успешно</span>
+                                {% else %}
+                                <span class="badge bg-danger px-3 py-2">Грешка</span>
+                                {% endif %}
+                            </td>
+                            <td style="min-width:220px;">{{ item.message or '—' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-clock-rotate-left fa-3x mb-3 opacity-30"></i><br>
+                Сѐ уште нема историја на испратени извештаи.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="text-center mt-4">
         <a href="{{ url_for('odmori.odmori_sekojdnevni_otsustva') }}"
            class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
-            <i class="fas fa-arrow-left me-2"></i> Назад на Отсуства
+            <i class="fas fa-arrow-left me-2"></i> Назад на отсуства
         </a>
     </div>
 </div>

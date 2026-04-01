@@ -12,6 +12,59 @@ from utils.config import STATIC_FOLDER, POZICII_FOLDER
 
 main_bp = Blueprint('main', __name__)
 
+WELCOME_MODULES = [
+    {"value": "dashboard", "label": "Dashboard", "description": "Преглед на системот и клучните податоци.", "endpoint": "admin.dashboard", "icon": "fas fa-chart-line", "group": "Админ"},
+    {"value": "system_logs", "label": "Системски логови", "description": "Следење на runtime, audit и email логови.", "endpoint": "admin.system_logs", "icon": "fas fa-wave-square", "group": "Админ"},
+    {"value": "pregled_greski", "label": "Грешки", "description": "Преглед и анализа на внесените грешки.", "endpoint": "admin.pregled_greski", "icon": "fas fa-triangle-exclamation", "group": "Админ"},
+    {"value": "admin_users", "label": "Корисници", "description": "Управување со корисници и дозволи.", "endpoint": "admin.admin_users", "icon": "fas fa-users-cog", "group": "Админ"},
+    {"value": "email_recipients", "label": "Email примачи", "description": "Поставки за системски и автоматски email известувања.", "endpoint": "admin.email_recipients", "icon": "fas fa-envelope-open-text", "group": "Админ"},
+    {"value": "procesni_cekori", "label": "Процесни чекори", "description": "Шаблони и чекори за производни процеси.", "endpoint": "admin.procesni_cekori", "icon": "fas fa-cogs", "group": "Админ"},
+    {"value": "select_kamin", "label": "Нов запис", "description": "Брз влез за нов производствен запис.", "endpoint": "main.select_kamin", "icon": "fas fa-plus-circle", "group": "Производство"},
+    {"value": "add_part", "label": "Отвори нов артикл", "description": "Креирање на нов артикл и негови параметри.", "endpoint": "artikli.add", "icon": "fas fa-box-open", "group": "Производство"},
+    {"value": "moj_zapisi", "label": "Мои записи", "description": "Лична листа на внесени записи.", "endpoint": "main.moj_zapisi", "icon": "fas fa-list", "group": "Производство"},
+    {"value": "kalkulacija", "label": "Калкулација", "description": "Пресметки и работни цени по операции.", "endpoint": "main.kalkulacija", "icon": "fas fa-calculator", "group": "Производство"},
+    {"value": "artikli", "label": "Артикли", "description": "Преглед и уредување на артикли.", "endpoint": "artikli.artikli", "icon": "fas fa-boxes-stacked", "group": "Производство"},
+    {"value": "plan_proizvodstvo", "label": "План за производство", "description": "Планирање и следење на производни активности.", "endpoint": "main.plan_proizvodstvo", "icon": "fas fa-calendar-check", "group": "Производство"},
+    {"value": "izvestaj", "label": "Извештај", "description": "Извештаи и пресек на работата.", "endpoint": "main.izvestaj", "icon": "fas fa-file-alt", "group": "Производство"},
+    {"value": "zalihi", "label": "Залихи", "description": "Состојба и движења на залихите.", "endpoint": "zalihi.zalihi", "icon": "fas fa-warehouse", "group": "Залихи"},
+    {"value": "kvalitet", "label": "Квалитет", "description": "Преглед на активни контроли за квалитет.", "endpoint": "kvalitet.kvalitet", "icon": "fas fa-check-circle", "group": "Квалитет"},
+    {"value": "kvalitet_nova", "label": "Нова контрола", "description": "Започни нова контрола за квалитет.", "endpoint": "kvalitet.kvalitet_select_kamin", "icon": "fas fa-clipboard-check", "group": "Квалитет"},
+    {"value": "kvalitet_arhiva", "label": "Архива на контроли", "description": "Историја на претходно завршени контроли.", "endpoint": "kvalitet.kvalitet_arhiva", "icon": "fas fa-folder-open", "group": "Квалитет"},
+    {"value": "kvalitet_template", "label": "QC шаблони", "description": "Управување со шаблони за контрола.", "endpoint": "kvalitet.kvalitet_template_manager", "icon": "fas fa-sliders", "group": "Квалитет"},
+    {"value": "nabavki", "label": "Набавки", "description": "Тековни барања и процес на набавки.", "endpoint": "nabavki.nabavki", "icon": "fas fa-shopping-cart", "group": "Набавки"},
+    {"value": "nabavki_arhiva", "label": "Архива на набавки", "description": "Архивирани барања и историја на набавки.", "endpoint": "nabavki.arhiva", "icon": "fas fa-archive", "group": "Набавки"},
+    {"value": "ponudi", "label": "Понуди", "description": "Активни понуди и нивно следење.", "endpoint": "ponudi.ponudi", "icon": "fas fa-file-invoice-dollar", "group": "Набавки"},
+    {"value": "ponudi_arhiva", "label": "Архива на понуди", "description": "Историја на стари понуди.", "endpoint": "ponudi.arhiva", "icon": "fas fa-box-archive", "group": "Набавки"},
+    {"value": "sostanoci", "label": "Состаноци", "description": "Записи и преглед на состаноци.", "endpoint": "sostanoci.lista", "icon": "fas fa-microphone", "group": "Комуникација"},
+    {"value": "chat", "label": "Чат", "description": "Внатрешна комуникација со тимот.", "endpoint": "chat.chat_page", "icon": "fas fa-comments", "group": "Комуникација"},
+    {"value": "odmori", "label": "Одмори", "description": "Главен екран за управување со одмори.", "endpoint": "main.odmori", "icon": "fas fa-umbrella-beach", "group": "Одмори"},
+    {"value": "baranje_odmor", "label": "Барање за одмор", "description": "Поднесување ново барање за одмор.", "endpoint": "main.baranje_odmor", "icon": "fas fa-file-signature", "group": "Одмори"},
+    {"value": "odmori_vraboteni", "label": "Вработени", "description": "Листа на вработени во модулот за одмори.", "endpoint": "odmori.odmori_vraboteni", "icon": "fas fa-users", "group": "Одмори"},
+    {"value": "odmori_kalendar", "label": "Календар", "description": "Календарски приказ на одмори и отсуства.", "endpoint": "odmori.odmori_kalendar", "icon": "fas fa-calendar-alt", "group": "Одмори"},
+    {"value": "odmori_pregled_odmori", "label": "Преглед на одмори", "description": "Преглед и одобрување на поднесени барања.", "endpoint": "odmori.odmori_pregled_odmori", "icon": "fas fa-list-check", "group": "Одмори"},
+    {"value": "odmori_sekojdnevni_otsustva", "label": "Секојдневни отсуства", "description": "Дневен приказ на присуства и отсуства.", "endpoint": "odmori.odmori_sekojdnevni_otsustva", "icon": "fas fa-user-clock", "group": "Одмори"},
+    {"value": "odmori_manager_emails", "label": "Email за менаџери", "description": "Поставки и тестирање на известувања за менаџери.", "endpoint": "odmori.odmori_manager_emails", "icon": "fas fa-envelope-open-text", "group": "Одмори"},
+]
+
+
+def _get_welcome_module_cards():
+    if session.get("is_admin"):
+        return [
+            {**item, "href": url_for(item["endpoint"])}
+            for item in WELCOME_MODULES
+        ]
+
+    allowed = {
+        module.strip()
+        for module in (session.get("allowed_modules") or "").split(",")
+        if module.strip()
+    }
+    return [
+        {**item, "href": url_for(item["endpoint"])}
+        for item in WELCOME_MODULES
+        if item["value"] in allowed
+    ]
+
 # ─────────────────────────────────────────────────────────────
 # EMAIL КОНФИГУРАЦИЈА
 # ─────────────────────────────────────────────────────────────
@@ -34,6 +87,23 @@ def kamin_static(filename):
 @main_bp.route("/pozicii/<path:filename>")
 def pozicii_static(filename):
     return send_from_directory(POZICII_FOLDER, filename)
+
+
+@main_bp.route("/welcome")
+@login_required
+def welcome():
+    module_cards = _get_welcome_module_cards()
+    if not session.get("is_admin") and not module_cards:
+        flash("Немате дозволен пристап до ниту еден модул. Контактирајте го администраторот.", "warning")
+        return redirect(url_for("auth.login"))
+
+    return render_template(
+        "welcome.html",
+        module_cards=module_cards,
+        user_name=session.get("user", ""),
+        is_admin=session.get("is_admin", False),
+        user_group=session.get("user_group", ""),
+    )
 
 
 # ─────────────────────────────────────────────────────────────
@@ -211,6 +281,26 @@ def moj_zapisi():
 @main_bp.route("/odmori")
 @login_required
 def odmori():
+    if not session.get("is_admin"):
+        allowed = {
+            module.strip()
+            for module in (session.get("allowed_modules") or "").split(",")
+            if module.strip()
+        }
+        if "odmori" not in allowed:
+            redirect_map = [
+                ("baranje_odmor", "main.baranje_odmor"),
+                ("odmori_vraboteni", "odmori.odmori_vraboteni"),
+                ("odmori_kalendar", "odmori.odmori_kalendar"),
+                ("odmori_pregled_odmori", "odmori.odmori_pregled_odmori"),
+                ("odmori_sekojdnevni_otsustva", "odmori.odmori_sekojdnevni_otsustva"),
+                ("odmori_manager_emails", "odmori.odmori_manager_emails"),
+            ]
+            for module_name, endpoint in redirect_map:
+                if module_name in allowed:
+                    return redirect(url_for(endpoint))
+            flash("Немате дозвола за пристап до модулот Одмори.", "warning")
+            return redirect(url_for("auth.index"))
     return render_template("odmori.html")
 
 # ─────────────────────────────────────────────────────────────
@@ -470,7 +560,7 @@ def baranje_odmor():
                 "working_days":           working_days,
                 "zabeleska":              zabeleska,
                 "podneseno_od":           session["user"],
-                "podneseno_na":           datetime.now().strftime("%d.%m.%Y %H:%M"),
+                "podneseno_na":           datetime.now().strftime("%d-%m-%Y %H:%M"),
                 "vkupno_dena":            vkupno_dena,
                 "iskoristeni":            iskoristeni,
                 "preostanati":            preostanati_po_baranje,
@@ -553,7 +643,7 @@ def _isprati_odmor_email(vraboten_email, ime_prezime, datum_od, datum_do,
 
     def fmt(d):
         try:
-            return datetime.strptime(d, "%Y-%m-%d").strftime("%d.%m.%Y")
+            return datetime.strptime(d, "%Y-%m-%d").strftime("%d-%m-%Y")
         except Exception:
             return d
 
@@ -656,14 +746,14 @@ def _isprati_odobruvanje_email(vraboten_email, ime_prezime, datum_od, datum_do,
 
     def fmt(d):
         try:
-            return datetime.strptime(d, "%Y-%m-%d").strftime("%d.%m.%Y")
+            return datetime.strptime(d, "%Y-%m-%d").strftime("%d-%m-%Y")
         except Exception:
             return d
 
     datum_od_fmt = fmt(datum_od)
     datum_do_fmt = fmt(datum_do)
     zabeleska    = zabeleska or "Нема забелешка"
-    odobren_na   = datetime.now().strftime("%d.%m.%Y %H:%M")
+    odobren_na   = datetime.now().strftime("%d-%m-%Y %H:%M")
 
     preos_color = "#ef4444" if preostanati <= 0 else ("#d97706" if preostanati <= 5 else "#16a34a")
     preos_bg    = "#fef2f2" if preostanati <= 0 else ("#fefce8" if preostanati <= 5 else "#f0fdf4")

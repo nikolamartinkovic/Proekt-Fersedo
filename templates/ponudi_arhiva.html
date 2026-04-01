@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Архива на Понуди – Fersedo{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-5">
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show d-flex align-items-center shadow" role="alert">
+                    <i class="fas fa-info-circle me-3 fs-4"></i>
+                    <div class="flex-grow-1 fw-medium">{{ message }}</div>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {# Хедер #}
+    <div class="mb-5">
+        <div class="text-white py-5 px-4 rounded-4 shadow-lg text-center"
+             style="background: linear-gradient(135deg,#1a1a2e,#16213e);">
+            <div class="d-flex justify-content-center align-items-center mb-3">
+                <i class="fas fa-archive fa-3x me-4" style="opacity:.9;"></i>
+                <h1 class="display-4 fw-bold mb-0" style="color:#f1f5f9;">Архива на понуди</h1>
+            </div>
+            <p class="lead mb-0" style="opacity:.9;">Завршени и архивирани понуди</p>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <a href="{{ url_for('ponudi.ponudi') }}" class="btn btn-outline-primary px-4 py-2">
+            <i class="fas fa-arrow-left me-2"></i> Назад кон Понуди
+        </a>
+    </div>
+
+    {% if archived %}
+    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+        <div class="card-header bg-dark text-white py-4 px-5">
+            <h5 class="mb-0 fs-4">
+                <i class="fas fa-box-archive me-3"></i>
+                Архивирани понуди ({{ archived|length }})
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Број</th>
+                            <th>Наслов</th>
+                            <th>Добавувач</th>
+                            <th>Цена</th>
+                            <th>Статус</th>
+                            <th>Архивирал</th>
+                            <th>Архивирано на</th>
+                            <th>Детали</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in archived %}
+                        <tr class="align-middle">
+                            <td><strong class="text-secondary">{{ a.ponuda_broj or '—' }}</strong></td>
+                            <td>{{ a.naslov }}</td>
+                            <td>{{ a.dobavuvac }}</td>
+                            <td>
+                                {% if a.cena != none %}
+                                    <span class="fw-bold">{{ "%.2f"|format(a.cena) }} {{ a.valuta }}</span>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary rounded-pill px-3 py-2">{{ a.status }}</span>
+                            </td>
+                            <td>{{ a.arhivirano_od or '—' }}</td>
+                            <td><small>{{ a.arhivirano_na or '—' }}</small></td>
+                            <td>
+                                <button type="button" class="btn btn-outline-secondary btn-sm px-3"
+                                        data-bs-toggle="modal" data-bs-target="#archiveModal{{ a.id }}">
+                                    <i class="fas fa-eye me-1"></i> Детали
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {# Архивирани детали модали #}
+    {% for a in archived %}
+    <div class="modal fade" id="archiveModal{{ a.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 shadow overflow-hidden">
+                <div class="modal-header bg-dark text-white py-4 px-5">
+                    <h5 class="modal-title fs-5">
+                        <i class="fas fa-archive me-2"></i>
+                        {{ a.ponuda_broj or '—' }} – {{ a.naslov }}
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-5">
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Добавувач:</strong> {{ a.dobavuvac }}</p>
+                            <p><strong>Цена:</strong>
+                                {% if a.cena != none %}
+                                    <span class="fw-bold text-success">{{ "%.2f"|format(a.cena) }} {{ a.valuta }}</span>
+                                {% else %}—{% endif %}
+                            </p>
+                            <p><strong>Рок испорака:</strong> {{ a.rok_isporaka or '—' }}</p>
+                            <p><strong>Важи до:</strong> {{ a.datum_vaznost or '—' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Опис:</strong> {{ a.opis or '—' }}</p>
+                            <p><strong>Статус:</strong> <span class="badge bg-secondary px-3 py-2">{{ a.status }}</span></p>
+                            <p><strong>Архивирал:</strong> {{ a.arhivirano_od or '—' }}</p>
+                            <p><strong>Архивирано на:</strong> {{ a.arhivirano_na or '—' }}</p>
+                        </div>
+                    </div>
+
+                    {% if a.slika %}
+                    <p><strong>Слика:</strong></p>
+                    <a href="#" onclick="openLightbox('/static/ponudi/{{ a.slika }}'); return false;">
+                        <img src="/static/ponudi/{{ a.slika }}"
+                             class="img-fluid rounded shadow"
+                             style="max-height:220px;cursor:zoom-in;">
+                    </a>
+                    {% endif %}
+
+                    {% if a.comments %}
+                    <div class="mt-4 border-top pt-4">
+                        <h6 class="fw-bold mb-3">Коментари</h6>
+                        <div class="bg-light rounded border p-3" style="max-height:280px;overflow-y:auto;">
+                            {% for c in a.comments %}
+                            <div class="mb-3 p-3 rounded bg-white border shadow-sm">
+                                <small class="text-muted d-block mb-1">{{ c.user }} • {{ c.timestamp }}</small>
+                                {% if c.comment %}<p class="mb-0">{{ c.comment }}</p>{% endif %}
+                                {% if c.slika %}
+                                <a href="#" onclick="openLightbox('/static/ponudi_chat/{{ c.slika }}'); return false;" class="d-block mt-2">
+                                    <img src="/static/ponudi_chat/{{ c.slika }}"
+                                         class="rounded shadow-sm"
+                                         style="max-width:180px;max-height:160px;object-fit:cover;cursor:zoom-in;">
+                                </a>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary btn-lg px-5 py-3" data-bs-dismiss="modal">Затвори</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="text-center py-5 text-muted">
+        <i class="fas fa-archive fa-5x mb-4 opacity-40"></i>
+        <h4 class="fw-light">Нема архивирани понуди.</h4>
+    </div>
+    {% endif %}
+</div>
+
+{# Lightbox #}
+<style>
+#lightbox-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:99999;align-items:center;justify-content:center;cursor:zoom-out;}
+#lightbox-overlay.active{display:flex;}
+#lightbox-overlay img{max-width:92vw;max-height:92vh;border-radius:10px;object-fit:contain;}
+#lightbox-close{position:fixed;top:18px;right:24px;color:#fff;font-size:2.2rem;background:none;border:none;cursor:pointer;z-index:100000;opacity:.85;}
+#lightbox-close:hover{opacity:1;}
+</style>
+<div id="lightbox-overlay" onclick="closeLightbox()">
+    <button id="lightbox-close" onclick="closeLightbox()">&times;</button>
+    <img id="lightbox-img" src="" alt="">
+</div>
+<script>
+function openLightbox(src){document.getElementById('lightbox-img').src=src;document.getElementById('lightbox-overlay').classList.add('active');document.body.style.overflow='hidden';}
+function closeLightbox(){document.getElementById('lightbox-overlay').classList.remove('active');document.getElementById('lightbox-img').src='';document.body.style.overflow='';}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLightbox();});
+document.getElementById('lightbox-img').addEventListener('click',e=>e.stopPropagation());
+</script>
+{% endblock %}

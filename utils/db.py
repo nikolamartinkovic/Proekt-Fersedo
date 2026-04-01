@@ -2,9 +2,14 @@ import sqlite3
 import os
 from flask import current_app
 from extensions import ph  # За хеширање на лозинка за default admin
+from utils.db_schema import apply_standard_migrations, ensure_common_indexes
 
 # Глобална променлива за патека до базата (ќе ја поставиме од app.py)
 DATABASE_PATH = None
+DEFAULT_DATABASE_PATH = os.getenv(
+    "DATABASE_PATH",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "instance", "database.db"),
+)
 
 def get_db():
     """Отвора SQLite конекција со dict row factory."""
@@ -14,7 +19,7 @@ def get_db():
         try:
             DATABASE_PATH = current_app.config['DATABASE_PATH']
         except RuntimeError:
-            DATABASE_PATH = r"C:\Users\Server\Desktop\Proekt Fersedo\instance\database.db"
+            DATABASE_PATH = DEFAULT_DATABASE_PATH
 
     conn = sqlite3.connect(
         DATABASE_PATH,
@@ -108,6 +113,31 @@ def init_db():
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS mobile_notifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            title TEXT NOT NULL,
+            body TEXT NOT NULL,
+            url TEXT DEFAULT '/',
+            category TEXT DEFAULT 'general',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL,
+            action TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'info',
+            username TEXT DEFAULT '',
+            details TEXT DEFAULT '',
+            ip_address TEXT DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS nabavki_requests (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT NOT NULL,
@@ -136,6 +166,7 @@ def init_db():
             timestamp TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS nabavki_archive (
@@ -328,6 +359,18 @@ def init_db():
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS otsustva_email_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tip TEXT NOT NULL,
+            status TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            recipients TEXT NOT NULL,
+            message TEXT DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS procesni_pozicii (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             kamin TEXT NOT NULL,
@@ -396,34 +439,27 @@ def init_db():
             FOREIGN KEY (kontrola_id) REFERENCES kvalitet_kontrola(id)
         )
     """)
+    cursor.execute("""CREATE TABLE IF NOT EXISTS chat_rooms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tip TEXT NOT NULL DEFAULT 'global',
+    ime TEXT, user1 TEXT, user2 TEXT)""")
 
+    cursor.execute("""CREATE TABLE IF NOT EXISTS chat_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    room_id INTEGER NOT NULL, sender TEXT NOT NULL,
+    text TEXT NOT NULL, timestamp TEXT NOT NULL, tip TEXT DEFAULT 'global')""")
+
+    cursor.execute("""CREATE TABLE IF NOT EXISTS chat_read (
+    room_id INTEGER NOT NULL, username TEXT NOT NULL,
+    last_read_id INTEGER DEFAULT 0,
+    PRIMARY KEY (room_id, username))""")
     # ─────────────────────────────────────────────────────────────
     # МИГРАЦИИ (ALTER TABLE) - безбедно со try-except
     # ─────────────────────────────────────────────────────────────
-    migrations = [
-        ("ALTER TABLE parts ADD COLUMN slika TEXT", "slika во parts"),
-        ("ALTER TABLE parts ADD COLUMN ime TEXT", "ime во parts"),
-        ("ALTER TABLE nabavki_archive ADD COLUMN arhiva_broj TEXT", "arhiva_broj во nabavki_archive"),
-        ("ALTER TABLE kvalitet_template_cekori ADD COLUMN redosled INTEGER DEFAULT 0", "redosled во kvalitet_template_cekori"),
-        ("ALTER TABLE kvalitet_kontrola ADD COLUMN original_pdf_file TEXT", "original_pdf_file во kvalitet_kontrola"),
-        ("ALTER TABLE baranja_odmor ADD COLUMN zabeleska TEXT DEFAULT ''", "zabeleska во baranja_odmor"),
-        ("ALTER TABLE baranja_odmor ADD COLUMN podneseno_od TEXT", "podneseno_od во baranja_odmor"),
-        ("ALTER TABLE baranja_odmor ADD COLUMN podneseno_na TEXT DEFAULT CURRENT_TIMESTAMP", "podneseno_na во baranja_odmor"),
-        ("ALTER TABLE users ADD COLUMN email TEXT DEFAULT ''", "email во users"),
-    ]
+    apply_standard_migrations(cursor)
+    ensure_common_indexes(cursor)
+    conn.commit()
 
-    for sql, desc in migrations:
-        try:
-            cursor.execute(sql)
-            conn.commit()
-            print(f"[MIGRATION] Успешно: {desc}")
-        except sqlite3.OperationalError as e:
-            if "duplicate column name" in str(e).lower():
-                print(f"[MIGRATION] Веќе постои: {desc}")
-            else:
-                print(f"[MIGRATION ERROR] {desc}: {e}")
-
-    # ─────────────────────────────────────────────────────────────
     # DEFAULT ADMIN АКО НЕМА КОРИСНИЦИ
     # ─────────────────────────────────────────────────────────────
     cursor.execute("""

@@ -1,13 +1,16 @@
-# routes/auth.py
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+﻿# routes/auth.py
 from datetime import datetime
+
 from argon2 import exceptions
-from utils.decorators import login_required, admin_required, worker_required
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from extensions import ph
+from utils.audit import log_audit_event
 from utils.db import get_db
+from utils.decorators import admin_required, login_required, worker_required
 
-auth_bp = Blueprint('auth', __name__)
+auth_bp = Blueprint("auth", __name__)
+
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -22,70 +25,57 @@ def login():
                 ph.verify(user["hashed_password"], password)
                 session["user"] = username
                 session["is_admin"] = bool(user["is_admin"])
-                session["user_group"] = user.get("user_group", "")
-                session["allowed_modules"] = user.get("allowed_modules", "")
+                session["user_group"] = user.get("user_group") or ""
+                session["allowed_modules"] = user.get("allowed_modules") or ""
+                log_audit_event(
+                    "auth",
+                    "login",
+                    status="success",
+                    details=f"Успешна најава за {username}",
+                    username=username,
+                )
                 flash("Успешно најавување!", "success")
                 return redirect(url_for("auth.index"))
             except exceptions.VerifyMismatchError:
                 pass
+
+        log_audit_event(
+            "auth",
+            "login",
+            status="warning",
+            details=f"Неуспешна најава за {username or 'непознат корисник'}",
+            username=username or "",
+        )
         flash("Погрешно корисничко име или лозинка!", "error")
-    return render_template(
-        'login.html',
-        current_year=datetime.now().strftime('%Y')
-    )
+
+    return render_template("login.html", current_year=datetime.now().strftime("%Y"))
+
 
 @auth_bp.route("/logout")
 def logout():
+    username = session.get("user", "")
+    if username:
+        log_audit_event(
+            "auth",
+            "logout",
+            status="info",
+            details=f"Одјава за {username}",
+            username=username,
+        )
     session.clear()
     flash("Успешно одјавување.", "success")
     return redirect(url_for("auth.login"))
+
 
 @auth_bp.route("/")
 @login_required
 def index():
     if session.get("is_admin"):
-        return redirect(url_for("admin.dashboard"))
+        return redirect(url_for("main.welcome"))
 
-    allowed = [m.strip() for m in session.get("allowed_modules", "").split(",") if m.strip()]
+    allowed = [m.strip() for m in (session.get("allowed_modules") or "").split(",") if m.strip()]
     if not allowed:
         flash("Немате дозволен пристап до ниту еден модул. Контактирајте го администраторот.", "warning")
         return redirect(url_for("auth.login"))
 
-    # Сите одмори модули — ако корисникот има кој било од нив, оди на главна одмори страница
-    odmori_modules = {
-        "odmori", "baranje_odmor", "odmori_vraboteni",
-        "odmori_kalendar", "odmori_pregled_odmori",
-        "odmori_sekojdnevni_otsustva", "odmori_manager_emails",
-    }
-    if any(m in odmori_modules for m in allowed):
-        return redirect(url_for("main.odmori"))
-
-    # Точни blueprint endpoints за секој модул
-    module_map = {
-    "select_kamin":      "main.select_kamin",
-    "add_part":          "artikli.add",
-    "moj_zapisi":        "main.moj_zapisi",
-    "kalkulacija":       "main.kalkulacija",
-    "artikli":           "artikli.artikli",
-    "nabavki":           "nabavki.nabavki",
-    "dashboard":         "admin.dashboard",
-    "pregled_greski":    "admin.pregled_greski",
-    "admin_users":       "admin.admin_users",
-    "plan_proizvodstvo": "main.plan_proizvodstvo",
-    "izvestaj":          "main.izvestaj",
-    "procesni_cekori":   "admin.procesni_cekori",
-    "zalihi":            "zalihi.zalihi",
-    "email_recipients":  "admin.email_recipients",
-    # ✅ ПОПРАВЕНО: вистински имиња на квалитет модули
-    "kvalitet_nova":     "kvalitet.kvalitet",
-    "kvalitet_arhiva":   "kvalitet.kvalitet",
-    "kvalitet_template": "kvalitet.kvalitet",
-}
-
-    for mod in allowed:
-        route = module_map.get(mod)
-        if route:
-            return redirect(url_for(route))
-
-    flash("Немате дозволен пристап до ниту еден активен модул.", "warning")
-    return redirect(url_for("auth.login"))
+    return redirect(url_for("main.welcome"))

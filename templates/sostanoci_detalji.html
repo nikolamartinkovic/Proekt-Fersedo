@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Sostanok #{{ s.id }} - Fersedo{% endblock %}
+{% block title %}Состанок #{{ s.id }} - Fersedo{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
@@ -13,15 +13,15 @@
 
             <div class="row g-4">
                 <div class="col-md-6">
-                    <p><strong>Datum:</strong> {{ s.datum }}</p>
-                    <p><strong>Snimen od:</strong> {{ s.username }}</p>
-                    <p><strong>Ucesnici:</strong> {{ s.ucesnici or '—' }}</p>
+                    <p><strong>Датум:</strong> {{ s.datum }}</p>
+                    <p><strong>Снимен од:</strong> {{ s.username }}</p>
+                    <p><strong>Учесници:</strong> {{ s.ucesnici or '—' }}</p>
                 </div>
                 <div class="col-md-6 text-md-end">
                     {% if s.audio_file %}
                     <a href="{{ url_for('sostanoci.serve_audio', filename=s.audio_file) }}"
                        class="btn btn-outline-primary btn-lg" target="_blank">
-                        <i class="fas fa-play me-2"></i> Slusni originalna snimka
+                        <i class="fas fa-play me-2"></i> Слушни оригинална снимка
                     </a>
                     {% endif %}
                 </div>
@@ -30,14 +30,14 @@
             <hr class="my-4">
 
             <h4 class="fw-bold mb-3">
-                <i class="fas fa-robot me-2 text-primary"></i> AI Rezime
+                <i class="fas fa-robot me-2 text-primary"></i> AI Резиме
             </h4>
             <div class="alert alert-info">
-                {{ s.rezime or 'Nema rezime (AI ne uspea da obraboti)' }}
+                {{ s.rezime or 'Нема резиме (AI не успеа да обработи)' }}
             </div>
 
             <h5 class="fw-bold mt-4">
-                <i class="fas fa-list-ul me-2 text-secondary"></i> Glavni tocki
+                <i class="fas fa-list-ul me-2 text-secondary"></i> Главни точки
             </h5>
             {% if s.glavni_tocki %}
             <div class="list-group mb-3">
@@ -46,12 +46,12 @@
                 {% endfor %}
             </div>
             {% else %}
-            <p class="text-muted">Nema glavni tocki.</p>
+            <p class="text-muted">Нема главни точки.</p>
             {% endif %}
 
             {% if s.odluki %}
             <h5 class="fw-bold mt-4">
-                <i class="fas fa-check-circle me-2 text-success"></i> Odluki
+                <i class="fas fa-check-circle me-2 text-success"></i> Одлуки
             </h5>
             <div class="list-group mb-3">
                 {% for o in s.odluki.split('\n') if o.strip() %}
@@ -62,7 +62,7 @@
 
             {% if s.zadaci %}
             <h5 class="fw-bold mt-4">
-                <i class="fas fa-tasks me-2 text-warning"></i> Zadaci
+                <i class="fas fa-tasks me-2 text-warning"></i> Задачи
             </h5>
             <div class="list-group mb-3">
                 {% for z in s.zadaci.split('\n') if z.strip() %}
@@ -73,7 +73,7 @@
 
             {% if s.transkripcija %}
             <h5 class="fw-bold mt-5">
-                <i class="fas fa-file-alt me-2 text-secondary"></i> Celosna transkripcija
+                <i class="fas fa-file-alt me-2 text-secondary"></i> Целосна транскрипција
             </h5>
             <div class="border p-4 bg-light rounded" style="max-height: 400px; overflow-y: auto;">
                 <pre style="white-space: pre-wrap; font-family: inherit;">{{ s.transkripcija }}</pre>
@@ -85,12 +85,12 @@
 
     <div class="d-flex justify-content-between align-items-center mt-4 mb-5">
         <a href="{{ url_for('sostanoci.lista') }}" class="btn btn-outline-secondary btn-lg">
-            <i class="fas fa-arrow-left me-2"></i> Nazad na lista
+            <i class="fas fa-arrow-left me-2"></i> Назад на листа
         </a>
         <form method="POST" action="{{ url_for('sostanoci.delete', id=s.id) }}"
-              onsubmit="return confirm('Siguren/a si deka sakash da go izbrishes ovoj sostanok?')">
+              onsubmit="return confirm('Сигурен/а си дека сакаш да го избришеш овој состанок?')">
             <button type="submit" class="btn btn-outline-danger btn-lg">
-                <i class="fas fa-trash me-2"></i> Izbrishi sostanok
+                <i class="fas fa-trash me-2"></i> Избриши состанок
             </button>
         </form>
     </div>

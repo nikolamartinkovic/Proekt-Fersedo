@@ -91,6 +91,21 @@
     </div>
     {% endif %}
 
+    {% if session.get('is_admin') or 'odmori_manager_emails' in allowed %}
+    <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('odmori.odmori_manager_emails') }}" class="card h-100 border-0 shadow-lg overflow-hidden hover-lift text-decoration-none">
+            <div class="card-body text-center p-5 bg-gradient-dark text-white d-flex flex-column justify-content-center">
+                <i class="fas fa-envelope-open-text fa-6x mb-4 opacity-80"></i>
+                <h4 class="card-title fw-bold mb-3 fs-3">Email за менаџери</h4>
+                <p class="card-text mb-4 opacity-90 fs-5">Примачи за дневни и неделни извештаи за отсуства</p>
+                <div class="btn btn-light btn-lg fw-bold mt-auto stretched-link">
+                    <i class="fas fa-envelope me-2"></i> Отвори
+                </div>
+            </div>
+        </a>
+    </div>
+    {% endif %}
+
 </div>
 
 <style>
@@ -102,6 +117,7 @@
     .bg-gradient-info     { background: linear-gradient(135deg, #17a2b8, #138496); }
     .bg-gradient-warning  { background: linear-gradient(135deg, #ffc107, #e0a800); }
     .bg-gradient-danger   { background: linear-gradient(135deg, #dc3545, #c82333); }
+    .bg-gradient-dark     { background: linear-gradient(135deg, #334155, #0f172a); }
 </style>
 
 {% endblock %}

@@ -1,87 +1,166 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block title %}Fersedo - Најава{% endblock %}
 
-<div class="login-page d-flex align-items-center justify-content-center" style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-    <div class="login-card bg-white rounded-4 shadow-2xl p-4 p-md-5" style="max-width: 460px; width: 92%;">
-        <!-- Лого -->
-        <div class="text-center mb-4">
-            <img src="{{ url_for('static', filename='logo.webp') }}" alt="Fersedo" style="max-height: 90px; width: auto;">
+{% block content %}
+<section class="fers-login">
+    <div class="fers-login__bg-orb fers-login__bg-orb--blue"></div>
+    <div class="fers-login__bg-orb fers-login__bg-orb--red"></div>
+    <div class="fers-login__grid-lines" aria-hidden="true"></div>
+
+    <div class="fers-login__shell">
+        <div class="fers-login__brand">
+            <div class="fers-login__brand-overlay"></div>
+            <div class="fers-login__bars" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <div class="fers-login__brand-inner">
+                <img
+                    src="{{ url_for('static', filename='logo.webp') }}"
+                    alt="Fersedo"
+                    class="fers-login__logo"
+                >
+
+                <div class="fers-login__badge">
+                    <i class="bi bi-stars"></i>
+                    <span>Fersedo Workspace</span>
+                </div>
+
+                <h1 class="fers-login__headline">
+                    Централно место за производство, набавки, квалитет и одмори.
+                </h1>
+
+                <p class="fers-login__lead">
+                    Најави се за пристап до модулите што ти се доделени и продолжи со работа без непотребни чекори.
+                </p>
+
+                <div class="fers-login__highlights">
+                    <div class="fers-login__highlight">
+                        <i class="bi bi-kanban"></i>
+                        <span>Организирани процеси</span>
+                    </div>
+                    <div class="fers-login__highlight">
+                        <i class="bi bi-shield-check"></i>
+                        <span>Контролиран пристап</span>
+                    </div>
+                    <div class="fers-login__highlight">
+                        <i class="bi bi-lightning-charge"></i>
+                        <span>Брз старт до твојот модул</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Наслов -->
-        <h1 class="text-center mb-1 fw-bold fs-2" style="color: var(--primary);">
-            Добредојде назад
-        </h1>
-        <p class="text-center text-muted mb-5 fs-5">
-            Најави се за да продолжиш
-        </p>
+        <div class="fers-login__form-panel">
+            <div class="fers-login__form-card">
+                <div class="fers-login__form-header">
+                    <div class="fers-login__icon-wrap">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                    </div>
+                    <h2>Добредојде назад</h2>
+                    <p>Најави се за да продолжиш во системот.</p>
+                </div>
 
-        <!-- Форма -->
-        <form method="POST" id="loginForm" novalidate>
-            <!-- Корисничко име -->
-            <div class="mb-4">
-                <label for="username" class="form-label fw-bold">Корисничко име</label>
-                <input type="text" id="username" name="username" class="form-control form-control-lg" required autofocus placeholder="Внеси корисничко име">
-                <div class="invalid-feedback">Корисничкото име е задолжително</div>
-            </div>
-
-            <!-- Лозинка -->
-            <div class="mb-4 position-relative">
-                <label for="password" class="form-label fw-bold">Лозинка</label>
-                <input type="password" id="password" name="password" class="form-control form-control-lg pe-5" required placeholder="Внеси лозинка">
-                <i class="fas fa-eye-slash position-absolute top-50 end-0 translate-middle-y pe-4 fs-5" id="togglePassword" style="cursor: pointer; color: #6c757d;"></i>
-                <div class="invalid-feedback">Лозинката е задолжителна</div>
-            </div>
-
-            <!-- Грешка -->
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category in ['error', 'danger'] else 'warning' }} alert-dismissible fade show d-flex align-items-center mb-4" role="alert">
-                            <i class="fas fa-exclamation-circle me-3 fs-4"></i>
-                            <div>{{ message }}</div>
-                            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="fers-login__alerts">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category in ['error', 'danger'] else 'warning' if category == 'warning' else 'success' }} alert-dismissible fade show d-flex align-items-start gap-3 mb-3" role="alert">
+                                    <i class="bi {% if category in ['error', 'danger'] %}bi-exclamation-octagon-fill{% elif category == 'warning' %}bi-exclamation-triangle-fill{% else %}bi-check-circle-fill{% endif %} fs-5 mt-1"></i>
+                                    <div class="flex-grow-1">{{ message }}</div>
+                                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
                         </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
+                    {% endif %}
+                {% endwith %}
 
-            <!-- Копче за најава -->
-            <button type="submit" id="loginBtn" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow mt-2">
-                <span id="loginText">Најави се</span>
-                <span id="loginSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
-            </button>
-        </form>
+                <form method="POST" id="loginForm" class="fers-login__form" novalidate>
+                    <div class="fers-login__field">
+                        <label for="username">Корисничко име</label>
+                        <div class="fers-login__input-wrap">
+                            <i class="bi bi-person"></i>
+                            <input
+                                type="text"
+                                id="username"
+                                name="username"
+                                class="form-control"
+                                required
+                                autofocus
+                                autocomplete="username"
+                                placeholder="Внеси корисничко име"
+                            >
+                            <div class="invalid-feedback">Корисничкото име е задолжително.</div>
+                        </div>
+                    </div>
 
-        <!-- Footer текст -->
-        <p class="text-center mt-5 text-white opacity-75 small">
-            © {{ current_year }} Fersedo Performance Tracker
-        </p>
+                    <div class="fers-login__field">
+                        <label for="password">Лозинка</label>
+                        <div class="fers-login__input-wrap fers-login__input-wrap--password">
+                            <i class="bi bi-lock"></i>
+                            <input
+                                type="password"
+                                id="password"
+                                name="password"
+                                class="form-control"
+                                required
+                                autocomplete="current-password"
+                                placeholder="Внеси лозинка"
+                            >
+                            <button type="button" class="fers-login__toggle" id="togglePassword" aria-label="Прикажи лозинка">
+                                <i class="bi bi-eye-slash"></i>
+                            </button>
+                            <div class="invalid-feedback">Лозинката е задолжителна.</div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="loginBtn" class="fers-login__submit">
+                        <span id="loginText">Најави се</span>
+                        <span id="loginSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                    </button>
+                </form>
+
+                <div class="fers-login__footer">
+                    <span>&copy; {{ current_year }} Fersedo</span>
+                    <span>Интерен систем за работа</span>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+</section>
 
 <script>
-// Toggle password visibility
-document.getElementById('togglePassword')?.addEventListener('click', function () {
-    const password = document.getElementById('password');
-    const type = password.type === 'password' ? 'text' : 'password';
-    password.type = type;
-    this.classList.toggle('fa-eye-slash');
-    this.classList.toggle('fa-eye');
+const togglePasswordBtn = document.getElementById('togglePassword');
+const togglePasswordIcon = togglePasswordBtn?.querySelector('i');
+const passwordInput = document.getElementById('password');
+
+togglePasswordBtn?.addEventListener('click', function () {
+    if (!passwordInput) return;
+    const isPassword = passwordInput.type === 'password';
+    passwordInput.type = isPassword ? 'text' : 'password';
+    togglePasswordIcon?.classList.toggle('bi-eye-slash', !isPassword);
+    togglePasswordIcon?.classList.toggle('bi-eye', isPassword);
 });
 
-// Loader при submit + валидација
 document.getElementById('loginForm')?.addEventListener('submit', function (e) {
-    if (!this.checkValidity()) {
-        e.preventDefault();
-        this.classList.add('was-validated');
-        return;
-    }
-
+    const username = document.getElementById('username');
+    const password = document.getElementById('password');
     const btn = document.getElementById('loginBtn');
     const text = document.getElementById('loginText');
     const spinner = document.getElementById('loginSpinner');
+
+    this.classList.add('was-validated');
+
+    if (!username.value.trim() || !password.value.trim()) {
+        e.preventDefault();
+        return;
+    }
 
     text.classList.add('d-none');
     spinner.classList.remove('d-none');
@@ -90,54 +169,397 @@ document.getElementById('loginForm')?.addEventListener('submit', function (e) {
 </script>
 
 <style>
-    .login-page {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
+
+    .fers-login,
+    .fers-login * {
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+    }
+
+    .fers-login__headline,
+    .fers-login__form-header h2,
+    .fers-login__submit,
+    .fers-login__field label {
+        font-family: "Manrope", "IBM Plex Sans", sans-serif;
+    }
+
+    .fers-login {
+        position: relative;
+        min-height: 100vh;
+        padding: clamp(1rem, 2vw, 1.75rem);
+        background:
+            radial-gradient(circle at top left, rgba(102, 126, 234, 0.28), transparent 34%),
+            radial-gradient(circle at bottom right, rgba(200, 32, 46, 0.22), transparent 28%),
+            linear-gradient(135deg, #eef4ff 0%, #dde7fb 50%, #f5f7fc 100%);
+        overflow: hidden;
+    }
+
+    .fers-login__bg-orb {
+        position: absolute;
+        border-radius: 999px;
+        filter: blur(8px);
+        opacity: 0.85;
+        pointer-events: none;
+    }
+
+    .fers-login__bg-orb--blue {
+        width: 22rem;
+        height: 22rem;
+        top: -8rem;
+        right: -4rem;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.55) 0%, rgba(102, 126, 234, 0) 70%);
+    }
+
+    .fers-login__bg-orb--red {
+        width: 18rem;
+        height: 18rem;
+        left: -5rem;
+        bottom: -4rem;
+        background: radial-gradient(circle, rgba(200, 32, 46, 0.28) 0%, rgba(200, 32, 46, 0) 72%);
+    }
+
+    .fers-login__grid-lines {
+        position: absolute;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(102, 126, 234, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(102, 126, 234, 0.05) 1px, transparent 1px);
+        background-size: 42px 42px;
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.35), transparent 88%);
+        pointer-events: none;
+    }
+
+    .fers-login__shell {
+        position: relative;
+        z-index: 1;
+        max-width: 1120px;
+        margin: 0 auto;
+        min-height: calc(100vh - 2rem);
+        display: grid;
+        grid-template-columns: 1.08fr 0.92fr;
+        border-radius: 32px;
+        overflow: hidden;
+        background: rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 28px 80px rgba(15, 23, 42, 0.16);
+        backdrop-filter: blur(10px);
+    }
+
+    .fers-login__brand {
+        position: relative;
+        padding: clamp(2rem, 3vw, 3rem);
+        background:
+            linear-gradient(160deg, rgba(21, 31, 57, 0.96) 0%, rgba(29, 48, 93, 0.92) 56%, rgba(38, 62, 120, 0.88) 100%);
+        color: #ffffff;
+        overflow: hidden;
+    }
+
+    .fers-login__brand-overlay {
+        position: absolute;
+        inset: 0;
+        background:
+            radial-gradient(circle at 82% 18%, rgba(200, 32, 46, 0.24) 0%, transparent 24%),
+            linear-gradient(to top, rgba(0, 0, 0, 0.28), transparent 36%);
+        pointer-events: none;
+    }
+
+    .fers-login__bars {
+        position: absolute;
+        inset: 0 auto 0 0;
+        display: flex;
+        gap: 1.25rem;
+        opacity: 0.24;
+        pointer-events: none;
+    }
+
+    .fers-login__bars span {
+        width: 3.2rem;
+        height: 100%;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.2) 100%);
+        transform: skewX(-14deg);
+    }
+
+    .fers-login__brand-inner {
+        position: relative;
+        z-index: 1;
+        max-width: 32rem;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 1.5rem;
+    }
+
+    .fers-login__logo {
+        width: min(16rem, 72%);
+        height: auto;
+        object-fit: contain;
+        filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.2));
+    }
+
+    .fers-login__badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        width: fit-content;
+        padding: 0.55rem 1rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        font-size: 0.88rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+    }
+
+    .fers-login__headline {
+        margin: 0;
+        font-size: clamp(2rem, 3vw, 3.35rem);
+        line-height: 1.04;
+        font-weight: 800;
+        max-width: 11ch;
+        letter-spacing: -0.035em;
+    }
+
+    .fers-login__lead {
+        margin: 0;
+        max-width: 33rem;
+        font-size: 1.04rem;
+        line-height: 1.8;
+        color: rgba(255, 255, 255, 0.82);
+    }
+
+    .fers-login__highlights {
+        display: grid;
+        gap: 0.9rem;
+        margin-top: auto;
+    }
+
+    .fers-login__highlight {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        padding: 0.95rem 1rem;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.92);
+        font-weight: 600;
+    }
+
+    .fers-login__highlight i {
+        color: #ff6674;
+        font-size: 1.1rem;
+    }
+
+    .fers-login__form-panel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: clamp(1.3rem, 3vw, 2.2rem);
+        background: rgba(255, 255, 255, 0.74);
+        backdrop-filter: blur(14px);
+    }
+
+    .fers-login__form-card {
+        width: min(100%, 31rem);
+        padding: clamp(1.6rem, 3vw, 2.4rem);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+    }
+
+    .fers-login__form-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .fers-login__icon-wrap {
+        width: 3.4rem;
+        height: 3.4rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 18px;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.12), rgba(200, 32, 46, 0.14));
+        color: #c8202e;
+        font-size: 1.35rem;
+    }
+
+    .fers-login__form-header h2 {
+        margin: 0 0 0.35rem;
+        font-size: clamp(1.8rem, 3vw, 2.4rem);
+        font-weight: 800;
+        color: #172033;
+        letter-spacing: -0.03em;
+    }
+
+    .fers-login__form-header p {
+        margin: 0;
+        color: #64748b;
+        font-size: 1rem;
+    }
+
+    .fers-login__alerts .alert {
+        border-radius: 18px;
+        border: 1px solid rgba(220, 38, 38, 0.08);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+    }
+
+    .fers-login__form {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .fers-login__field label {
+        display: block;
+        margin-bottom: 0.55rem;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1e293b;
+    }
+
+    .fers-login__field .invalid-feedback {
+        display: none !important;
+        margin-top: 0.45rem;
+        font-size: 0.82rem;
+        color: #dc2626;
+    }
+
+    .fers-login__form.was-validated .form-control:invalid ~ .invalid-feedback,
+    .fers-login__field .form-control:invalid:not(:placeholder-shown) ~ .invalid-feedback {
+        display: block !important;
+    }
+
+    .fers-login__input-wrap {
         position: relative;
     }
 
-    .login-card {
-        background: white;
-        border-radius: 24px;
-        box-shadow: 0 30px 100px rgba(0,0,0,0.4);
-        transition: transform 0.3s ease;
+    .fers-login__input-wrap > i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #94a3b8;
+        font-size: 1rem;
+        pointer-events: none;
     }
 
-    .login-card:hover {
-        transform: translateY(-8px);
+    .fers-login__input-wrap .form-control {
+        min-height: 3.65rem;
+        padding: 0.95rem 1rem 0.95rem 2.9rem;
+        border-radius: 18px;
+        border: 1px solid #d7dfeb;
+        background: rgba(248, 250, 252, 0.98);
+        color: #0f172a;
+        font-size: 1rem;
+        box-shadow: none;
     }
 
-    .form-control-lg {
-        font-size: 1.1rem;
-        padding: 0.85rem 1.5rem;
-        border-radius: 12px;
-        border: 1px solid #cbd5e1;
+    .fers-login__input-wrap .form-control:focus {
+        border-color: rgba(102, 126, 234, 0.55);
+        box-shadow: 0 0 0 0.28rem rgba(102, 126, 234, 0.15);
+        background: #ffffff;
     }
 
-    .form-control-lg:focus {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 0.25rem rgba(102,126,234,0.25);
+    .fers-login__input-wrap--password .form-control {
+        padding-right: 3.4rem;
     }
 
-    .btn-primary {
-        background: linear-gradient(135deg, #667eea, #764ba2);
+    .fers-login__toggle {
+        position: absolute;
+        right: 0.85rem;
+        top: 50%;
+        transform: translateY(-50%);
         border: none;
-        transition: all 0.3s ease;
+        background: transparent;
+        color: #64748b;
+        width: 2.2rem;
+        height: 2.2rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease, color 0.2s ease;
     }
 
-    .btn-primary:hover:not(:disabled) {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 35px rgba(102,126,234,0.4);
+    .fers-login__toggle:hover {
+        background: rgba(102, 126, 234, 0.08);
+        color: #334155;
+    }
+
+    .fers-login__submit {
+        margin-top: 0.55rem;
+        min-height: 3.65rem;
+        border: none;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #667eea 0%, #4f6fe6 52%, #c8202e 180%);
+        color: #ffffff;
+        font-size: 1rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        box-shadow: 0 18px 36px rgba(102, 126, 234, 0.28);
+        transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.22s ease;
+    }
+
+    .fers-login__submit:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 24px 42px rgba(79, 111, 230, 0.34);
+    }
+
+    .fers-login__submit:disabled {
+        opacity: 0.8;
+        cursor: wait;
+    }
+
+    .fers-login__footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1.35rem;
+        padding-top: 1.15rem;
+        border-top: 1px solid rgba(148, 163, 184, 0.18);
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    @media (max-width: 991px) {
+        .fers-login__shell {
+            grid-template-columns: 1fr;
+            min-height: auto;
+        }
+
+        .fers-login__brand {
+            min-height: 21rem;
+        }
     }
 
     @media (max-width: 576px) {
-        .login-card {
-            padding: 2rem 1.5rem;
-            border-radius: 20px;
+        .fers-login {
+            padding: 0.65rem;
         }
-        h1 {
-            font-size: 2.2rem;
+
+        .fers-login__shell {
+            border-radius: 24px;
+        }
+
+        .fers-login__brand,
+        .fers-login__form-panel,
+        .fers-login__form-card {
+            padding-left: 1.1rem;
+            padding-right: 1.1rem;
+        }
+
+        .fers-login__headline {
+            max-width: 100%;
+            font-size: 2rem;
+        }
+
+        .fers-login__footer {
+            flex-direction: column;
+            gap: 0.35rem;
         }
     }
 </style>
-
 {% endblock %}

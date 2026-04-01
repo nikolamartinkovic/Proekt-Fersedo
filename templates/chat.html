@@ -1,0 +1,724 @@
+{% extends "base.html" %}
+{% block title %}Чат{% endblock %}
+
+{% block content %}
+<style>
+/* ── Layout ─────────────────────────────────────── */
+.chat-wrap {
+  display: flex;
+  height: calc(100vh - 70px);
+  overflow: hidden;
+  background: #f1f5f9;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.10);
+  margin: 12px;
+}
+
+/* ── Sidebar ─────────────────────────────────────── */
+.chat-sidebar {
+  width: 280px;
+  min-width: 220px;
+  background: #1e293b;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px 0 0 16px;
+  overflow: hidden;
+}
+.sidebar-header {
+  padding: 18px 16px 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  border-bottom: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sidebar-section {
+  padding: 10px 14px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.room-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  border-radius: 10px;
+  margin: 2px 8px;
+  transition: background .15s;
+  font-size: 14px;
+  color: #cbd5e1;
+  position: relative;
+}
+.room-item:hover { background: #334155; }
+.room-item.active { background: #3b82f6; color: #fff; }
+.room-item .avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#6366f1,#8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+.room-item .room-meta { flex: 1; min-width: 0; }
+.room-item .room-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room-item .room-preview { font-size: 12px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room-item.active .room-preview { color: #bfdbfe; }
+.badge {
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 7px;
+  min-width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* New DM button */
+.new-dm-btn {
+  margin: 10px 12px 6px;
+  padding: 9px 0;
+  background: #334155;
+  border: none;
+  color: #93c5fd;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .15s;
+  font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.new-dm-btn:hover { background: #3b82f6; color: #fff; }
+
+.sidebar-scroll { flex: 1; overflow-y: auto; padding-bottom: 12px; }
+.sidebar-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+
+/* ── Main chat area ──────────────────────────────── */
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 0 16px 16px 0;
+}
+.chat-topbar {
+  padding: 14px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  flex-shrink: 0;
+}
+.chat-topbar .tbar-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#6366f1,#8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; font-weight: 700; color: #fff;
+}
+.chat-topbar .tbar-name { font-size: 16px; font-weight: 700; color: #1e293b; }
+.chat-topbar .tbar-sub  { font-size: 12px; color: #64748b; }
+.online-dot {
+  width: 9px; height: 9px;
+  background: #22c55e;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  margin-left: -12px; margin-top: 22px;
+}
+
+/* ── Messages ────────────────────────────────────── */
+.messages-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.messages-area::-webkit-scrollbar { width: 5px; }
+.messages-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+.msg-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin-bottom: 4px;
+  animation: msgIn .18s ease;
+}
+.msg-row.mine { flex-direction: row-reverse; }
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.msg-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#6366f1,#8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+  margin-bottom: 18px;
+}
+.msg-row.mine .msg-avatar {
+  background: linear-gradient(135deg,#3b82f6,#6366f1);
+}
+
+.msg-content { max-width: 68%; }
+.msg-sender {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 2px;
+  padding-left: 2px;
+}
+.msg-row.mine .msg-sender { text-align: right; padding-right: 2px; }
+
+.msg-bubble {
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+.msg-row:not(.mine) .msg-bubble {
+  background: #f1f5f9;
+  color: #1e293b;
+  border-bottom-left-radius: 4px;
+}
+.msg-row.mine .msg-bubble {
+  background: linear-gradient(135deg,#3b82f6,#6366f1);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.msg-time {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 3px;
+  padding: 0 4px;
+}
+.msg-row.mine .msg-time { text-align: right; }
+
+.date-divider {
+  display: flex; align-items: center; gap: 12px;
+  color: #94a3b8; font-size: 12px; font-weight: 600;
+  margin: 10px 0;
+}
+.date-divider::before, .date-divider::after {
+  content: ''; flex: 1; height: 1px; background: #e2e8f0;
+}
+
+/* ── Input bar ───────────────────────────────────── */
+.chat-input-bar {
+  padding: 14px 20px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  background: #fff;
+  flex-shrink: 0;
+}
+.chat-input-bar textarea {
+  flex: 1;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  max-height: 120px;
+  min-height: 42px;
+  background: #f8fafc;
+  color: #1e293b;
+  transition: border .2s;
+  font-family: inherit;
+}
+.chat-input-bar textarea:focus { border-color: #3b82f6; background: #fff; }
+.send-btn {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg,#3b82f6,#6366f1);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform .15s, opacity .15s;
+}
+.send-btn:hover { transform: scale(1.08); }
+.send-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* ── Empty / loading states ─────────────────────── */
+.chat-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  gap: 10px;
+}
+.chat-empty .empty-icon { font-size: 52px; }
+.chat-empty p { font-size: 15px; }
+
+/* ── User picker modal ───────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: none;
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  width: 340px;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.2);
+}
+.modal-box h3 { font-size: 17px; font-weight: 700; color: #1e293b; margin: 0; }
+.modal-search {
+  padding: 9px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+.modal-search:focus { border-color: #3b82f6; }
+.user-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.user-list-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .15s;
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 500;
+}
+.user-list-item:hover { background: #eff6ff; color: #3b82f6; }
+.user-list-item .u-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg,#6366f1,#8b5cf6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff;
+}
+.modal-close-btn {
+  padding: 9px;
+  background: #f1f5f9;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+}
+.modal-close-btn:hover { background: #e2e8f0; }
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 640px) {
+  .chat-sidebar { width: 60px; min-width: 60px; }
+  .sidebar-section, .room-item .room-meta,
+  .new-dm-btn span, .sidebar-header span { display: none; }
+  .room-item { justify-content: center; padding: 10px 0; }
+  .new-dm-btn { padding: 10px 0; }
+}
+</style>
+
+<div class="chat-wrap">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
+  <div class="chat-sidebar">
+    <div class="sidebar-header">
+      💬 <span>Чат</span>
+    </div>
+
+    <div class="sidebar-scroll">
+      <!-- Global room -->
+      <div class="sidebar-section">Канали</div>
+      <div class="room-item {% if open_room == global_room_id %}active{% endif %}"
+           id="room-{{ global_room_id }}"
+           onclick="openRoom({{ global_room_id }}, 'global', 'Општ чат')">
+        <div class="avatar">#</div>
+        <div class="room-meta">
+          <div class="room-name">Општ чат</div>
+          <div class="room-preview">Сите вработени</div>
+        </div>
+        {% if unread.get(global_room_id, 0) %}
+        <span class="badge" id="badge-{{ global_room_id }}">{{ unread[global_room_id] }}</span>
+        {% endif %}
+      </div>
+
+      <!-- DM rooms -->
+      <div class="sidebar-section">Директни пораки</div>
+      {% for dm in dm_list %}
+      <div class="room-item {% if open_room == dm.id %}active{% endif %}"
+           id="room-{{ dm.id }}"
+           onclick="openRoom({{ dm.id }}, 'dm', '{{ dm.other }}')">
+        <div class="avatar">{{ dm.other[0]|upper }}</div>
+        <div class="room-meta">
+          <div class="room-name">{{ dm.other }}</div>
+          <div class="room-preview">{{ dm.last_msg[:30] if dm.last_msg else 'Нема пораки' }}</div>
+        </div>
+        {% if dm.unread %}
+        <span class="badge" id="badge-{{ dm.id }}">{{ dm.unread }}</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+      <!-- New DM -->
+      <button class="new-dm-btn" onclick="openDMModal()">
+        ✉️ <span>Нова порака</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ MAIN ════════════════════════════════════════════════ -->
+  <div class="chat-main" id="chatMain">
+
+    <!-- Empty state -->
+    <div class="chat-empty" id="emptyState">
+      <div class="empty-icon">💬</div>
+      <p>Изберете соба за да почнете</p>
+    </div>
+
+    <!-- Active chat (hidden until room selected) -->
+    <div id="activeChatArea" style="display:none; flex:1; overflow:hidden; flex-direction:column; display:none;">
+      <div class="chat-topbar" id="chatTopbar">
+        <div class="tbar-avatar" id="topbarAvatar">?</div>
+        <div class="online-dot" id="topbarDot"></div>
+        <div>
+          <div class="tbar-name" id="topbarName">–</div>
+          <div class="tbar-sub" id="topbarSub">–</div>
+        </div>
+      </div>
+
+      <div class="messages-area" id="messagesArea">
+        <div style="color:#94a3b8; font-size:13px; text-align:center; margin-top:20px;">Се вчитуваат пораките...</div>
+      </div>
+
+      <div class="chat-input-bar">
+        <textarea id="msgInput"
+                  placeholder="Напиши порака... (Enter за испрати, Shift+Enter за нов ред)"
+                  rows="1"
+                  onkeydown="handleKey(event)"
+                  oninput="autoResize(this)"></textarea>
+        <button class="send-btn" onclick="sendMessage()" id="sendBtn" title="Испрати">
+          ➤
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ USER PICKER MODAL ════════════════════════════════════ -->
+<div class="modal-overlay" id="dmModal" onclick="closeDMModal(event)">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <h3>💬 Нова директна порака</h3>
+    <input class="modal-search" type="text" placeholder="Пребарај корисник..."
+           id="userSearch" oninput="filterUsers()">
+    <div class="user-list" id="userList">
+      {% for u in users %}
+      <div class="user-list-item" onclick="startDM('{{ u.username }}')">
+        <div class="u-avatar">{{ u.username[0]|upper }}</div>
+        {{ u.username }}
+      </div>
+      {% endfor %}
+    </div>
+    <button class="modal-close-btn" onclick="closeDMModalBtn()">✕ Затвори</button>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────
+let currentRoomId   = null;
+let currentRoomType = null;
+let currentRoomName = null;
+let lastMessageId   = 0;
+let pollTimer       = null;
+let me              = "{{ me }}";
+
+// ── On load: open default room ─────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  {% if open_room %}
+  const defRoom = {{ open_room }};
+  const defType = defRoom === {{ global_room_id }} ? 'global' : 'dm';
+  const defName = defRoom === {{ global_room_id }} ? 'Општ чат' :
+    '{{ dm_list|selectattr("id", "equalto", open_room)|map(attribute="other")|first|default("") }}';
+  if (defName || defType === 'global') openRoom(defRoom, defType, defName || 'Општ чат');
+  {% endif %}
+  startBadgePoller();
+});
+
+// ── Open room ──────────────────────────────────────
+function openRoom(roomId, type, name) {
+  currentRoomId   = roomId;
+  currentRoomType = type;
+  currentRoomName = name;
+  lastMessageId   = 0;
+
+  // Sidebar active state
+  document.querySelectorAll(".room-item").forEach(el => el.classList.remove("active"));
+  const rEl = document.getElementById("room-" + roomId);
+  if (rEl) rEl.classList.add("active");
+
+  // Topbar
+  document.getElementById("emptyState").style.display = "none";
+  const area = document.getElementById("activeChatArea");
+  area.style.display = "flex";
+  area.style.flexDirection = "column";
+
+  const av = document.getElementById("topbarAvatar");
+  av.textContent = type === "global" ? "#" : name[0].toUpperCase();
+  document.getElementById("topbarName").textContent = name;
+  document.getElementById("topbarSub").textContent =
+    type === "global" ? "Сите вработени" : "Директна порака";
+  document.getElementById("topbarDot").style.display = type === "global" ? "none" : "block";
+
+  // Clear messages
+  document.getElementById("messagesArea").innerHTML =
+    '<div style="color:#94a3b8;font-size:13px;text-align:center;margin-top:20px;">Се вчитуваат...</div>';
+  document.getElementById("msgInput").focus();
+
+  // Load history
+  fetch(`/chat/history?room_id=${roomId}`)
+    .then(r => r.json())
+    .then(data => {
+      const area = document.getElementById("messagesArea");
+      area.innerHTML = "";
+      if (!data.messages || data.messages.length === 0) {
+        area.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;margin-top:20px;">Нема пораки уште. Почнете разговор! 👋</div>';
+      } else {
+        data.messages.forEach(m => appendMessage(m));
+        if (data.messages.length) {
+          lastMessageId = data.messages[data.messages.length - 1].id;
+        }
+      }
+      scrollToBottom();
+    });
+
+  // Start polling
+  stopPolling();
+  pollTimer = setInterval(pollMessages, 2000);
+}
+
+// ── Poll for new messages ──────────────────────────
+function pollMessages() {
+  if (!currentRoomId) return;
+  fetch(`/chat/messages?room_id=${currentRoomId}&after=${lastMessageId}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.messages && data.messages.length) {
+        const area = document.getElementById("messagesArea");
+        // Remove "no messages" placeholder if present
+        const placeholder = area.querySelector("div[style*='color:#94a3b8']");
+        if (placeholder) placeholder.remove();
+
+        data.messages.forEach(m => appendMessage(m));
+        lastMessageId = data.messages[data.messages.length - 1].id;
+        scrollToBottom();
+      }
+      // Update badges
+      updateBadges(data.unread || {}, data.total_unread || 0);
+    });
+}
+
+function stopPolling() {
+  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+}
+
+// ── Badge poller (global, runs always) ─────────────
+function startBadgePoller() {
+  setInterval(() => {
+    if (currentRoomId) return; // main poller handles this
+    fetch("/chat/unread")
+      .then(r => r.json())
+      .then(data => updateBadges(data.per_room || {}, data.total || 0));
+  }, 5000);
+}
+
+function updateBadges(perRoom, total) {
+  // Update per-room badges in sidebar
+  document.querySelectorAll(".badge[id^='badge-']").forEach(b => {
+    const rid = parseInt(b.id.replace("badge-",""));
+    if (rid !== currentRoomId) {
+      const cnt = perRoom[rid] || 0;
+      if (cnt > 0) { b.textContent = cnt; b.style.display = ""; }
+      else b.style.display = "none";
+    } else {
+      b.style.display = "none";
+    }
+  });
+  // Nav badge (if you have one)
+  const navBadge = document.getElementById("chatNavBadge");
+  if (navBadge) {
+    navBadge.textContent = total;
+    navBadge.style.display = total > 0 ? "inline" : "none";
+  }
+}
+
+// ── Append single message ──────────────────────────
+function appendMessage(m) {
+  const area = document.getElementById("messagesArea");
+  const isMine = m.sender === me;
+
+  const row = document.createElement("div");
+  row.className = "msg-row" + (isMine ? " mine" : "");
+
+  const initials = m.sender[0].toUpperCase();
+  row.innerHTML = `
+    <div class="msg-avatar">${initials}</div>
+    <div class="msg-content">
+      ${!isMine ? `<div class="msg-sender">${escHtml(m.sender)}</div>` : ''}
+      <div class="msg-bubble">${escHtml(m.text)}</div>
+      <div class="msg-time">${m.ts}</div>
+    </div>`;
+
+  area.appendChild(row);
+}
+
+// ── Send message ───────────────────────────────────
+function sendMessage() {
+  const input = document.getElementById("msgInput");
+  const text  = input.value.trim();
+  if (!text || !currentRoomId) return;
+
+  const btn = document.getElementById("sendBtn");
+  btn.disabled = true;
+  input.value = "";
+  autoResize(input);
+
+  fetch("/chat/send", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({room_id: currentRoomId, text})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok) {
+      // Optimistic UI — append immediately
+      const area = document.getElementById("messagesArea");
+      const placeholder = area.querySelector("div[style*='color:#94a3b8']");
+      if (placeholder) placeholder.remove();
+
+      appendMessage({sender: me, text, ts: data.ts, mine: true});
+      scrollToBottom();
+    } else {
+      alert(data.error || "Грешка при испраќање");
+    }
+  })
+  .finally(() => { btn.disabled = false; input.focus(); });
+}
+
+function handleKey(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+}
+
+function scrollToBottom() {
+  const area = document.getElementById("messagesArea");
+  area.scrollTop = area.scrollHeight;
+}
+
+// ── DM Modal ───────────────────────────────────────
+function openDMModal() {
+  document.getElementById("dmModal").classList.add("open");
+  document.getElementById("userSearch").value = "";
+  filterUsers();
+  document.getElementById("userSearch").focus();
+}
+
+function closeDMModal(e) {
+  if (e.target === document.getElementById("dmModal"))
+    document.getElementById("dmModal").classList.remove("open");
+}
+
+function closeDMModalBtn() {
+  document.getElementById("dmModal").classList.remove("open");
+}
+
+function filterUsers() {
+  const q = document.getElementById("userSearch").value.toLowerCase();
+  document.querySelectorAll(".user-list-item").forEach(el => {
+    el.style.display = el.textContent.trim().toLowerCase().includes(q) ? "" : "none";
+  });
+}
+
+function startDM(username) {
+  closeDMModalBtn();
+  fetch("/chat/dm/open", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({username})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.room_id) {
+      // Add to sidebar if not present
+      if (!document.getElementById("room-" + data.room_id)) {
+        addDMToSidebar(data.room_id, data.other);
+      }
+      openRoom(data.room_id, "dm", data.other);
+    } else {
+      alert(data.error || "Грешка");
+    }
+  });
+}
+
+function addDMToSidebar(roomId, other) {
+  const section = document.querySelector(".new-dm-btn");
+  const item = document.createElement("div");
+  item.className = "room-item";
+  item.id = "room-" + roomId;
+  item.onclick = () => openRoom(roomId, "dm", other);
+  item.innerHTML = `
+    <div class="avatar">${other[0].toUpperCase()}</div>
+    <div class="room-meta">
+      <div class="room-name">${escHtml(other)}</div>
+      <div class="room-preview">Нема пораки</div>
+    </div>`;
+  section.parentNode.insertBefore(item, section);
+}
+
+// ── Utils ──────────────────────────────────────────
+function escHtml(str) {
+  return str
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;");
+}
+</script>
+{% endblock %}

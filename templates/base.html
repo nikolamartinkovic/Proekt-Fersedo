@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="mk" data-theme="light">
 <head>
     <meta charset="UTF-8">
@@ -12,9 +12,7 @@
 
     <title>{% block title %}Fersedo - Перформанси{% endblock %}</title>
 
-    <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
-    <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -46,7 +44,6 @@
             --radius: 12px;
             --transition: all 0.3s ease;
 
-            /* Sidebar specific */
             --sb-width-collapsed: 64px;
             --sb-width-expanded: 260px;
             --sb-bg: #ffffff;
@@ -58,6 +55,9 @@
             --sb-group-color: #9ca3af;
             --sb-shadow: 4px 0 32px rgba(15,23,42,0.10);
             --sb-transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --app-safe-top: env(safe-area-inset-top, 0px);
+            --header-base-height: 64px;
+            --header-height: calc(var(--header-base-height) + var(--app-safe-top));
         }
 
         [data-theme="dark"] {
@@ -67,7 +67,6 @@
             --text-secondary: #cbd5e1;
             --border: #475569;
             --shadow: 0 4px 20px rgba(0,0,0,0.5);
-
             --sb-bg: #1a2236;
             --sb-border: #2d3a50;
             --sb-item-hover: rgba(102,126,234,0.12);
@@ -83,218 +82,126 @@
         body { min-height:100vh; touch-action:manipulation; }
 
         header {
-            position: fixed;
-            top: 0; left: 0; width: 100%;
+            position: fixed; top:0; left:0; width:100%;
             z-index: 1200;
             background: var(--surface);
             box-shadow: 0 1px 0 var(--border), var(--shadow-sm);
-            height: 64px;
+            height: var(--header-height);
+            padding-top: var(--app-safe-top);
         }
 
         nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 1.25rem;
-            height: 64px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 1.25rem; height: var(--header-base-height);
         }
 
         .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            text-decoration: none;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
+            display: flex; align-items: center; gap: 0.75rem;
+            text-decoration: none; font-size: 1.5rem; font-weight: 700; color: var(--primary);
         }
-
         .nav-brand img { height: 44px; width: auto; }
 
         .menu-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px; height: 40px;
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            border-radius: 10px;
-            transition: background 0.2s, color 0.2s;
-            font-size: 1.2rem;
+            display: flex; align-items: center; justify-content: center;
+            width: 40px; height: 40px; background: none; border: none;
+            color: var(--text-secondary); cursor: pointer; border-radius: 10px;
+            transition: background 0.2s, color 0.2s; font-size: 1.2rem;
+            position: relative; z-index: 1210;
         }
-
-        .menu-toggle:hover {
-            background: rgba(102,126,234,0.1);
-            color: var(--primary);
-        }
-
-        #sb-trigger {
-            position: fixed;
-            top: 64px; left: 0;
-            width: var(--sb-width-collapsed);
-            height: calc(100vh - 64px);
-            z-index: 1080;
-            pointer-events: none;
-        }
+        .menu-toggle:hover { background: rgba(102,126,234,0.1); color: var(--primary); }
 
         .sidebar {
-            position: fixed;
-            top: 64px; left: 0;
+            position: fixed; top: var(--header-height); left: 0;
             width: var(--sb-width-collapsed);
-            height: calc(100vh - 64px);
+            height: calc(100vh - var(--header-height));
             background: var(--sb-bg);
             border-right: 1px solid var(--sb-border);
             box-shadow: none;
-            z-index: 1100;
-            overflow: hidden;
-            transition:
-                width var(--sb-transition),
-                box-shadow var(--sb-transition);
+            z-index: 1100; overflow: hidden;
+            transition: width var(--sb-transition), box-shadow var(--sb-transition);
             will-change: width;
         }
 
         @media (min-width: 992px) {
-            .sidebar:hover {
-                width: var(--sb-width-expanded);
-                box-shadow: var(--sb-shadow);
-            }
+            .sidebar:hover { width: var(--sb-width-expanded); box-shadow: var(--sb-shadow); }
         }
 
-        .sidebar.mobile-open {
-            width: var(--sb-width-expanded) !important;
-            box-shadow: var(--sb-shadow) !important;
-        }
+        .sidebar.mobile-open { width: var(--sb-width-expanded) !important; box-shadow: var(--sb-shadow) !important; }
 
         .sidebar-inner {
             width: var(--sb-width-expanded);
-            height: 100%;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 0.75rem 0 2rem;
-            scrollbar-width: none;
+            height: 100%; overflow-y: auto; overflow-x: hidden;
+            padding: 0.75rem 0 2rem; scrollbar-width: none;
         }
         .sidebar-inner::-webkit-scrollbar { display: none; }
 
         .sb-group {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            display: flex; align-items: center; gap: 0.5rem;
             padding: 1.2rem 0 0.4rem 1.1rem;
-            font-size: 0.68rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--sb-group-color);
-            white-space: nowrap;
-            overflow: hidden;
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em;
+            text-transform: uppercase; color: var(--sb-group-color);
+            white-space: nowrap; overflow: hidden;
         }
-
         .sb-group::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--sb-border);
-            margin-right: 0.75rem;
-            opacity: 0;
-            transition: opacity var(--sb-transition);
+            content: ''; flex: 1; height: 1px;
+            background: var(--sb-border); margin-right: 0.75rem;
+            opacity: 0; transition: opacity var(--sb-transition);
         }
-
         .sidebar:hover .sb-group::after,
-        .sidebar.mobile-open .sb-group::after {
-            opacity: 1;
-        }
+        .sidebar.mobile-open .sb-group::after { opacity: 1; }
 
         .sb-link {
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 0;
-            padding: 0 0.75rem;
-            height: 46px;
-            color: var(--sb-text-color);
-            text-decoration: none;
-            border-radius: 10px;
-            margin: 2px 0.5rem;
-            overflow: hidden;
-            transition:
-                background 0.2s ease,
-                color 0.2s ease;
-            white-space: nowrap;
+            position: relative; display: flex; align-items: center;
+            gap: 0; padding: 0 0.75rem; height: 46px;
+            color: var(--sb-text-color); text-decoration: none;
+            border-radius: 10px; margin: 2px 0.5rem; overflow: hidden;
+            transition: background 0.2s ease, color 0.2s ease; white-space: nowrap;
         }
-
-        .sb-link:hover {
-            background: var(--sb-item-hover);
-            color: var(--primary);
-        }
-
-        .sb-link.active {
-            background: var(--sb-item-active);
-            color: var(--primary);
-        }
-
+        .sb-link:hover { background: var(--sb-item-hover); color: var(--primary); }
+        .sb-link.active { background: var(--sb-item-active); color: var(--primary); }
         .sb-link.active::before {
-            content: '';
-            position: absolute;
-            left: -0.5rem;
+            content: ''; position: absolute; left: -0.5rem;
             top: 50%; transform: translateY(-50%);
             width: 4px; height: 60%;
-            background: var(--primary);
-            border-radius: 0 4px 4px 0;
+            background: var(--primary); border-radius: 0 4px 4px 0;
         }
 
         .sb-icon {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 40px; height: 40px;
-            border-radius: 9px;
-            font-size: 1.05rem;
-            color: var(--sb-icon-color);
-            transition: color 0.2s ease, background 0.2s ease;
-            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            min-width: 40px; height: 40px; border-radius: 9px;
+            font-size: 1.05rem; color: var(--sb-icon-color);
+            transition: color 0.2s ease, background 0.2s ease; flex-shrink: 0;
+            position: relative;
         }
-
-        .sb-link:hover .sb-icon,
-        .sb-link.active .sb-icon {
-            color: var(--primary);
-            background: rgba(102,126,234,0.10);
+        .sb-link:hover .sb-icon, .sb-link.active .sb-icon {
+            color: var(--primary); background: rgba(102,126,234,0.10);
         }
 
         .sb-label {
-            font-size: 0.875rem;
-            font-weight: 600;
-            opacity: 0;
-            transform: translateX(-6px);
-            transition:
-                opacity 0.28s ease 0.04s,
-                transform 0.28s ease 0.04s;
-            pointer-events: none;
-            padding-left: 0.5rem;
+            font-size: 0.875rem; font-weight: 600;
+            opacity: 0; transform: translateX(-6px);
+            transition: opacity 0.28s ease 0.04s, transform 0.28s ease 0.04s;
+            pointer-events: none; padding-left: 0.5rem;
+        }
+        .sidebar:hover .sb-label, .sidebar.mobile-open .sb-label {
+            opacity: 1; transform: translateX(0);
         }
 
-        .sidebar:hover .sb-label,
-        .sidebar.mobile-open .sb-label {
-            opacity: 1;
-            transform: translateX(0);
+        /* Badge РЅР° РёРєРѕРЅР°С‚Р° РІРѕ sidebar */
+        .sb-badge {
+            position: absolute;
+            top: 4px; right: 4px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 9px; font-weight: 700;
+            border-radius: 999px;
+            padding: 1px 5px;
+            min-width: 16px;
+            text-align: center;
+            border: 2px solid var(--sb-bg);
+            display: none;
+            line-height: 1.4;
         }
-
-        .sidebar:hover .sb-link:nth-child(1) .sb-label  { transition-delay: 0.00s; }
-        .sidebar:hover .sb-link:nth-child(2) .sb-label  { transition-delay: 0.02s; }
-        .sidebar:hover .sb-link:nth-child(3) .sb-label  { transition-delay: 0.04s; }
-        .sidebar:hover .sb-link:nth-child(4) .sb-label  { transition-delay: 0.06s; }
-        .sidebar:hover .sb-link:nth-child(5) .sb-label  { transition-delay: 0.08s; }
-        .sidebar:hover .sb-link:nth-child(6) .sb-label  { transition-delay: 0.10s; }
-        .sidebar:hover .sb-link:nth-child(7) .sb-label  { transition-delay: 0.12s; }
-        .sidebar:hover .sb-link:nth-child(8) .sb-label  { transition-delay: 0.14s; }
-        .sidebar:hover .sb-link:nth-child(9) .sb-label  { transition-delay: 0.16s; }
-        .sidebar:hover .sb-link:nth-child(10) .sb-label { transition-delay: 0.18s; }
-        .sidebar:hover .sb-link:nth-child(11) .sb-label { transition-delay: 0.20s; }
-        .sidebar:hover .sb-link:nth-child(12) .sb-label { transition-delay: 0.22s; }
-        .sidebar:hover .sb-link:nth-child(13) .sb-label { transition-delay: 0.24s; }
-        .sidebar:hover .sb-link:nth-child(14) .sb-label { transition-delay: 0.26s; }
-        .sidebar:hover .sb-link:nth-child(15) .sb-label { transition-delay: 0.28s; }
 
         @media (min-width: 992px) {
             .sidebar:not(:hover) .sb-link::after {
@@ -302,42 +209,34 @@
                 position: absolute;
                 left: calc(var(--sb-width-collapsed) - 0.2rem);
                 top: 50%; transform: translateY(-50%);
-                background: #1e293b;
-                color: #f8fafc;
-                font-size: 0.78rem;
-                font-weight: 600;
+                background: #1e293b; color: #f8fafc;
+                font-size: 0.78rem; font-weight: 600;
                 padding: 0.35rem 0.75rem;
-                border-radius: 7px;
-                white-space: nowrap;
-                pointer-events: none;
-                opacity: 0;
+                border-radius: 7px; white-space: nowrap;
+                pointer-events: none; opacity: 0;
                 box-shadow: 0 4px 16px rgba(0,0,0,0.18);
                 z-index: 9999;
             }
             .sidebar:not(:hover) .sb-link:hover::after {
-                opacity: 1;
-                transition: opacity 0.18s ease 0.4s;
+                opacity: 1; transition: opacity 0.18s ease 0.4s;
             }
         }
 
         .overlay {
-            position: fixed;
-            inset: 0;
+            position: fixed; inset: 0;
             background: rgba(15,23,42,0.45);
             backdrop-filter: blur(2px);
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
+            z-index: 1000; opacity: 0; visibility: hidden;
             transition: opacity 0.35s ease, visibility 0.35s ease;
         }
         .overlay.show { opacity: 1; visibility: visible; }
 
         main {
-            margin-top: 64px;
+            margin-top: var(--header-height);
             margin-left: var(--sb-width-collapsed);
             transition: margin-left var(--sb-transition);
             padding: 1rem;
-            min-height: calc(100vh - 64px);
+            min-height: calc(100vh - var(--header-height));
         }
 
         @media (max-width: 991px) {
@@ -345,74 +244,42 @@
             .sidebar { width: 0; border-right: none; }
             .sidebar.mobile-open { width: var(--sb-width-expanded) !important; }
         }
-
-        @media (max-width: 576px) {
-            nav { padding: 0 0.75rem; }
-        }
+        @media (max-width: 576px) { nav { padding: 0 0.75rem; } }
 
         #scrollToTopBtn {
-            display: none;
-            position: fixed;
+            display: none; position: fixed;
             bottom: 90px; right: 28px;
-            z-index: 998;
-            width: 50px; height: 50px;
+            z-index: 998; width: 50px; height: 50px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            border: none;
-            font-size: 1.1rem;
-            cursor: pointer;
+            color: white; border: none; font-size: 1.1rem; cursor: pointer;
             box-shadow: 0 4px 20px rgba(102,126,234,0.45);
             transition: transform 0.2s ease, box-shadow 0.2s ease;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            line-height: 1;
+            align-items: center; justify-content: center; padding: 0; line-height: 1;
         }
-        #scrollToTopBtn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 28px rgba(102,126,234,0.55);
-        }
+        #scrollToTopBtn:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(102,126,234,0.55); }
 
         #imageModal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.92);
-            z-index: 2000;
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.92); z-index: 2000;
         }
-
         #modalImage {
-            margin: auto;
-            display: block;
-            max-width: 95%;
-            max-height: 90vh;
-            object-fit: contain;
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            border-radius: 8px;
+            margin: auto; display: block;
+            max-width: 95%; max-height: 90vh; object-fit: contain;
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); border-radius: 8px;
         }
-
         .close-modal {
-            position: absolute;
-            top: 16px; right: 24px;
-            color: #e2e8f0;
-            font-size: 2.5rem;
-            cursor: pointer;
-            line-height: 1;
-            transition: color 0.2s;
+            position: absolute; top: 16px; right: 24px;
+            color: #e2e8f0; font-size: 2.5rem; cursor: pointer;
+            line-height: 1; transition: color 0.2s;
         }
         .close-modal:hover { color: #fff; }
 
         .efektivnost-value {
-            font-size: clamp(1.5rem, 5vw, 2.2rem);
-            font-weight: bold;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            min-width: 100px;
-            display: inline-block;
-            text-align: center;
+            font-size: clamp(1.5rem, 5vw, 2.2rem); font-weight: bold;
+            padding: 0.5rem 1rem; border-radius: 8px;
+            min-width: 100px; display: inline-block; text-align: center;
         }
         .high   { background: #d1fae5; color: #065f46; }
         .medium { background: #fef3c7; color: #92400e; }
@@ -420,179 +287,554 @@
 
         .module-card {
             display: flex; align-items: center; gap: 1rem;
-            padding: 1.25rem;
-            border-radius: 18px;
-            text-decoration: none;
-            background: var(--surface);
-            border: 1px solid var(--border);
+            padding: 1.25rem; border-radius: 18px; text-decoration: none;
+            background: var(--surface); border: 1px solid var(--border);
             box-shadow: var(--shadow-sm);
             transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
         }
-        .module-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 18px 45px rgba(0,0,0,0.18);
-            border-color: rgba(102,126,234,0.35);
-        }
-        .module-icon {
-            width:64px; height:64px; border-radius:16px;
-            display:flex; align-items:center; justify-content:center;
-            background: rgba(102,126,234,0.12); color: var(--primary);
-            font-size: 1.8rem; flex: 0 0 64px;
-        }
+        .module-card:hover { transform: translateY(-8px); box-shadow: 0 18px 45px rgba(0,0,0,0.18); border-color: rgba(102,126,234,0.35); }
+        .module-icon { width:64px; height:64px; border-radius:16px; display:flex; align-items:center; justify-content:center; background: rgba(102,126,234,0.12); color: var(--primary); font-size: 1.8rem; flex: 0 0 64px; }
         .module-text { flex:1; min-width:0; }
         .module-title { font-weight:800; font-size:1.25rem; color:var(--text); line-height:1.2; }
         .module-subtitle { margin-top:.25rem; color:var(--text-secondary); font-weight:600; }
-        .module-arrow {
-            width:44px; height:44px; border-radius:14px;
-            display:flex; align-items:center; justify-content:center;
-            background:rgba(102,126,234,0.10); color:var(--primary);
-            transition: transform .25s ease; flex:0 0 44px;
-        }
+        .module-arrow { width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:rgba(102,126,234,0.10); color:var(--primary); transition: transform .25s ease; flex:0 0 44px; }
         .module-card:hover .module-arrow { transform: translateX(4px); }
-
-        @media (max-width:576px) {
-            .module-card { padding:1.1rem 1rem; }
-            .module-icon { width:56px; height:56px; border-radius:14px; font-size:1.6rem; flex-basis:56px; }
-            .module-title { font-size:1.15rem; }
-        }
+        @media (max-width:576px) { .module-card { padding:1.1rem 1rem; } .module-icon { width:56px; height:56px; border-radius:14px; font-size:1.6rem; flex-basis:56px; } .module-title { font-size:1.15rem; } }
 
         .alert-container {
-            position: fixed;
-            top: 74px; left: 50%;
-            transform: translateX(-50%);
-            z-index: 1050;
-            max-width: 90%;
-            width: 500px;
-            pointer-events: none;
-            max-height: 70vh;
-            overflow-y: auto;
+            position: fixed; top: calc(var(--header-height) + 10px); left: 50%;
+            transform: translateX(-50%); z-index: 1050;
+            max-width: 90%; width: 500px; pointer-events: none;
+            max-height: 70vh; overflow-y: auto;
         }
-        .alert {
-            margin-bottom: 10px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            pointer-events: auto;
-        }
+        .alert { margin-bottom: 10px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); pointer-events: auto; }
         .alert-success { background-color:#d4edda; color:#155724; border-color:#c3e6cb; }
 
-        #pwaInstallBanner {
-            display: none;
+        #appInstallModal {
             position: fixed;
-            bottom: 0; left: 0; right: 0;
-            z-index: 1300;
-            background: linear-gradient(135deg, #1e40af, #1e293b);
-            color: white;
-            padding: 14px 20px;
-            box-shadow: 0 -4px 24px rgba(0,0,0,0.25);
-            animation: slideUp 0.35s ease;
+            inset: 0;
+            z-index: 1450;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
         }
-
-        @keyframes slideUp {
-            from { transform: translateY(100%); opacity: 0; }
-            to   { transform: translateY(0);    opacity: 1; }
+        #appInstallModal.show { display: flex; }
+        .app-install-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.58);
+            backdrop-filter: blur(6px);
         }
-
-        .pwa-banner-inner {
+        .app-install-panel {
+            position: relative;
+            width: min(560px, 100%);
+            border-radius: 28px;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at top right, rgba(102, 126, 234, 0.22), transparent 34%),
+                radial-gradient(circle at bottom left, rgba(200, 32, 46, 0.12), transparent 30%),
+                linear-gradient(155deg, #ffffff 0%, #f8fbff 56%, #eef3fb 100%);
+            border: 1px solid rgba(148, 163, 184, 0.22);
+            box-shadow: 0 28px 80px rgba(15, 23, 42, 0.28);
+            color: #0f172a;
+        }
+        .app-install-panel::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(120deg, transparent 0%, rgba(102, 126, 234, 0.06) 52%, transparent 100%);
+            pointer-events: none;
+        }
+        .app-install-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.72);
+            color: #334155;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.1);
+            transition: transform 0.18s ease, background 0.18s ease, color 0.18s ease;
+            z-index: 2;
+        }
+        .app-install-close:hover {
+            transform: translateY(-1px);
+            background: #ffffff;
+            color: #0f172a;
+        }
+        .app-install-hero {
+            position: relative;
+            display: grid;
+            gap: 1.1rem;
+            padding: 1.8rem 1.8rem 1.2rem;
+        }
+        .app-install-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.95rem;
+        }
+        .app-install-brand-mark {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(145deg, #17213b 0%, #26345f 58%, #30497f 100%);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 20px 42px rgba(22, 36, 72, 0.25);
+            overflow: hidden;
+        }
+        .app-install-brand-mark img {
+            width: 84%;
+            height: auto;
+            object-fit: contain;
+            filter: saturate(1.05);
+        }
+        .app-install-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.38rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.08);
+            color: #3452a3;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+        .app-install-status--update {
+            background: rgba(220, 38, 38, 0.08);
+            color: #b42318;
+        }
+        .app-install-status--installed {
+            background: rgba(22, 163, 74, 0.09);
+            color: #166534;
+        }
+        .app-install-title {
+            margin: 0;
+            font-size: clamp(1.7rem, 3vw, 2.15rem);
+            line-height: 1.05;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: #111827;
+            max-width: 14ch;
+        }
+        .app-install-text {
+            margin: 0;
+            max-width: 50ch;
+            font-size: 0.98rem;
+            color: #516176;
+            line-height: 1.72;
+        }
+        .app-install-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.8rem;
+        }
+        .app-install-meta-card {
+            padding: 0.95rem 1rem;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.72);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+        }
+        .app-install-meta-label {
+            display: block;
+            margin-bottom: 0.2rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        .app-install-meta-value {
+            font-size: 1rem;
+            font-weight: 800;
+            color: #111827;
+        }
+        .app-install-body {
+            position: relative;
+            display: grid;
+            gap: 0.9rem;
+            padding: 0 1.8rem 1.8rem;
+        }
+        .app-install-option {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            max-width: 680px;
-            margin: 0 auto;
-            gap: 12px;
-            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem 1rem 1rem 1.1rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
         }
-
-        .pwa-banner-info {
+        .app-install-option-main {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 0.95rem;
+            min-width: 0;
         }
-
-        .pwa-banner-info img {
-            width: 46px; height: 46px;
-            border-radius: 10px;
+        .app-install-option-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 17px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            color: #f8fafc;
+            background: linear-gradient(145deg, #16233f 0%, #314b82 100%);
+            box-shadow: 0 12px 26px rgba(30, 41, 59, 0.18);
             flex-shrink: 0;
         }
-
-        .pwa-banner-title {
-            font-weight: 700;
-            font-size: 0.95rem;
-            line-height: 1.2;
+        .app-install-option-icon--android {
+            background: linear-gradient(145deg, #17213b 0%, #253659 52%, #354f80 100%);
         }
-
-        .pwa-banner-subtitle {
+        .app-install-option-icon--web {
+            background: linear-gradient(145deg, #243b6b 0%, #526fe6 100%);
+        }
+        .app-install-option h4 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #111827;
+        }
+        .app-install-option p {
+            margin: 0.18rem 0 0;
+            color: #64748b;
+            font-size: 0.88rem;
+            line-height: 1.55;
+        }
+        .app-install-note {
             font-size: 0.78rem;
-            opacity: 0.8;
-            margin-top: 2px;
+            color: #64748b;
         }
-
-        .pwa-banner-actions {
+        .app-install-actions {
             display: flex;
-            gap: 8px;
-            flex-shrink: 0;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            padding-top: 0.1rem;
         }
-
-        .pwa-btn-dismiss {
-            padding: 7px 16px;
-            background: transparent;
-            color: white;
-            border: 1px solid rgba(255,255,255,0.35);
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: background 0.2s;
-        }
-        .pwa-btn-dismiss:hover { background: rgba(255,255,255,0.1); }
-
-        .pwa-btn-install {
-            padding: 7px 18px;
-            background: #2563eb;
-            color: white;
+        .app-install-btn {
+            appearance: none;
             border: none;
-            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.55rem;
+            min-width: 156px;
+            padding: 0.92rem 1.25rem;
+            border-radius: 999px;
+            font-size: 0.93rem;
+            font-weight: 800;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
             cursor: pointer;
-            font-weight: 700;
-            font-size: 0.85rem;
-            transition: background 0.2s, transform 0.15s;
         }
-        .pwa-btn-install:hover {
-            background: #1d4ed8;
+        .app-install-btn:hover {
             transform: translateY(-1px);
         }
-
-        @media (max-width: 480px) {
-            .pwa-banner-inner { flex-direction: column; align-items: flex-start; }
-            .pwa-banner-actions { width: 100%; justify-content: flex-end; }
+        .app-install-btn--primary {
+            background: linear-gradient(135deg, #162240, #30477a);
+            color: #ffffff;
+            box-shadow: 0 16px 32px rgba(22, 34, 64, 0.22);
         }
+        .app-install-btn--primary:hover {
+            background: linear-gradient(135deg, #121d37, #2a416f);
+            color: #ffffff;
+        }
+        .app-install-btn--ghost {
+            background: rgba(255, 255, 255, 0.72);
+            color: #334155;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+        }
+        .app-install-btn--ghost:hover {
+            background: rgba(255, 255, 255, 0.96);
+        }
+        .app-install-btn[hidden],
+        .app-install-option[hidden] {
+            display: none !important;
+        }
+        @media (max-width: 640px) {
+            #appInstallModal { padding: 0.85rem; }
+            .app-install-panel { border-radius: 24px; }
+            .app-install-hero,
+            .app-install-body { padding-left: 1.15rem; padding-right: 1.15rem; }
+            .app-install-title { max-width: none; font-size: 1.55rem; }
+            .app-install-meta-grid { grid-template-columns: 1fr; }
+            .app-install-option { flex-direction: column; align-items: stretch; }
+            .app-install-actions { justify-content: stretch; }
+            .app-install-btn { width: 100%; }
+        }
+
+        /* в”Ђв”Ђ Р’РіСЂР°РґРµРЅ Chat Widget в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ */
+        .chat-fab {
+            position: fixed; bottom: 25px; right: 25px;
+            width: 60px; height: 60px;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white; border: none; border-radius: 50%;
+            font-size: 26px;
+            box-shadow: 0 6px 20px rgba(59,130,246,0.45);
+            cursor: pointer; z-index: 1990;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .chat-fab:hover { transform: scale(1.1); box-shadow: 0 10px 28px rgba(59,130,246,0.55); }
+        .chat-fab svg { width: 26px; height: 26px; fill: currentColor; display: block; }
+
+        .chat-fab-badge {
+            position: absolute; top: -3px; right: -3px;
+            background: #ef4444; color: #fff;
+            font-size: 10px; font-weight: 700;
+            border-radius: 999px; padding: 2px 6px;
+            min-width: 18px; text-align: center;
+            border: 2px solid white; display: none;
+        }
+
+        .chat-widget-popup {
+            position: fixed; bottom: 95px; right: 20px;
+            width: 350px; height: 500px;
+            background: white; border-radius: 18px;
+            box-shadow: 0 12px 48px rgba(0,0,0,0.22);
+            display: none; flex-direction: column; overflow: hidden;
+            z-index: 1989; border: 1px solid #e2e8f0;
+            animation: popupIn .22s ease;
+        }
+        @keyframes popupIn { from { opacity:0; transform: scale(0.95) translateY(10px); } to { opacity:1; transform: scale(1) translateY(0); } }
+
+        .cwp-header {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            color: white; padding: 13px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0;
+        }
+        .cwp-header-left { display: flex; align-items: center; gap: 10px; }
+        .cwp-header-left .cwp-av {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px;
+        }
+        .cwp-header-title { font-weight: 700; font-size: 14px; }
+        .cwp-header-sub { font-size: 11px; opacity: 0.8; }
+        .cwp-header-actions { display: flex; gap: 6px; }
+        .cwp-header-actions a,
+        .cwp-header-actions button {
+            background: rgba(255,255,255,0.18); border: none; color: white;
+            width: 30px; height: 30px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; cursor: pointer; text-decoration: none;
+            transition: background 0.2s;
+        }
+        .cwp-header-actions a:hover,
+        .cwp-header-actions button:hover { background: rgba(255,255,255,0.30); }
+
+        .cwp-messages {
+            flex: 1; overflow-y: auto; padding: 14px;
+            background: #f8fafc; display: flex; flex-direction: column; gap: 6px;
+        }
+        .cwp-messages::-webkit-scrollbar { width: 4px; }
+        .cwp-messages::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+        .cwp-msg {
+            max-width: 80%; padding: 8px 12px;
+            border-radius: 16px; font-size: 13.5px;
+            line-height: 1.45; word-break: break-word;
+            animation: msgIn .18s ease;
+        }
+        @keyframes msgIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+        .cwp-msg.mine {
+            align-self: flex-end;
+            background: linear-gradient(135deg,#3b82f6,#6366f1);
+            color: white; border-bottom-right-radius: 4px;
+        }
+        .cwp-msg.other {
+            align-self: flex-start;
+            background: #e8edf5; color: #1e293b;
+            border-bottom-left-radius: 4px;
+        }
+        .cwp-msg .cwp-sender { font-size: 10px; font-weight: 700; opacity: 0.7; margin-bottom: 2px; }
+        .cwp-msg .cwp-ts { font-size: 10px; opacity: 0.6; margin-top: 3px; text-align: right; }
+
+        .cwp-input {
+            padding: 10px 12px; background: white;
+            border-top: 1px solid #e2e8f0;
+            display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0;
+        }
+        .cwp-input textarea {
+            flex: 1; resize: none; min-height: 38px; max-height: 100px;
+            padding: 8px 12px; border: 1.5px solid #e2e8f0;
+            border-radius: 12px; font-size: 13px; outline: none;
+            font-family: inherit; background: #f8fafc; color: #1e293b;
+            transition: border 0.2s;
+        }
+        .cwp-input textarea:focus { border-color: #3b82f6; background: white; }
+        .cwp-input button {
+            width: 38px; height: 38px; flex-shrink: 0;
+            background: linear-gradient(135deg,#3b82f6,#6366f1);
+            color: white; border: none; border-radius: 50%;
+            font-size: 16px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+            transition: transform 0.15s;
+        }
+        .cwp-input button:hover { transform: scale(1.08); }
+        .cwp-input button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .cwp-input button svg { width: 16px; height: 16px; fill: currentColor; display: block; }
+
+        /* In-app toast РЅРѕС‚РёС„РёРєР°С†РёРё */
+        .chat-toast {
+            position: fixed; bottom: 100px; left: 20px;
+            background: #1e293b; color: white;
+            border-radius: 14px; padding: 12px 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+            display: flex; align-items: center; gap: 12px;
+            z-index: 9998; cursor: pointer; max-width: 300px;
+            border-left: 4px solid #3b82f6;
+            animation: toastIn .3s ease;
+            transition: opacity .3s, transform .3s;
+        }
+        .chat-toast .ct-av {
+            width: 34px; height: 34px; border-radius: 50%;
+            background: linear-gradient(135deg,#3b82f6,#6366f1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700; flex-shrink: 0;
+        }
+        .chat-toast .ct-body { flex: 1; min-width: 0; }
+        .chat-toast .ct-name { font-size: 11px; font-weight: 700; color: #93c5fd; }
+        .chat-toast .ct-text { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-toast .ct-x { color: #64748b; flex-shrink: 0; font-size: 15px; padding: 0 2px; }
+        .chat-toast .ct-x:hover { color: white; }
+        @keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+
+        /* Notification permission banner */
+        .notif-perm-banner {
+            background: linear-gradient(135deg,#1d4ed8,#4338ca);
+            color: white; padding: 10px 20px;
+            display: none; align-items: center; gap: 12px; font-size: 13px;
+            position: fixed; top: var(--header-height); left: 0; right: 0; z-index: 1150;
+        }
+        .notif-perm-banner button {
+            background: white; color: #1d4ed8; border: none;
+            border-radius: 8px; padding: 5px 14px;
+            font-size: 12px; font-weight: 700; cursor: pointer;
+        }
+        .notif-perm-banner .nb-x { background: transparent; color: rgba(255,255,255,0.6); font-size: 18px; padding: 0; margin-left: auto; }
     </style>
 </head>
 
 <body>
 
-<button id="scrollToTopBtn" title="Назад на врвот">
+<button id="scrollToTopBtn" title="РќР°Р·Р°Рґ РЅР° РІСЂРІРѕС‚">
     <i class="fas fa-arrow-up"></i>
 </button>
 
 <div id="imageModal">
-    <span class="close-modal">×</span>
-    <img id="modalImage" src="" alt="Зголемена слика">
+    <span class="close-modal">Г—</span>
+    <img id="modalImage" src="" alt="Р—РіРѕР»РµРјРµРЅР° СЃР»РёРєР°">
 </div>
 
-<!-- PWA INSTALL BANNER -->
-<div id="pwaInstallBanner">
-    <div class="pwa-banner-inner">
-        <div class="pwa-banner-info">
-            <img src="/static/icons/icon-192.png" alt="Fersedo">
+<div id="appInstallModal" aria-hidden="true">
+    <div class="app-install-backdrop" data-close-install-modal></div>
+    <div class="app-install-panel" role="dialog" aria-modal="true" aria-labelledby="appInstallTitle">
+        <button type="button" class="app-install-close" onclick="dismissInstallBanner()" aria-label="Затвори">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <div class="app-install-hero">
+            <div class="app-install-brand">
+                <div class="app-install-brand-mark">
+                    <img src="{{ url_for('static', filename='logo.webp') }}" alt="Fersedo">
+                </div>
+                <div>
+                    <div class="app-install-status" id="appInstallStatusChip">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>Инсталација</span>
+                    </div>
+                </div>
+            </div>
+
             <div>
-                <div class="pwa-banner-title">Fersedo Sistem</div>
-                <div class="pwa-banner-subtitle">Инсталирај ја апликацијата за побрз пристап</div>
+                <h3 class="app-install-title" id="appInstallTitle">Инсталирај ја Fersedo апликацијата</h3>
+                <p class="app-install-text" id="appInstallLead">
+                    За побрз пристап можеш да ја инсталираш веб апликацијата или да ја преземеш Android APK верзијата.
+                </p>
+            </div>
+
+            <div class="app-install-meta-grid">
+                <div class="app-install-meta-card">
+                    <span class="app-install-meta-label">Android верзија</span>
+                    <div class="app-install-meta-value" id="appInstallVersionValue">-</div>
+                </div>
+                <div class="app-install-meta-card">
+                    <span class="app-install-meta-label">Последно обновување</span>
+                    <div class="app-install-meta-value" id="appInstallUpdatedValue">-</div>
+                </div>
+                <div class="app-install-meta-card">
+                    <span class="app-install-meta-label">Тип</span>
+                    <div class="app-install-meta-value" id="appInstallModeValue">Веб + Android</div>
+                </div>
             </div>
         </div>
-        <div class="pwa-banner-actions">
-            <button class="pwa-btn-dismiss" onclick="dismissInstallBanner()">Не сега</button>
-            <button class="pwa-btn-install" onclick="installPWA()">
-                <i class="fas fa-download me-1"></i> Инсталирај
-            </button>
+
+        <div class="app-install-body">
+            <div class="app-install-option" id="appInstallAndroidOption">
+                <div class="app-install-option-main">
+                    <div class="app-install-option-icon app-install-option-icon--android">
+                        <i class="fab fa-android"></i>
+                    </div>
+                    <div>
+                        <h4>Android APK</h4>
+                        <p id="appInstallAndroidText">Преземи ја локалната Android апликација за побрз и поудобен пристап.</p>
+                    </div>
+                </div>
+                <a
+                    id="appInstallAndroidBtn"
+                    class="app-install-btn app-install-btn--primary"
+                    href="{{ app_install_meta.android.download_url }}"
+                    download
+                >
+                    <i class="fas fa-download"></i>
+                    <span>Преземи APK</span>
+                </a>
+            </div>
+
+            <div class="app-install-option" id="appInstallWebOption" hidden>
+                <div class="app-install-option-main">
+                    <div class="app-install-option-icon app-install-option-icon--web">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <div>
+                        <h4>Веб апликација</h4>
+                        <p id="appInstallWebText">Инсталирај ја веб апликацијата директно од прелистувачот како PWA.</p>
+                    </div>
+                </div>
+                <button id="appInstallWebBtn" type="button" class="app-install-btn app-install-btn--ghost" onclick="installPWA()" hidden>
+                    <i class="fas fa-mobile-screen-button"></i>
+                    <span>Инсталирај веб апликација</span>
+                </button>
+            </div>
+
+            <div class="app-install-actions">
+                <button type="button" class="app-install-btn app-install-btn--ghost" onclick="dismissInstallBanner()">
+                    <i class="fas fa-clock"></i>
+                    <span>Не сега</span>
+                </button>
+            </div>
+            <div class="app-install-note" id="appInstallNote">
+                Попапот ќе се прикажува повторно кога ќе има нова Android верзија или кога веб инсталацијата ќе биде достапна.
+            </div>
         </div>
     </div>
 </div>
@@ -601,18 +843,17 @@
 <header>
     <nav>
         <a href="{{ url_for('auth.index') }}" class="nav-brand">
-            <img src="{{ url_for('static', filename='logo.webp') }}" alt="Fersedo Лого">
+            <img src="{{ url_for('static', filename='logo.webp') }}" alt="Fersedo Р›РѕРіРѕ">
         </a>
-
         <div style="display:flex; align-items:center; gap:0.75rem;">
             {% if session.user %}
-                <span class="d-none d-md-flex align-items-center gap-2"
-                      style="color:var(--text-secondary); font-weight:500; font-size:0.875rem;">
-                    <i class="fas fa-circle-user" style="color:var(--primary);"></i>
-                    {{ session.user }}
-                </span>
+            <span class="d-none d-md-flex align-items-center gap-2"
+                  style="color:var(--text-secondary); font-weight:500; font-size:0.875rem;">
+                <i class="fas fa-circle-user" style="color:var(--primary);"></i>
+                {{ session.user }}
+            </span>
             {% endif %}
-            <button class="menu-toggle d-flex d-lg-none" onclick="toggleMobileSidebar()" aria-label="Мени">
+            <button class="menu-toggle d-flex d-lg-none" onclick="toggleMobileSidebar()" aria-label="РњРµРЅРё">
                 <i class="fas fa-bars"></i>
             </button>
         </div>
@@ -624,297 +865,387 @@
     <div class="sidebar-inner" id="sidebar-inner">
 
         {% if session.user %}
-            {% set allowed = (session.allowed_modules or '').split(',') | map('trim') | list %}
+        {% set allowed = (session.allowed_modules or '').split(',') | map('trim') | list %}
 
-            {% if session.is_admin %}
+        <div class="sb-group"><i class="fas fa-house" style="font-size:0.7rem;"></i> Почетна</div>
+        <a class="sb-link" href="{{ url_for('main.welcome') }}" data-tooltip="Почетен екран">
+            <span class="sb-icon"><i class="fas fa-house"></i></span>
+            <span class="sb-label">Почетен екран</span>
+        </a>
 
-                <div class="sb-group"><i class="fas fa-shield-halved" style="font-size:0.7rem;"></i> Админ</div>
-                <a class="sb-link" href="{{ url_for('admin.dashboard') }}" data-tooltip="Dashboard">
-                    <span class="sb-icon"><i class="fas fa-chart-line"></i></span>
-                    <span class="sb-label">Dashboard</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('admin.admin_users') }}" data-tooltip="Корисници">
-                    <span class="sb-icon"><i class="fas fa-users-cog"></i></span>
-                    <span class="sb-label">Корисници</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('admin.pregled_greski') }}" data-tooltip="Грешки">
-                    <span class="sb-icon"><i class="fas fa-triangle-exclamation"></i></span>
-                    <span class="sb-label">Грешки</span>
-                </a>
+        {% if session.is_admin %}
 
-                <div class="sb-group"><i class="fas fa-industry" style="font-size:0.7rem;"></i> Производство</div>
-                <a class="sb-link" href="{{ url_for('main.select_kamin') }}" data-tooltip="Нов запис">
-                    <span class="sb-icon"><i class="fas fa-plus-circle"></i></span>
-                    <span class="sb-label">Нов запис</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('artikli.add') }}" data-tooltip="Нов артикл">
-                    <span class="sb-icon"><i class="fas fa-box-open"></i></span>
-                    <span class="sb-label">Отвори нов артикл</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('main.moj_zapisi') }}" data-tooltip="Мои записи">
-                    <span class="sb-icon"><i class="fas fa-list"></i></span>
-                    <span class="sb-label">Мои записи</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('main.kalkulacija') }}" data-tooltip="Калкулација">
-                    <span class="sb-icon"><i class="fas fa-calculator"></i></span>
-                    <span class="sb-label">Калкулација</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('artikli.artikli') }}" data-tooltip="Артикли">
-                    <span class="sb-icon"><i class="fas fa-boxes-stacked"></i></span>
-                    <span class="sb-label">Артикли</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('main.plan_proizvodstvo') }}" data-tooltip="План">
-                    <span class="sb-icon"><i class="fas fa-calendar-check"></i></span>
-                    <span class="sb-label">План за производство</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('main.izvestaj') }}" data-tooltip="Извештај">
-                    <span class="sb-icon"><i class="fas fa-file-alt"></i></span>
-                    <span class="sb-label">Извештај</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('admin.procesni_cekori') }}" data-tooltip="Процесни чекори">
-                    <span class="sb-icon"><i class="fas fa-cogs"></i></span>
-                    <span class="sb-label">Процесни чекори</span>
-                </a>
+            <div class="sb-group"><i class="fas fa-shield-halved" style="font-size:0.7rem;"></i> Админ</div>
+            <a class="sb-link" href="{{ url_for('admin.dashboard') }}" data-tooltip="Dashboard">
+                <span class="sb-icon"><i class="fas fa-chart-line"></i></span>
+                <span class="sb-label">Dashboard</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('admin.admin_users') }}" data-tooltip="Корисници">
+                <span class="sb-icon"><i class="fas fa-users-cog"></i></span>
+                <span class="sb-label">Корисници</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('admin.pregled_greski') }}" data-tooltip="Грешки">
+                <span class="sb-icon"><i class="fas fa-triangle-exclamation"></i></span>
+                <span class="sb-label">Грешки</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('admin.system_logs') }}" data-tooltip="Системски логови">
+                <span class="sb-icon"><i class="fas fa-wave-square"></i></span>
+                <span class="sb-label">Системски логови</span>
+            </a>
 
-                <div class="sb-group"><i class="fas fa-warehouse" style="font-size:0.7rem;"></i> Залихи</div>
-                <a class="sb-link" href="{{ url_for('zalihi.zalihi') }}" data-tooltip="Залихи">
-                    <span class="sb-icon"><i class="fas fa-warehouse"></i></span>
-                    <span class="sb-label">Залихи</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('admin.email_recipients') }}" data-tooltip="Email примачи">
-                    <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
-                    <span class="sb-label">Email примачи</span>
-                </a>
+            <div class="sb-group"><i class="fas fa-industry" style="font-size:0.7rem;"></i> Производство</div>
+            <a class="sb-link" href="{{ url_for('main.select_kamin') }}" data-tooltip="Нов запис">
+                <span class="sb-icon"><i class="fas fa-plus-circle"></i></span>
+                <span class="sb-label">Нов запис</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('artikli.add') }}" data-tooltip="Отвори нов артикл">
+                <span class="sb-icon"><i class="fas fa-box-open"></i></span>
+                <span class="sb-label">Отвори нов артикл</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('main.moj_zapisi') }}" data-tooltip="Мои записи">
+                <span class="sb-icon"><i class="fas fa-list"></i></span>
+                <span class="sb-label">Мои записи</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('main.kalkulacija') }}" data-tooltip="Калкулација">
+                <span class="sb-icon"><i class="fas fa-calculator"></i></span>
+                <span class="sb-label">Калкулација</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('artikli.artikli') }}" data-tooltip="Артикли">
+                <span class="sb-icon"><i class="fas fa-boxes-stacked"></i></span>
+                <span class="sb-label">Артикли</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('main.plan_proizvodstvo') }}" data-tooltip="План за производство">
+                <span class="sb-icon"><i class="fas fa-calendar-check"></i></span>
+                <span class="sb-label">План за производство</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('main.izvestaj') }}" data-tooltip="Извештај">
+                <span class="sb-icon"><i class="fas fa-file-alt"></i></span>
+                <span class="sb-label">Извештај</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('admin.procesni_cekori') }}" data-tooltip="Процесни чекори">
+                <span class="sb-icon"><i class="fas fa-cogs"></i></span>
+                <span class="sb-label">Процесни чекори</span>
+            </a>
 
-                <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
-                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet') }}" data-tooltip="Квалитет">
-                    <span class="sb-icon"><i class="fas fa-check-circle"></i></span>
-                    <span class="sb-label">Квалитет</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_select_kamin') }}" data-tooltip="Нова контрола">
-                    <span class="sb-icon"><i class="fas fa-clipboard-check"></i></span>
-                    <span class="sb-label">Нова контрола</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_arhiva') }}" data-tooltip="Архива на контроли">
-                    <span class="sb-icon"><i class="fas fa-folder-open"></i></span>
-                    <span class="sb-label">Архива на контроли</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_template_manager') }}" data-tooltip="QC Шаблони">
-                    <span class="sb-icon"><i class="fas fa-sliders"></i></span>
-                    <span class="sb-label">QC Шаблони</span>
-                </a>
+            <div class="sb-group"><i class="fas fa-warehouse" style="font-size:0.7rem;"></i> Залихи</div>
+            <a class="sb-link" href="{{ url_for('zalihi.zalihi') }}" data-tooltip="Залихи">
+                <span class="sb-icon"><i class="fas fa-warehouse"></i></span>
+                <span class="sb-label">Залихи</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('admin.email_recipients') }}" data-tooltip="Email примачи">
+                <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
+                <span class="sb-label">Email примачи</span>
+            </a>
 
-                <div class="sb-group"><i class="fas fa-cart-shopping" style="font-size:0.7rem;"></i> Набавки</div>
-                <a class="sb-link" href="{{ url_for('nabavki.nabavki') }}" data-tooltip="Набавки">
-                    <span class="sb-icon"><i class="fas fa-shopping-cart"></i></span>
-                    <span class="sb-label">Набавки</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('nabavki.arhiva') }}" data-tooltip="Архива">
-                    <span class="sb-icon"><i class="fas fa-archive"></i></span>
-                    <span class="sb-label">Архива</span>
-                </a>
+            <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet') }}" data-tooltip="Квалитет">
+                <span class="sb-icon"><i class="fas fa-check-circle"></i></span>
+                <span class="sb-label">Квалитет</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_select_kamin') }}" data-tooltip="Нова контрола">
+                <span class="sb-icon"><i class="fas fa-clipboard-check"></i></span>
+                <span class="sb-label">Нова контрола</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_arhiva') }}" data-tooltip="Архива на контроли">
+                <span class="sb-icon"><i class="fas fa-folder-open"></i></span>
+                <span class="sb-label">Архива на контроли</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_template_manager') }}" data-tooltip="QC шаблони">
+                <span class="sb-icon"><i class="fas fa-sliders"></i></span>
+                <span class="sb-label">QC шаблони</span>
+            </a>
 
-                <!-- ═══ СОСТАНОЦИ (Admin) ═══ -->
-                <div class="sb-group"><i class="fas fa-microphone" style="font-size:0.7rem;"></i> Состаноци</div>
-                <a class="sb-link" href="{{ url_for('sostanoci.lista') }}" data-tooltip="Состаноци">
-                    <span class="sb-icon"><i class="fas fa-microphone"></i></span>
-                    <span class="sb-label">Состаноци</span>
-                </a>
+            <div class="sb-group"><i class="fas fa-cart-shopping" style="font-size:0.7rem;"></i> Набавки</div>
+            <a class="sb-link" href="{{ url_for('nabavki.nabavki') }}" data-tooltip="Набавки">
+                <span class="sb-icon"><i class="fas fa-shopping-cart"></i></span>
+                <span class="sb-label">Набавки</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('nabavki.arhiva') }}" data-tooltip="Архива на набавки">
+                <span class="sb-icon"><i class="fas fa-archive"></i></span>
+                <span class="sb-label">Архива на набавки</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('ponudi.ponudi') }}" data-tooltip="Понуди">
+                <span class="sb-icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                <span class="sb-label">Понуди</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('ponudi.arhiva') }}" data-tooltip="Архива на понуди">
+                <span class="sb-icon"><i class="fas fa-box-archive"></i></span>
+                <span class="sb-label">Архива на понуди</span>
+            </a>
 
-                <div class="sb-group"><i class="fas fa-sun" style="font-size:0.7rem;"></i> Одмори</div>
-                <a class="sb-link" href="{{ url_for('main.odmori') }}" data-tooltip="Одмори">
-                    <span class="sb-icon"><i class="fas fa-umbrella-beach"></i></span>
-                    <span class="sb-label">Одмори</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('main.baranje_odmor') }}" data-tooltip="Барање за одмор">
-                    <span class="sb-icon"><i class="fas fa-file-signature"></i></span>
-                    <span class="sb-label">Барање за одмор</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('odmori.odmori_vraboteni') }}" data-tooltip="Вработени">
-                    <span class="sb-icon"><i class="fas fa-users"></i></span>
-                    <span class="sb-label">Вработени</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('odmori.odmori_kalendar') }}" data-tooltip="Календар">
-                    <span class="sb-icon"><i class="fas fa-calendar-alt"></i></span>
-                    <span class="sb-label">Календар</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('odmori.odmori_pregled_odmori') }}" data-tooltip="Преглед на одмори">
-                    <span class="sb-icon"><i class="fas fa-list-check"></i></span>
-                    <span class="sb-label">Преглед на одмори</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('odmori.odmori_sekojdnevni_otsustva') }}" data-tooltip="Отсуства">
-                    <span class="sb-icon"><i class="fas fa-user-clock"></i></span>
-                    <span class="sb-label">Секојдневни отсуства</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('odmori.odmori_manager_emails') }}" data-tooltip="Email за менаџери">
-                    <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
-                    <span class="sb-label">📧 Email за менаџери</span>
-                </a>
+            <div class="sb-group"><i class="fas fa-microphone" style="font-size:0.7rem;"></i> Состаноци</div>
+            <a class="sb-link" href="{{ url_for('sostanoci.lista') }}" data-tooltip="Состаноци">
+                <span class="sb-icon"><i class="fas fa-microphone"></i></span>
+                <span class="sb-label">Состаноци</span>
+            </a>
 
-            {% else %}
-
-                {% if 'select_kamin' in allowed %}
-                <a class="sb-link" href="{{ url_for('main.select_kamin') }}" data-tooltip="Нов запис">
-                    <span class="sb-icon"><i class="fas fa-plus-circle"></i></span>
-                    <span class="sb-label">Нов запис</span>
-                </a>
-                {% endif %}
-                {% if 'add_part' in allowed %}
-                <a class="sb-link" href="{{ url_for('artikli.add') }}" data-tooltip="Нов артикл">
-                    <span class="sb-icon"><i class="fas fa-box-open"></i></span>
-                    <span class="sb-label">Отвори нов артикл</span>
-                </a>
-                {% endif %}
-                {% if 'moj_zapisi' in allowed %}
-                <a class="sb-link" href="{{ url_for('main.moj_zapisi') }}" data-tooltip="Мои записи">
-                    <span class="sb-icon"><i class="fas fa-list"></i></span>
-                    <span class="sb-label">Мои записи</span>
-                </a>
-                {% endif %}
-                {% if 'kalkulacija' in allowed %}
-                <a class="sb-link" href="{{ url_for('main.kalkulacija') }}" data-tooltip="Калкулација">
-                    <span class="sb-icon"><i class="fas fa-calculator"></i></span>
-                    <span class="sb-label">Калкулација</span>
-                </a>
-                {% endif %}
-                {% if 'artikli' in allowed %}
-                <a class="sb-link" href="{{ url_for('artikli.artikli') }}" data-tooltip="Артикли">
-                    <span class="sb-icon"><i class="fas fa-boxes-stacked"></i></span>
-                    <span class="sb-label">Артикли</span>
-                </a>
-                {% endif %}
-                {% if 'plan_proizvodstvo' in allowed %}
-                <a class="sb-link" href="{{ url_for('main.plan_proizvodstvo') }}" data-tooltip="План">
-                    <span class="sb-icon"><i class="fas fa-calendar-check"></i></span>
-                    <span class="sb-label">План за производство</span>
-                </a>
-                {% endif %}
-                {% if 'izvestaj' in allowed %}
-                <a class="sb-link" href="{{ url_for('main.izvestaj') }}" data-tooltip="Извештај">
-                    <span class="sb-icon"><i class="fas fa-file-alt"></i></span>
-                    <span class="sb-label">Извештај</span>
-                </a>
-                {% endif %}
-                {% if 'procesni_cekori' in allowed %}
-                <a class="sb-link" href="{{ url_for('admin.procesni_cekori') }}" data-tooltip="Процесни чекори">
-                    <span class="sb-icon"><i class="fas fa-cogs"></i></span>
-                    <span class="sb-label">Процесни чекори</span>
-                </a>
-                {% endif %}
-
-                {% if 'zalihi' in allowed %}
-                <div class="sb-group"><i class="fas fa-warehouse" style="font-size:0.7rem;"></i> Залихи</div>
-                <a class="sb-link" href="{{ url_for('zalihi.zalihi') }}" data-tooltip="Залихи">
-                    <span class="sb-icon"><i class="fas fa-warehouse"></i></span>
-                    <span class="sb-label">Залихи</span>
-                </a>
-                {% endif %}
-
-                {% if 'kvalitet_nova' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_template' in allowed %}
-                <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
-                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet') }}" data-tooltip="Квалитет">
-                    <span class="sb-icon"><i class="fas fa-check-circle"></i></span>
-                    <span class="sb-label">Квалитет</span>
-                </a>
-                {% endif %}
-                {% if 'kvalitet_nova' in allowed %}
-                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_select_kamin') }}" data-tooltip="Нова контрола">
-                    <span class="sb-icon"><i class="fas fa-clipboard-check"></i></span>
-                    <span class="sb-label">Нова контрола</span>
-                </a>
-                {% endif %}
-                {% if 'kvalitet_arhiva' in allowed %}
-                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_arhiva') }}" data-tooltip="Архива на контроли">
-                    <span class="sb-icon"><i class="fas fa-folder-open"></i></span>
-                    <span class="sb-label">Архива на контроли</span>
-                </a>
-                {% endif %}
-                {% if 'kvalitet_template' in allowed %}
-                <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_template_manager') }}" data-tooltip="QC Шаблони">
-                    <span class="sb-icon"><i class="fas fa-sliders"></i></span>
-                    <span class="sb-label">QC Шаблони</span>
-                </a>
-                {% endif %}
-
-                {% if 'nabavki' in allowed %}
-                <div class="sb-group"><i class="fas fa-cart-shopping" style="font-size:0.7rem;"></i> Набавки</div>
-                <a class="sb-link" href="{{ url_for('nabavki.nabavki') }}" data-tooltip="Набавки">
-                    <span class="sb-icon"><i class="fas fa-shopping-cart"></i></span>
-                    <span class="sb-label">Набавки</span>
-                </a>
-                <a class="sb-link" href="{{ url_for('nabavki.arhiva') }}" data-tooltip="Архива">
-                    <span class="sb-icon"><i class="fas fa-archive"></i></span>
-                    <span class="sb-label">Архива</span>
-                </a>
-                {% endif %}
-
-                <!-- ═══ СОСТАНОЦИ (Non-admin) ═══ -->
-                <div class="sb-group"><i class="fas fa-microphone" style="font-size:0.7rem;"></i> Состаноци</div>
-                <a class="sb-link" href="{{ url_for('sostanoci.lista') }}" data-tooltip="Состаноци">
-                    <span class="sb-icon"><i class="fas fa-microphone"></i></span>
-                    <span class="sb-label">Состаноци</span>
-                </a>
-
-                {% if 'odmori' in allowed or 'baranje_odmor' in allowed or 'odmori_vraboteni' in allowed or 'odmori_kalendar' in allowed or 'odmori_pregled_odmori' in allowed or 'odmori_sekojdnevni_otsustva' in allowed or 'odmori_manager_emails' in allowed %}
-                <div class="sb-group"><i class="fas fa-sun" style="font-size:0.7rem;"></i> Одмори</div>
-                {% endif %}
-                {% if 'odmori' in allowed %}
-                <a class="sb-link" href="{{ url_for('main.odmori') }}" data-tooltip="Одмори">
-                    <span class="sb-icon"><i class="fas fa-umbrella-beach"></i></span>
-                    <span class="sb-label">Одмори</span>
-                </a>
-                {% endif %}
-                {% if 'baranje_odmor' in allowed %}
-                <a class="sb-link" href="{{ url_for('main.baranje_odmor') }}" data-tooltip="Барање за одмор">
-                    <span class="sb-icon"><i class="fas fa-file-signature"></i></span>
-                    <span class="sb-label">Барање за одмор</span>
-                </a>
-                {% endif %}
-                {% if 'odmori_vraboteni' in allowed %}
-                <a class="sb-link" href="{{ url_for('odmori.odmori_vraboteni') }}" data-tooltip="Вработени">
-                    <span class="sb-icon"><i class="fas fa-users"></i></span>
-                    <span class="sb-label">Вработени</span>
-                </a>
-                {% endif %}
-                {% if 'odmori_kalendar' in allowed %}
-                <a class="sb-link" href="{{ url_for('odmori.odmori_kalendar') }}" data-tooltip="Календар">
-                    <span class="sb-icon"><i class="fas fa-calendar-alt"></i></span>
-                    <span class="sb-label">Календар</span>
-                </a>
-                {% endif %}
-                {% if 'odmori_pregled_odmori' in allowed %}
-                <a class="sb-link" href="{{ url_for('odmori.odmori_pregled_odmori') }}" data-tooltip="Преглед на одмори">
-                    <span class="sb-icon"><i class="fas fa-list-check"></i></span>
-                    <span class="sb-label">Преглед на одмори</span>
-                </a>
-                {% endif %}
-                {% if 'odmori_sekojdnevni_otsustva' in allowed %}
-                <a class="sb-link" href="{{ url_for('odmori.odmori_sekojdnevni_otsustva') }}" data-tooltip="Отсуства">
-                    <span class="sb-icon"><i class="fas fa-user-clock"></i></span>
-                    <span class="sb-label">Секојдневни отсуства</span>
-                </a>
-                {% endif %}
-                {% if 'odmori_manager_emails' in allowed %}
-                <a class="sb-link" href="{{ url_for('odmori.odmori_manager_emails') }}" data-tooltip="Email за менаџери">
-                    <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
-                    <span class="sb-label">📧 Email за менаџери</span>
-                </a>
-                {% endif %}
-
-            {% endif %}
+            <div class="sb-group"><i class="fas fa-sun" style="font-size:0.7rem;"></i> Одмори</div>
+            <a class="sb-link" href="{{ url_for('main.odmori') }}" data-tooltip="Одмори">
+                <span class="sb-icon"><i class="fas fa-umbrella-beach"></i></span>
+                <span class="sb-label">Одмори</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('main.baranje_odmor') }}" data-tooltip="Барање за одмор">
+                <span class="sb-icon"><i class="fas fa-file-signature"></i></span>
+                <span class="sb-label">Барање за одмор</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('odmori.odmori_vraboteni') }}" data-tooltip="Вработени">
+                <span class="sb-icon"><i class="fas fa-users"></i></span>
+                <span class="sb-label">Вработени</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('odmori.odmori_kalendar') }}" data-tooltip="Календар">
+                <span class="sb-icon"><i class="fas fa-calendar-alt"></i></span>
+                <span class="sb-label">Календар</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('odmori.odmori_pregled_odmori') }}" data-tooltip="Преглед на одмори">
+                <span class="sb-icon"><i class="fas fa-list-check"></i></span>
+                <span class="sb-label">Преглед на одмори</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('odmori.odmori_sekojdnevni_otsustva') }}" data-tooltip="Секојдневни отсуства">
+                <span class="sb-icon"><i class="fas fa-user-clock"></i></span>
+                <span class="sb-label">Секојдневни отсуства</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('odmori.odmori_manager_emails') }}" data-tooltip="Email за менаџери">
+                <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
+                <span class="sb-label">Email за менаџери</span>
+            </a>
 
             <div style="height:1px; background:var(--sb-border); margin:0.75rem 0.75rem;"></div>
-            <a class="sb-link" href="{{ url_for('auth.logout') }}" data-tooltip="Одјави се"
-               style="color:#ef4444;">
-                <span class="sb-icon" style="color:#ef4444;"><i class="fas fa-right-from-bracket"></i></span>
-                <span class="sb-label">Одјави се</span>
+            <a class="sb-link" href="{{ url_for('chat.chat_page') }}" data-tooltip="Чат">
+                <span class="sb-icon" id="sbChatIcon">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    <span class="sb-badge" id="sbChatBadge"></span>
+                </span>
+                <span class="sb-label">Чат</span>
             </a>
 
         {% else %}
-            <a class="sb-link" href="{{ url_for('auth.login') }}" data-tooltip="Најава">
-                <span class="sb-icon"><i class="fas fa-right-to-bracket"></i></span>
-                <span class="sb-label">Најава</span>
+
+            {% if 'dashboard' in allowed or 'system_logs' in allowed or 'pregled_greski' in allowed or 'admin_users' in allowed or 'email_recipients' in allowed or 'procesni_cekori' in allowed %}
+            <div class="sb-group"><i class="fas fa-shield-halved" style="font-size:0.7rem;"></i> Админ</div>
+            {% endif %}
+            {% if 'dashboard' in allowed %}
+            <a class="sb-link" href="{{ url_for('admin.dashboard') }}" data-tooltip="Dashboard">
+                <span class="sb-icon"><i class="fas fa-chart-line"></i></span>
+                <span class="sb-label">Dashboard</span>
             </a>
+            {% endif %}
+            {% if 'system_logs' in allowed %}
+            <a class="sb-link" href="{{ url_for('admin.system_logs') }}" data-tooltip="Системски логови">
+                <span class="sb-icon"><i class="fas fa-wave-square"></i></span>
+                <span class="sb-label">Системски логови</span>
+            </a>
+            {% endif %}
+            {% if 'pregled_greski' in allowed %}
+            <a class="sb-link" href="{{ url_for('admin.pregled_greski') }}" data-tooltip="Грешки">
+                <span class="sb-icon"><i class="fas fa-triangle-exclamation"></i></span>
+                <span class="sb-label">Грешки</span>
+            </a>
+            {% endif %}
+            {% if 'admin_users' in allowed %}
+            <a class="sb-link" href="{{ url_for('admin.admin_users') }}" data-tooltip="Корисници">
+                <span class="sb-icon"><i class="fas fa-users-cog"></i></span>
+                <span class="sb-label">Корисници</span>
+            </a>
+            {% endif %}
+            {% if 'email_recipients' in allowed %}
+            <a class="sb-link" href="{{ url_for('admin.email_recipients') }}" data-tooltip="Email примачи">
+                <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
+                <span class="sb-label">Email примачи</span>
+            </a>
+            {% endif %}
+            {% if 'procesni_cekori' in allowed %}
+            <a class="sb-link" href="{{ url_for('admin.procesni_cekori') }}" data-tooltip="Процесни чекори">
+                <span class="sb-icon"><i class="fas fa-cogs"></i></span>
+                <span class="sb-label">Процесни чекори</span>
+            </a>
+            {% endif %}
+
+            {% if 'select_kamin' in allowed or 'add_part' in allowed or 'moj_zapisi' in allowed or 'kalkulacija' in allowed or 'artikli' in allowed or 'plan_proizvodstvo' in allowed or 'izvestaj' in allowed %}
+            <div class="sb-group"><i class="fas fa-industry" style="font-size:0.7rem;"></i> Производство</div>
+            {% endif %}
+            {% if 'select_kamin' in allowed %}
+            <a class="sb-link" href="{{ url_for('main.select_kamin') }}" data-tooltip="Нов запис">
+                <span class="sb-icon"><i class="fas fa-plus-circle"></i></span>
+                <span class="sb-label">Нов запис</span>
+            </a>
+            {% endif %}
+            {% if 'add_part' in allowed %}
+            <a class="sb-link" href="{{ url_for('artikli.add') }}" data-tooltip="Отвори нов артикл">
+                <span class="sb-icon"><i class="fas fa-box-open"></i></span>
+                <span class="sb-label">Отвори нов артикл</span>
+            </a>
+            {% endif %}
+            {% if 'moj_zapisi' in allowed %}
+            <a class="sb-link" href="{{ url_for('main.moj_zapisi') }}" data-tooltip="Мои записи">
+                <span class="sb-icon"><i class="fas fa-list"></i></span>
+                <span class="sb-label">Мои записи</span>
+            </a>
+            {% endif %}
+            {% if 'kalkulacija' in allowed %}
+            <a class="sb-link" href="{{ url_for('main.kalkulacija') }}" data-tooltip="Калкулација">
+                <span class="sb-icon"><i class="fas fa-calculator"></i></span>
+                <span class="sb-label">Калкулација</span>
+            </a>
+            {% endif %}
+            {% if 'artikli' in allowed %}
+            <a class="sb-link" href="{{ url_for('artikli.artikli') }}" data-tooltip="Артикли">
+                <span class="sb-icon"><i class="fas fa-boxes-stacked"></i></span>
+                <span class="sb-label">Артикли</span>
+            </a>
+            {% endif %}
+            {% if 'plan_proizvodstvo' in allowed %}
+            <a class="sb-link" href="{{ url_for('main.plan_proizvodstvo') }}" data-tooltip="План за производство">
+                <span class="sb-icon"><i class="fas fa-calendar-check"></i></span>
+                <span class="sb-label">План за производство</span>
+            </a>
+            {% endif %}
+            {% if 'izvestaj' in allowed %}
+            <a class="sb-link" href="{{ url_for('main.izvestaj') }}" data-tooltip="Извештај">
+                <span class="sb-icon"><i class="fas fa-file-alt"></i></span>
+                <span class="sb-label">Извештај</span>
+            </a>
+            {% endif %}
+
+            {% if 'zalihi' in allowed %}
+            <div class="sb-group"><i class="fas fa-warehouse" style="font-size:0.7rem;"></i> Залихи</div>
+            <a class="sb-link" href="{{ url_for('zalihi.zalihi') }}" data-tooltip="Залихи">
+                <span class="sb-icon"><i class="fas fa-warehouse"></i></span>
+                <span class="sb-label">Залихи</span>
+            </a>
+            {% endif %}
+
+            {% if 'kvalitet' in allowed or 'kvalitet_nova' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_template' in allowed %}
+            <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
+            {% endif %}
+            {% if 'kvalitet' in allowed %}
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet') }}" data-tooltip="Квалитет">
+                <span class="sb-icon"><i class="fas fa-check-circle"></i></span>
+                <span class="sb-label">Квалитет</span>
+            </a>
+            {% endif %}
+            {% if 'kvalitet_nova' in allowed %}
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_select_kamin') }}" data-tooltip="Нова контрола">
+                <span class="sb-icon"><i class="fas fa-clipboard-check"></i></span>
+                <span class="sb-label">Нова контрола</span>
+            </a>
+            {% endif %}
+            {% if 'kvalitet_arhiva' in allowed %}
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_arhiva') }}" data-tooltip="Архива на контроли">
+                <span class="sb-icon"><i class="fas fa-folder-open"></i></span>
+                <span class="sb-label">Архива на контроли</span>
+            </a>
+            {% endif %}
+            {% if 'kvalitet_template' in allowed %}
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_template_manager') }}" data-tooltip="QC шаблони">
+                <span class="sb-icon"><i class="fas fa-sliders"></i></span>
+                <span class="sb-label">QC шаблони</span>
+            </a>
+            {% endif %}
+
+            {% if 'nabavki' in allowed or 'nabavki_arhiva' in allowed or 'ponudi' in allowed or 'ponudi_arhiva' in allowed or 'sostanoci' in allowed %}
+            <div class="sb-group"><i class="fas fa-cart-shopping" style="font-size:0.7rem;"></i> Набавки</div>
+            {% endif %}
+            {% if 'nabavki' in allowed %}
+            <a class="sb-link" href="{{ url_for('nabavki.nabavki') }}" data-tooltip="Набавки">
+                <span class="sb-icon"><i class="fas fa-shopping-cart"></i></span>
+                <span class="sb-label">Набавки</span>
+            </a>
+            {% endif %}
+            {% if 'nabavki_arhiva' in allowed %}
+            <a class="sb-link" href="{{ url_for('nabavki.arhiva') }}" data-tooltip="Архива на набавки">
+                <span class="sb-icon"><i class="fas fa-archive"></i></span>
+                <span class="sb-label">Архива на набавки</span>
+            </a>
+            {% endif %}
+            {% if 'ponudi' in allowed %}
+            <a class="sb-link" href="{{ url_for('ponudi.ponudi') }}" data-tooltip="Понуди">
+                <span class="sb-icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                <span class="sb-label">Понуди</span>
+            </a>
+            {% endif %}
+            {% if 'ponudi_arhiva' in allowed %}
+            <a class="sb-link" href="{{ url_for('ponudi.arhiva') }}" data-tooltip="Архива на понуди">
+                <span class="sb-icon"><i class="fas fa-box-archive"></i></span>
+                <span class="sb-label">Архива на понуди</span>
+            </a>
+            {% endif %}
+            {% if 'sostanoci' in allowed %}
+            <a class="sb-link" href="{{ url_for('sostanoci.lista') }}" data-tooltip="Состаноци">
+                <span class="sb-icon"><i class="fas fa-microphone"></i></span>
+                <span class="sb-label">Состаноци</span>
+            </a>
+            {% endif %}
+
+            {% if 'odmori' in allowed or 'baranje_odmor' in allowed or 'odmori_vraboteni' in allowed or 'odmori_kalendar' in allowed or 'odmori_pregled_odmori' in allowed or 'odmori_sekojdnevni_otsustva' in allowed or 'odmori_manager_emails' in allowed %}
+            <div class="sb-group"><i class="fas fa-sun" style="font-size:0.7rem;"></i> Одмори</div>
+            {% endif %}
+            {% if 'odmori' in allowed %}
+            <a class="sb-link" href="{{ url_for('main.odmori') }}" data-tooltip="Одмори">
+                <span class="sb-icon"><i class="fas fa-umbrella-beach"></i></span>
+                <span class="sb-label">Одмори</span>
+            </a>
+            {% endif %}
+            {% if 'baranje_odmor' in allowed %}
+            <a class="sb-link" href="{{ url_for('main.baranje_odmor') }}" data-tooltip="Барање за одмор">
+                <span class="sb-icon"><i class="fas fa-file-signature"></i></span>
+                <span class="sb-label">Барање за одмор</span>
+            </a>
+            {% endif %}
+            {% if 'odmori_vraboteni' in allowed %}
+            <a class="sb-link" href="{{ url_for('odmori.odmori_vraboteni') }}" data-tooltip="Вработени">
+                <span class="sb-icon"><i class="fas fa-users"></i></span>
+                <span class="sb-label">Вработени</span>
+            </a>
+            {% endif %}
+            {% if 'odmori_kalendar' in allowed %}
+            <a class="sb-link" href="{{ url_for('odmori.odmori_kalendar') }}" data-tooltip="Календар">
+                <span class="sb-icon"><i class="fas fa-calendar-alt"></i></span>
+                <span class="sb-label">Календар</span>
+            </a>
+            {% endif %}
+            {% if 'odmori_pregled_odmori' in allowed %}
+            <a class="sb-link" href="{{ url_for('odmori.odmori_pregled_odmori') }}" data-tooltip="Преглед на одмори">
+                <span class="sb-icon"><i class="fas fa-list-check"></i></span>
+                <span class="sb-label">Преглед на одмори</span>
+            </a>
+            {% endif %}
+            {% if 'odmori_sekojdnevni_otsustva' in allowed %}
+            <a class="sb-link" href="{{ url_for('odmori.odmori_sekojdnevni_otsustva') }}" data-tooltip="Секојдневни отсуства">
+                <span class="sb-icon"><i class="fas fa-user-clock"></i></span>
+                <span class="sb-label">Секојдневни отсуства</span>
+            </a>
+            {% endif %}
+            {% if 'odmori_manager_emails' in allowed %}
+            <a class="sb-link" href="{{ url_for('odmori.odmori_manager_emails') }}" data-tooltip="Email за менаџери">
+                <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
+                <span class="sb-label">Email за менаџери</span>
+            </a>
+            {% endif %}
+
+            {% if 'chat' in allowed %}
+            <div style="height:1px; background:var(--sb-border); margin:0.75rem 0.75rem;"></div>
+            <a class="sb-link" href="{{ url_for('chat.chat_page') }}" data-tooltip="Чат">
+                <span class="sb-icon" id="sbChatIcon">
+                    <i class="bi bi-chat-dots-fill"></i>
+                    <span class="sb-badge" id="sbChatBadge"></span>
+                </span>
+                <span class="sb-label">Чат</span>
+            </a>
+            {% endif %}
+
+        {% endif %}
+
+        <div style="height:1px; background:var(--sb-border); margin:0.75rem 0.75rem;"></div>
+        <a class="sb-link" href="{{ url_for('auth.logout') }}" data-tooltip="Одјави се" style="color:#ef4444;">
+            <span class="sb-icon" style="color:#ef4444;"><i class="fas fa-right-from-bracket"></i></span>
+            <span class="sb-label">Одјави се</span>
+        </a>
+
+        {% else %}
+        <a class="sb-link" href="{{ url_for('auth.login') }}" data-tooltip="Најава">
+            <span class="sb-icon"><i class="fas fa-right-to-bracket"></i></span>
+            <span class="sb-label">Најава</span>
+        </a>
         {% endif %}
 
     </div>
@@ -925,37 +1256,340 @@
 <!-- MAIN -->
 <main class="container-fluid p-0" id="main-content">
     {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="alert-container">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
+        {% if messages and request.endpoint != 'auth.login' %}
+        <div class="alert-container">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message|safe }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
+            {% endfor %}
+        </div>
         {% endif %}
     {% endwith %}
     {% block content %}{% endblock %}
 </main>
 
-<!-- SCRIPTS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- в•ђв•ђ CHAT WIDGET (РІРіСЂР°РґРµРЅ РґРёСЂРµРєС‚РЅРѕ) в•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђв•ђ -->
+{% if session.user %}
+
+<!-- Notification permission banner -->
+<div class="notif-perm-banner" id="notifPermBanner">
+    <i class="fas fa-bell"></i> <span>Овозможи нотификации за нови пораки во чат</span>
+    <button onclick="grantNotifPermission()">Овозможи</button>
+    <button class="nb-x" onclick="this.parentElement.style.display='none'">&times;</button>
+</div>
+
+<!-- FAB РєРѕРїС‡Рµ -->
+<div style="position:fixed; bottom:25px; right:25px; z-index:1990;">
+    <button class="chat-fab" id="chatFab" onclick="toggleChatWidget()" title="Чат" aria-label="Отвори чат">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5.5A3.5 3.5 0 0 1 7.5 2h9A3.5 3.5 0 0 1 20 5.5v6A3.5 3.5 0 0 1 16.5 15H10l-4.2 3.5c-.65.54-1.8.08-1.8-.77V15.1A3.49 3.49 0 0 1 4 11.5zM8 8.25a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2zm0 3.75a1 1 0 1 0 0 2h5a1 1 0 1 0 0-2z"/>
+        </svg>
+    </button>
+    <span class="chat-fab-badge" id="chatFabBadge"></span>
+</div>
+
+<!-- Popup РїСЂРѕР·РѕСЂРµС† -->
+<div class="chat-widget-popup" id="chatWidgetPopup">
+    <div class="cwp-header">
+        <div class="cwp-header-left">
+            <div class="cwp-av">#</div>
+            <div>
+                <div class="cwp-header-title">Општ чат</div>
+                <div class="cwp-header-sub">Сите вработени</div>
+            </div>
+        </div>
+        <div class="cwp-header-actions">
+            <a href="{{ url_for('chat.chat_page') }}" title="Отвори цел чат" target="_self">
+                <i class="fas fa-expand"></i>
+            </a>
+            <button onclick="toggleChatWidget()" title="Затвори">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    <div class="cwp-messages" id="cwpMessages">
+        <div style="color:#94a3b8; font-size:12px; text-align:center; margin-top:20px;">Се вчитуваат пораките...</div>
+    </div>
+    <div class="cwp-input">
+        <textarea id="cwpInput"
+                  placeholder="Напиши порака... (Enter за испрати)"
+                  rows="1"
+                  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();cwpSend();}"
+                  oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+        <button onclick="cwpSend()" id="cwpSendBtn" aria-label="Испрати порака">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21.8 3.6a1 1 0 0 0-1.08-.19L3.9 10.8a1 1 0 0 0 .08 1.87l6.66 2.22 2.22 6.66a1 1 0 0 0 1.87.08l7.39-16.82a1 1 0 0 0-.32-1.19ZM12.2 13.2l-5.06-1.69L18.07 6.7ZM13.9 16.86l-1.69-5.06 6.5-5.87Z"/>
+            </svg>
+        </button>
+    </div>
+</div>
 
 <script>
+(function() {
+    // РљРѕРЅС„РёРіСѓСЂР°С†РёСР°
+    const ME = {{ session.user | tojson }};
+    let globalRoomId = null;
+    let lastId = 0;
+    let pollTimer = null;
+    let widgetOpen = false;
+    let toastList  = [];
+
+    // в”Ђв”Ђ Р’С‡РёС‚Р°С global room ID в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    async function initWidget() {
+        try {
+            const r = await fetch('/chat/unread');
+            const d = await r.json();
+            // room IDs РіРё Р·РµРјР°РјРµ РёРЅРґРёСЂРµРєС‚РЅРѕ вЂ” С‚СЂРµР±Р° РіР»РѕР±Р°Р»РµРЅ РР”
+            // Р’РµРґРЅР°С€ РЅР°РїСЂР°РІРё РµРґРЅРѕ РїРѕРІРёРєСѓРІР°СљРµ РґРѕ /chat/global_room_id
+        } catch(e) {}
+
+        // РџРѕР±Р°СЂР°С РіРѕ global room ID
+        try {
+            const r = await fetch('/chat/global_room');
+            const d = await r.json();
+            globalRoomId = d.room_id;
+            startBadgePoll();
+            initNotifPermission();
+        } catch(e) { console.warn('Chat widget init failed', e); }
+    }
+
+    // в”Ђв”Ђ Toggle в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    window.toggleChatWidget = function() {
+        widgetOpen = !widgetOpen;
+        const popup = document.getElementById('chatWidgetPopup');
+        popup.style.display = widgetOpen ? 'flex' : 'none';
+        if (widgetOpen) {
+            loadWidgetHistory();
+            startPoll();
+            document.getElementById('chatFabBadge').style.display = 'none';
+            updateSbBadge(0); // Р РµСЃРµС‚РёСЂР°С sidebar badge РїСЂРё РѕС‚РІРѕСЂР°СљРµ
+            setTimeout(() => document.getElementById('cwpInput').focus(), 100);
+        } else {
+            stopPoll();
+        }
+    };
+
+    // в”Ђв”Ђ Load history в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    async function loadWidgetHistory() {
+        if (!globalRoomId) return;
+        const area = document.getElementById('cwpMessages');
+        area.innerHTML = '<div style="color:#94a3b8; font-size:12px; text-align:center; margin-top:20px;">Се вчитува...</div>';
+        try {
+            const r = await fetch(`/chat/history?room_id=${globalRoomId}`);
+            const d = await r.json();
+            area.innerHTML = '';
+            if (!d.messages || !d.messages.length) {
+                area.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;margin-top:30px;">Нема пораки уште.</div>';
+            } else {
+                d.messages.forEach(m => appendWidgetMsg(m, false));
+                lastId = d.messages[d.messages.length-1].id;
+            }
+            cwpScrollBottom(false);
+        } catch(e) {}
+    }
+
+    // в”Ђв”Ђ Poll в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    async function pollWidgetMsgs() {
+        if (!globalRoomId) return;
+        try {
+            const r = await fetch(`/chat/messages?room_id=${globalRoomId}&after=${lastId}`);
+            const d = await r.json();
+            if (d.messages && d.messages.length) {
+                const area = document.getElementById('cwpMessages');
+                const ph = area.querySelector('[style*="color:#94a3b8"]');
+                if (ph) ph.remove();
+                d.messages.forEach(m => {
+                    appendWidgetMsg(m, true);
+                    if (m.sender !== ME) {
+                        // РќРѕС‚РёС„РёРєР°С†РёСР° СЃР°РјРѕ Р°РєРѕ widget Рµ Р·Р°С‚РІРѕСЂРµРЅ
+                        if (!widgetOpen) {
+                            showChatToast(m.sender, m.text, globalRoomId, 'Општ чат');
+                            sendBrowserNotif(m.sender, m.text);
+                        }
+                    }
+                });
+                lastId = d.messages[d.messages.length-1].id;
+                cwpScrollBottom(true);
+            }
+            // РђР¶СѓСЂРёСЂР°С badge-РѕРІРё
+            const total = d.total_unread || 0;
+            if (!widgetOpen) {
+                const fab = document.getElementById('chatFabBadge');
+                fab.textContent = total;
+                fab.style.display = total > 0 ? 'inline' : 'none';
+            }
+            updateSbBadge(total);
+        } catch(e) {}
+    }
+
+    function startPoll() {
+        stopPoll();
+        pollTimer = setInterval(pollWidgetMsgs, 2500);
+    }
+    function stopPoll() {
+        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    }
+
+    // Badge poll РєРѕРіР° widget Рµ Р·Р°С‚РІРѕСЂРµРЅ
+    function startBadgePoll() {
+        setInterval(async () => {
+            if (widgetOpen) return;
+            try {
+                const r = await fetch('/chat/unread');
+                const d = await r.json();
+                const total = d.total || 0;
+                const fab = document.getElementById('chatFabBadge');
+                fab.textContent = total;
+                fab.style.display = total > 0 ? 'inline' : 'none';
+                updateSbBadge(total);
+                // Tab title
+                document.title = total > 0 ? `(${total}) ${document.title.replace(/^\(\d+\) /, '')}` : document.title.replace(/^\(\d+\) /, '');
+            } catch(e) {}
+        }, 6000);
+    }
+
+    function updateSbBadge(total) {
+        const b = document.getElementById('sbChatBadge');
+        if (!b) return;
+        b.textContent = total;
+        b.style.display = total > 0 ? 'inline' : 'none';
+    }
+
+    // в”Ђв”Ђ Append message в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    function appendWidgetMsg(m, animate) {
+        const area = document.getElementById('cwpMessages');
+        const isMine = m.sender === ME;
+        const div = document.createElement('div');
+        div.className = 'cwp-msg ' + (isMine ? 'mine' : 'other');
+        if (!animate) div.style.animation = 'none';
+        div.innerHTML =
+            (!isMine ? `<div class="cwp-sender">${esc(m.sender)}</div>` : '') +
+            esc(m.text) +
+            `<div class="cwp-ts">${m.ts || ''}</div>`;
+        area.appendChild(div);
+    }
+
+    // в”Ђв”Ђ Send в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    window.cwpSend = async function() {
+        if (!globalRoomId) return;
+        const inp = document.getElementById('cwpInput');
+        const text = inp.value.trim();
+        if (!text) return;
+        const btn = document.getElementById('cwpSendBtn');
+        btn.disabled = true;
+        inp.value = '';
+        inp.style.height = 'auto';
+        try {
+            const r = await fetch('/chat/send', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({room_id: globalRoomId, text})
+            });
+            const d = await r.json();
+            if (d.ok) {
+                const area = document.getElementById('cwpMessages');
+                const ph = area.querySelector('[style*="color:#94a3b8"]');
+                if (ph) ph.remove();
+                appendWidgetMsg({sender: ME, text, ts: d.ts || ''}, true);
+                cwpScrollBottom(true);
+            }
+        } catch(e) {}
+        btn.disabled = false;
+        inp.focus();
+    };
+
+    function cwpScrollBottom(smooth) {
+        const a = document.getElementById('cwpMessages');
+        const nearBottom = a.scrollHeight - a.scrollTop - a.clientHeight < 80;
+        if (smooth && !nearBottom) return;
+        a.scrollTo({top: a.scrollHeight, behavior: smooth ? 'smooth' : 'instant'});
+    }
+
+    // в”Ђв”Ђ In-app toast в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    function showChatToast(sender, text, roomId, roomName) {
+        const toast = document.createElement('div');
+        toast.className = 'chat-toast';
+        toast.style.bottom = (100 + toastList.length * 76) + 'px';
+        toast.innerHTML = `
+            <div class="ct-av">${esc(sender[0].toUpperCase())}</div>
+            <div class="ct-body">
+                <div class="ct-name">${esc(sender)}</div>
+                <div class="ct-text">${esc(text)}</div>
+            </div>
+            <div class="ct-x">&times;</div>`;
+        toast.querySelector('.ct-x').onclick = (e) => { e.stopPropagation(); removeToast(toast); };
+        toast.onclick = () => {
+            if (!widgetOpen) toggleChatWidget();
+            removeToast(toast);
+        };
+        document.body.appendChild(toast);
+        toastList.push(toast);
+        setTimeout(() => removeToast(toast), 5000);
+    }
+
+    function removeToast(t) {
+        t.style.opacity = '0'; t.style.transform = 'translateY(10px)';
+        setTimeout(() => {
+            t.remove();
+            toastList = toastList.filter(x => x !== t);
+            toastList.forEach((x, i) => x.style.bottom = (100 + i*76) + 'px');
+        }, 300);
+    }
+
+    // в”Ђв”Ђ Browser notifications в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    function initNotifPermission() {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'default') {
+            document.getElementById('notifPermBanner').style.display = 'flex';
+        }
+    }
+
+    window.grantNotifPermission = function() {
+        Notification.requestPermission().then(() => {
+            document.getElementById('notifPermBanner').style.display = 'none';
+        });
+    };
+
+    function sendBrowserNotif(sender, text) {
+        if (!('Notification' in window)) return;
+        if (Notification.permission !== 'granted') return;
+        if (document.hasFocus() && widgetOpen) return;
+        const n = new Notification(`Чат - ${sender}`, {
+            body: text.length > 80 ? text.slice(0,80) + '...' : text,
+            icon: '/static/icons/icon-192.png',
+            tag: 'chat-msg',
+            renotify: true
+        });
+        n.onclick = () => { window.focus(); if (!widgetOpen) toggleChatWidget(); n.close(); };
+        setTimeout(() => n.close(), 6000);
+    }
+
+    // в”Ђв”Ђ Utils в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    function esc(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // в”Ђв”Ђ Init в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
+    initWidget();
+})();
+</script>
+{% endif %}
+
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
     function toggleMobileSidebar() {
-        const sb = document.getElementById('sidebar');
-        const ov = document.getElementById('overlay');
-        sb.classList.toggle('mobile-open');
-        ov.classList.toggle('show');
+        document.getElementById('sidebar').classList.toggle('mobile-open');
+        document.getElementById('overlay').classList.toggle('show');
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         const path = location.pathname;
         document.querySelectorAll('.sb-link').forEach(link => {
-            if (link.getAttribute('href') === path) {
-                link.classList.add('active');
-            }
+            if (link.getAttribute('href') === path) link.classList.add('active');
         });
 
         let scrollTick;
@@ -975,7 +1609,6 @@
 
         const modal = document.getElementById('imageModal');
         const modalImg = document.getElementById('modalImage');
-
         document.querySelectorAll('.zoomable-img, img[data-full]').forEach(img => {
             img.style.cursor = 'zoom-in';
             img.addEventListener('click', () => {
@@ -983,70 +1616,202 @@
                 modal.style.display = 'block';
             });
         });
-
-        document.querySelector('.close-modal')?.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
-
-        modal?.addEventListener('click', e => {
-            if (e.target === modal) modal.style.display = 'none';
-        });
+        document.querySelector('.close-modal')?.addEventListener('click', () => { modal.style.display = 'none'; });
+        modal?.addEventListener('click', e => { if (e.target === modal) modal.style.display = 'none'; });
     });
 </script>
 
 <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
+        let refreshed = false;
         navigator.serviceWorker.register('/sw.js', { scope: '/' })
-            .then(r => console.log('[SW] Registered, scope:', r.scope))
-            .catch(e => console.error('[SW] Registration failed:', e));
+            .then(async (r) => {
+                console.log('[SW] Registered:', r.scope);
+                await r.update();
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (refreshed) return;
+                    refreshed = true;
+                    window.location.reload();
+                });
+            })
+            .catch(e => console.error('[SW] Error:', e));
     });
 }
 </script>
 
 <script>
+const APP_INSTALL_META = {{ app_install_meta|tojson }};
+const APP_INSTALL_SEEN_APK_KEY = 'fersedoSeenAndroidVersion';
+const APP_INSTALL_DISMISS_PREFIX = 'fersedoInstallDismissed:';
 let deferredPrompt = null;
+
+function getInstallModal() {
+    return document.getElementById('appInstallModal');
+}
+
+function getDismissStorageKey() {
+    const versionKey = APP_INSTALL_META?.android?.version_key || 'default';
+    return `${APP_INSTALL_DISMISS_PREFIX}${versionKey}`;
+}
+
+function isStandaloneApp() {
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function hasAndroidApk() {
+    return Boolean(APP_INSTALL_META?.android?.available);
+}
+
+function hasAndroidUpdate() {
+    const latestVersion = APP_INSTALL_META?.android?.version_name || '';
+    const seenVersion = localStorage.getItem(APP_INSTALL_SEEN_APK_KEY) || '';
+    return Boolean(latestVersion && seenVersion && latestVersion !== seenVersion);
+}
+
+function markAndroidVersionSeen() {
+    const latestVersion = APP_INSTALL_META?.android?.version_name;
+    if (latestVersion) {
+        localStorage.setItem(APP_INSTALL_SEEN_APK_KEY, latestVersion);
+    }
+}
+
+function configureInstallModal() {
+    const statusChip = document.getElementById('appInstallStatusChip');
+    const title = document.getElementById('appInstallTitle');
+    const lead = document.getElementById('appInstallLead');
+    const versionValue = document.getElementById('appInstallVersionValue');
+    const updatedValue = document.getElementById('appInstallUpdatedValue');
+    const modeValue = document.getElementById('appInstallModeValue');
+    const androidOption = document.getElementById('appInstallAndroidOption');
+    const androidBtn = document.getElementById('appInstallAndroidBtn');
+    const androidText = document.getElementById('appInstallAndroidText');
+    const webOption = document.getElementById('appInstallWebOption');
+    const webBtn = document.getElementById('appInstallWebBtn');
+    const webText = document.getElementById('appInstallWebText');
+    const note = document.getElementById('appInstallNote');
+
+    const showWebInstall = Boolean(deferredPrompt) && !isStandaloneApp();
+    const showAndroidDownload = hasAndroidApk();
+    const androidUpdate = hasAndroidUpdate();
+
+    versionValue.textContent = APP_INSTALL_META?.android?.version_name || 'Нема APK';
+    updatedValue.textContent = APP_INSTALL_META?.android?.last_updated || 'Непознато';
+    modeValue.textContent = showWebInstall && showAndroidDownload ? 'Веб + Android' : showWebInstall ? 'Само веб' : 'Само Android';
+
+    androidOption.hidden = !showAndroidDownload;
+    webOption.hidden = !showWebInstall;
+    webBtn.hidden = !showWebInstall;
+
+    if (showAndroidDownload && androidBtn) {
+        androidBtn.href = APP_INSTALL_META.android.download_url;
+        androidBtn.download = '';
+        androidText.textContent = androidUpdate
+            ? `Достапна е понова Android верзија ${APP_INSTALL_META.android.version_name}. Преземи ја и инсталирај ја врз постоечката.`
+            : 'Преземи ја локалната Android апликација за побрз и поудобен пристап.';
+    }
+
+    if (webText) {
+        webText.textContent = showWebInstall
+            ? 'Инсталирај ја веб апликацијата директно од прелистувачот за старт од почетен екран.'
+            : 'Веб инсталацијата не е достапна на овој уред во моментов.';
+    }
+
+    statusChip.className = 'app-install-status';
+    if (androidUpdate) {
+        statusChip.classList.add('app-install-status--update');
+        statusChip.innerHTML = '<i class="fas fa-rotate"></i><span>Достапно ажурирање</span>';
+        title.textContent = 'Достапна е понова Fersedo верзија';
+        lead.textContent = 'Имаш нова Android APK верзија. Преземи ја најновата верзија за да бидеш на тек со последните подобрувања.';
+    } else if (isStandaloneApp()) {
+        statusChip.classList.add('app-install-status--installed');
+        statusChip.innerHTML = '<i class="fas fa-check"></i><span>Веќе инсталирано</span>';
+        title.textContent = 'Fersedo е подготвен за работа';
+        lead.textContent = 'Веќе ја користиш веб апликацијата во инсталиран режим. Подолу можеш и да ја преземеш Android APK верзијата.';
+    } else {
+        statusChip.innerHTML = '<i class="fas fa-download"></i><span>Инсталација</span>';
+        title.textContent = 'Инсталирај ја Fersedo апликацијата';
+        lead.textContent = 'За побрз пристап можеш да ја инсталираш веб апликацијата или да ја преземеш Android APK верзијата.';
+    }
+
+    if (!showAndroidDownload && !showWebInstall) {
+        title.textContent = 'Инсталацијата моментално не е достапна';
+        lead.textContent = 'Во моментов нема активна веб инсталација ниту достапна Android APK верзија за преземање.';
+        note.textContent = 'Кога ќе се појави нова верзија, попапот повторно автоматски ќе те извести.';
+    } else {
+        note.textContent = androidUpdate
+            ? 'Овој прозорец повторно ќе се појави и за секоја следна нова Android верзија.'
+            : 'Попапот ќе се прикажува повторно кога ќе има нова Android верзија или кога веб инсталацијата ќе биде достапна.';
+    }
+}
+
+function showInstallModal(force = false) {
+    const modal = getInstallModal();
+    if (!modal) return;
+
+    const dismissedForVersion = localStorage.getItem(getDismissStorageKey()) === '1';
+    const webInstallAvailable = Boolean(deferredPrompt) && !isStandaloneApp();
+    const shouldShow = force || hasAndroidUpdate() || (!dismissedForVersion && (hasAndroidApk() || webInstallAvailable));
+    if (!shouldShow) return;
+
+    configureInstallModal();
+    modal.classList.add('show');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideInstallModal() {
+    const modal = getInstallModal();
+    if (!modal) return;
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+}
+
+function dismissInstallBanner() {
+    localStorage.setItem(getDismissStorageKey(), '1');
+    hideInstallModal();
+}
+
+function installPWA() {
+    if (!deferredPrompt) {
+        showInstallModal(true);
+        return;
+    }
+
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.finally(() => {
+        deferredPrompt = null;
+        hideInstallModal();
+    });
+}
+
+document.getElementById('appInstallAndroidBtn')?.addEventListener('click', () => {
+    markAndroidVersionSeen();
+    hideInstallModal();
+});
+
+document.querySelector('[data-close-install-modal]')?.addEventListener('click', dismissInstallBanner);
 
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-
-    const dismissed = localStorage.getItem('pwaInstallDismissed');
-    if (dismissed && Date.now() < parseInt(dismissed)) return;
-
-    setTimeout(() => {
-        document.getElementById('pwaInstallBanner').style.display = 'block';
-    }, 1000);
+    window.setTimeout(() => showInstallModal(), 900);
 });
 
-function installPWA() {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then(choice => {
-        document.getElementById('pwaInstallBanner').style.display = 'none';
-        deferredPrompt = null;
-        if (choice.outcome === 'accepted') {
-            localStorage.removeItem('pwaInstallDismissed');
-        }
-    });
-}
-
-function dismissInstallBanner() {
-    document.getElementById('pwaInstallBanner').style.display = 'none';
-    const expiry = Date.now() + (3 * 24 * 60 * 60 * 1000);
-    localStorage.setItem('pwaInstallDismissed', expiry);
-}
-
 window.addEventListener('appinstalled', () => {
-    document.getElementById('pwaInstallBanner').style.display = 'none';
+    localStorage.setItem(getDismissStorageKey(), '1');
+    hideInstallModal();
     deferredPrompt = null;
-    localStorage.removeItem('pwaInstallDismissed');
+});
+
+window.addEventListener('load', () => {
+    window.setTimeout(() => showInstallModal(), 1200);
 });
 </script>
 
 <script>
 const VAPID_PUBLIC_KEY = "{{ VAPID_PUBLIC_KEY }}";
-
 async function subscribeToPush() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
     try {
@@ -1057,21 +1822,15 @@ async function subscribeToPush() {
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
         });
-        await fetch('/subscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(sub)
-        });
-    } catch(e) { console.error('Push subscription error:', e); }
+        await fetch('/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(sub) });
+    } catch(e) { console.error('Push error:', e); }
 }
-
 function urlBase64ToUint8Array(b64) {
     const pad = '='.repeat((4 - b64.length % 4) % 4);
-    const base64 = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+    const base64 = (b64 + pad).replace(/-/g,'+').replace(/_/g,'/');
     const raw = atob(base64);
     return Uint8Array.from(raw, c => c.charCodeAt(0));
 }
-
 window.addEventListener('load', subscribeToPush);
 </script>
 
@@ -1079,3 +1838,4 @@ window.addEventListener('load', subscribeToPush);
 
 </body>
 </html>
+

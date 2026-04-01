@@ -28,7 +28,7 @@ def add_page_number(canvas, doc):
     canvas.setFillColor(colors.gray)
     canvas.drawRightString(
         190 * mm, 10 * mm,
-        f"Страна {canvas.getPageNumber()} • {datetime.now().strftime('%d.%m.%Y %H:%M')}",
+        f"Страна {canvas.getPageNumber()} • {datetime.now().strftime('%d-%m-%Y %H:%M')}",
     )
 
 def get_compressed_image_buffer(slika_path, max_size=(450, 450), quality=68):

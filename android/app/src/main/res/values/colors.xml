@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="fersedo_primary">#6377E8</color>
+    <color name="fersedo_primary_dark">#1F2B43</color>
+    <color name="fersedo_accent">#C8202E</color>
+    <color name="fersedo_surface">#F6F8FC</color>
+    <color name="fersedo_divider">#D7E0F0</color>
+    <color name="fersedo_text_muted">#61708F</color>
+</resources>

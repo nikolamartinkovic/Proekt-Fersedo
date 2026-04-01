@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 
-{% block content %}
+{% block title %}Fersedo - Барање за одмор{% endblock %}
 
+{% block content %}
 <div class="container" style="max-width: 900px; margin: 4rem auto 5rem; padding: 0 1rem;">
     <div class="text-center mb-5">
         <h2 style="font-weight: 800; color: var(--primary); font-size: clamp(2rem, 7vw, 2.8rem); margin-bottom: 0.5rem;">
@@ -12,7 +13,6 @@
         </p>
     </div>
 
-    <!-- Flash пораки со икони -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             <div class="mb-4">
@@ -37,7 +37,6 @@
 
         <div class="card-body p-4 p-md-5">
             <form method="POST" id="odmorForm" class="needs-validation" novalidate>
-                <!-- Вработен -->
                 <div class="mb-4">
                     <label for="vraboten_id" class="form-label fw-bold fs-5">Вработен</label>
                     <select class="form-select form-select-lg" id="vraboten_id" name="vraboten_id" required>
@@ -46,40 +45,49 @@
                             <option value="{{ v.id }}">{{ v.prezime }} {{ v.ime }}</option>
                         {% endfor %}
                     </select>
-                    <div class="invalid-feedback mt-2">
-                        Изберете вработен
-                    </div>
+                    <div class="invalid-feedback mt-2">Изберете вработен</div>
                 </div>
 
-                <!-- Датуми -->
                 <div class="row g-4 mb-4">
                     <div class="col-md-6">
                         <label for="datum_od" class="form-label fw-bold fs-5">Од датум</label>
-                        <input type="date" class="form-control form-control-lg" id="datum_od" name="datum_od" 
-                               min="{{ today }}" value="{{ today }}" required>
-                        <div class="invalid-feedback mt-2">
-                            Изберете почеток на одмор
-                        </div>
+                        <input
+                            type="date"
+                            class="form-control form-control-lg"
+                            id="datum_od"
+                            name="datum_od"
+                            min="{{ today }}"
+                            value="{{ today }}"
+                            required
+                        >
+                        <div class="invalid-feedback mt-2">Изберете почеток на одмор</div>
                     </div>
 
                     <div class="col-md-6">
                         <label for="datum_do" class="form-label fw-bold fs-5">До датум</label>
-                        <input type="date" class="form-control form-control-lg" id="datum_do" name="datum_do" 
-                               min="{{ today }}" required>
-                        <div class="invalid-feedback mt-2">
-                            Изберете крај на одмор
-                        </div>
+                        <input
+                            type="date"
+                            class="form-control form-control-lg"
+                            id="datum_do"
+                            name="datum_do"
+                            min="{{ today }}"
+                            required
+                        >
+                        <div class="invalid-feedback mt-2">Изберете крај на одмор</div>
                     </div>
                 </div>
 
-                <!-- Забелешка -->
                 <div class="mb-5">
                     <label for="zabeleska" class="form-label fw-bold fs-5">Забелешка / причина</label>
-                    <textarea class="form-control form-control-lg" id="zabeleska" name="zabeleska" rows="5" 
-                              placeholder="На пр. 'Годишен одмор од 15 јули до 5 август', 'Боледување со лекарско уверение', 'Итно семејно отсуство'..."></textarea>
+                    <textarea
+                        class="form-control form-control-lg"
+                        id="zabeleska"
+                        name="zabeleska"
+                        rows="5"
+                        placeholder="На пр. 'Годишен одмор од 15 јули до 5 август', 'Боледување со лекарско уверение', 'Итно семејно отсуство'..."
+                    ></textarea>
                 </div>
 
-                <!-- Акции -->
                 <div class="d-grid gap-3 d-md-flex justify-content-md-center mt-5">
                     <button type="submit" id="submitBtn" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow">
                         <span id="btnText"><i class="fas fa-paper-plane me-2"></i> Поднеси барање</span>
@@ -95,10 +103,8 @@
     </div>
 </div>
 
-<!-- JavaScript -->
 <script>
-// Реално-временска валидација на датуми
-document.getElementById('odmorForm')?.addEventListener('submit', function(e) {
+document.getElementById('odmorForm')?.addEventListener('submit', function (e) {
     const od = document.getElementById('datum_od').value;
     const do_ = document.getElementById('datum_do').value;
     const today = "{{ today }}";
@@ -106,14 +112,12 @@ document.getElementById('odmorForm')?.addEventListener('submit', function(e) {
     const text = document.getElementById('btnText');
     const spinner = document.getElementById('loadingSpinner');
 
-    // 1. Од датумот не смее да биде во минатото
     if (od && new Date(od) < new Date(today)) {
         e.preventDefault();
         alert('Не можете да барате одмор во минатото!');
         return;
     }
 
-    // 2. Од мора да биде пред или еднаков на До
     if (od && do_ && new Date(od) > new Date(do_)) {
         e.preventDefault();
         alert('Датумот "Од" не може да биде после "До"!');
@@ -126,18 +130,16 @@ document.getElementById('odmorForm')?.addEventListener('submit', function(e) {
         return;
     }
 
-    // Loader
     text.classList.add('d-none');
     spinner.classList.remove('d-none');
     btn.disabled = true;
 });
 
-// Bootstrap валидација
 (function () {
     'use strict';
     const form = document.getElementById('odmorForm');
     if (form) {
-        form.addEventListener('submit', event => {
+        form.addEventListener('submit', (event) => {
             if (!form.checkValidity()) {
                 event.preventDefault();
                 event.stopPropagation();
@@ -160,7 +162,8 @@ document.getElementById('odmorForm')?.addEventListener('submit', function(e) {
         box-shadow: var(--shadow-lg);
     }
 
-    .form-control-lg, .form-select-lg {
+    .form-control-lg,
+    .form-select-lg {
         font-size: clamp(1.05rem, 3.5vw, 1.25rem);
         padding: 0.85rem 1.5rem;
         border-radius: 12px;
@@ -184,7 +187,7 @@ document.getElementById('odmorForm')?.addEventListener('submit', function(e) {
 
     .btn-primary:hover:not(:disabled) {
         transform: translateY(-3px);
-        box-shadow: 0 12px 30px rgba(102,126,234,0.4);
+        box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
     }
 
     .alert {
@@ -193,19 +196,41 @@ document.getElementById('odmorForm')?.addEventListener('submit', function(e) {
         font-size: 1.05rem;
     }
 
-    /* Responsive */
     @media (max-width: 992px) {
-        .container { padding: 0 1.5rem; margin-top: 3rem; }
-        h2 { font-size: clamp(1.8rem, 7vw, 2.5rem); }
-        .row.g-3 { row-gap: 1.5rem; }
-        .btn-lg { width: 100%; margin-bottom: 1rem; }
+        .container {
+            padding: 0 1.5rem;
+            margin-top: 3rem;
+        }
+
+        h2 {
+            font-size: clamp(1.8rem, 7vw, 2.5rem);
+        }
+
+        .row.g-4 {
+            row-gap: 1.5rem;
+        }
+
+        .btn-lg {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
     }
 
     @media (max-width: 576px) {
-        .card-body { padding: 1.5rem !important; }
-        .form-control-lg, .form-select-lg { font-size: 1.1rem; }
-        .btn-lg { font-size: 1.05rem; padding: 0.9rem 1.5rem; min-height: 56px; }
+        .card-body {
+            padding: 1.5rem !important;
+        }
+
+        .form-control-lg,
+        .form-select-lg {
+            font-size: 1.1rem;
+        }
+
+        .btn-lg {
+            font-size: 1.05rem;
+            padding: 0.9rem 1.5rem;
+            min-height: 56px;
+        }
     }
 </style>
-
 {% endblock %}

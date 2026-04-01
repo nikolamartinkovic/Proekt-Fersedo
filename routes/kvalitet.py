@@ -126,7 +126,7 @@ def generiraj_kvalitet_pdf(kontrola, cekori):
 
     c.setFont("DejaVuSans", 9)
     c.setFillColorRGB(0.4, 0.4, 0.4)
-    c.drawString(50, 40, f"Генерирано на {datetime.now().strftime('%d.%m.%Y %H:%M')} од {session.get('user', 'Корисник')}")
+    c.drawString(50, 40, f"Генерирано на {datetime.now().strftime('%d-%m-%Y %H:%M')} од {session.get('user', 'Корисник')}")
     c.drawString(width - 200, 40, "Fersedo Production System")
     c.save()
     print(f"[PDF CREATED] {filepath}")
@@ -269,7 +269,7 @@ def nova_kontrola():
             conn.commit()
             pdf_filename = generiraj_kvalitet_pdf({
                 "id": kontrola_id, "kamin": kamin, "seriski_broj": seriski_broj,
-                "datum": datetime.now().strftime("%d.%m.%Y %H:%M")
+                "datum": datetime.now().strftime("%d-%m-%Y %H:%M")
             }, odgovori_za_pdf)
             cursor.execute("UPDATE kvalitet_kontrola SET pdf_file = ? WHERE id = ?", (pdf_filename, kontrola_id))
             conn.commit()
@@ -376,7 +376,7 @@ def uredi_kontrola(kontrola_id):
             conn.commit()
             pdf_filename = generiraj_kvalitet_pdf({
                 "id": kontrola_id, "kamin": kontrola["kamin"],
-                "seriski_broj": nov_seriski, "datum": datetime.now().strftime("%d.%m.%Y %H:%M")
+                "seriski_broj": nov_seriski, "datum": datetime.now().strftime("%d-%m-%Y %H:%M")
             }, odgovori_za_pdf)
             cursor.execute("UPDATE kvalitet_kontrola SET pdf_file = ? WHERE id = ?", (pdf_filename, kontrola_id))
             conn.commit()

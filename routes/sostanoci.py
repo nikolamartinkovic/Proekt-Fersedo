@@ -12,7 +12,7 @@ from flask import (
 )
 from werkzeug.utils import secure_filename
 from utils.db import get_db
-from utils.decorators import login_required
+from utils.decorators import login_required, user_has_module
 from groq import Groq
 
 sostanoci_bp = Blueprint('sostanoci', __name__, url_prefix='/sostanoci')
@@ -24,10 +24,7 @@ MAX_FILE_SIZE = 400 * 1024 * 1024  # 400 MB
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Groq client (free) - used for both transcription and summary
-groq_client = Groq(
-    api_key=os.getenv("GROQ_API_KEY"),
-)
+
 
 # --- TABLE INIT ---
 def init_sostanoci_table():
@@ -58,6 +55,16 @@ def init_sostanoci_table():
         conn.commit()
 
 init_sostanoci_table()
+
+
+@sostanoci_bp.before_request
+def ensure_sostanoci_access():
+    if "user" not in session:
+        return None
+    if user_has_module("sostanoci"):
+        return None
+    flash("Немате дозвола за пристап до модулот Состаноци.", "danger")
+    return redirect(url_for("auth.index"))
 
 # --- HELPERS ---
 def allowed_file(filename):
@@ -98,26 +105,86 @@ def save_audio_file(audio_source, naslov):
 
 
 def ai_process_audio(audio_path):
+    from pathlib import Path
+    import subprocess
+    load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env")
+
     try:
+        api_key = os.getenv("GROQ_API_KEY")
+        if not api_key:
+            raise ValueError("GROQ_API_KEY не е пронајден во .env фајлот!")
+
+        groq_client = Groq(api_key=api_key)
+
         print(f"[AUDIO] Processing file: {audio_path}")
         print(f"[AUDIO] File size: {os.path.getsize(audio_path)} bytes")
 
-        # 1. Transcription via Groq Whisper
-        with open(audio_path, "rb") as audio_file:
-            transcript = groq_client.audio.transcriptions.create(
-                model="whisper-large-v3",
-                file=audio_file,
-                response_format="text",
-                language="mk"
-            )
+        MAX_BYTES = 23 * 1024 * 1024  # 23 MB
 
-        print(f"[GROQ WHISPER] Transcript: {transcript}")
-        text = transcript.strip()
+        # ── Сечење со ffmpeg ако е поголем од 23MB ───────────────
+        def get_duration_seconds(path):
+            result = subprocess.run(
+                ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+                 "-of", "default=noprint_wrappers=1:nokey=1", path],
+                capture_output=True, text=True
+            )
+            return float(result.stdout.strip())
+
+        def split_audio(path, chunk_seconds=600):
+            """Сечи на парчиња од 10 мин со ffmpeg"""
+            ext = os.path.splitext(path)[1].lower() or ".webm"
+            duration = get_duration_seconds(path)
+            chunks = []
+            start = 0
+            i = 0
+            while start < duration:
+                chunk_path = path.replace(ext, f"_chunk{i}{ext}")
+                subprocess.run([
+                    "ffmpeg", "-y", "-i", path,
+                    "-ss", str(start),
+                    "-t", str(chunk_seconds),
+                    "-c", "copy",
+                    chunk_path
+                ], capture_output=True)
+                chunks.append(chunk_path)
+                start += chunk_seconds
+                i += 1
+            return chunks
+
+        file_size = os.path.getsize(audio_path)
+        if file_size <= MAX_BYTES:
+            chunks = [audio_path]
+            print(f"[AUDIO] Фајлот е мал, без сечење")
+        else:
+            print(f"[AUDIO] Фајлот е голем ({file_size} bytes), сечам...")
+            chunks = split_audio(audio_path)
+            print(f"[AUDIO] Сечен на {len(chunks)} чанкови")
+
+        # ── Транскрипција ─────────────────────────────────────────
+        ext = os.path.splitext(audio_path)[1].lower().replace(".", "") or "webm"
+        full_transcript = ""
+        for i, chunk_path in enumerate(chunks):
+            print(f"[WHISPER] Транскрибирам чанк {i+1}/{len(chunks)}...")
+            with open(chunk_path, "rb") as af:
+                transcript = groq_client.audio.transcriptions.create(
+                    model="whisper-large-v3",
+                    file=(os.path.basename(chunk_path), af, f"audio/{ext}"),
+                    response_format="text",
+                    language="mk"
+                )
+            full_transcript += transcript.strip() + " "
+
+            # Избриши привремени чанкови
+            if chunk_path != audio_path and os.path.exists(chunk_path):
+                os.remove(chunk_path)
+
+        text = full_transcript.strip()
+        print(f"[WHISPER] Транскрипција: {len(text)} карактери")
 
         if not text:
-            raise ValueError("Transcript is empty")
+            raise ValueError("Транскрипцијата е празна")
 
-        # 2. Summary via Groq LLaMA
+        # ── Резиме преку LLaMA ────────────────────────────────────
         prompt = f"""
 Ti si profesionalen asistent vo proizvodna kompanija Fersedo.
 Napravi rezime na makedonski jazik od sledniov transkribirani sostanok.
@@ -133,7 +200,6 @@ Vrati SAMO validen JSON bez markdown, bez objasnuvanje:
   "zadaci": ["Zadaca 1 - odgovorno lice i rok"]
 }}
 """
-
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
@@ -141,7 +207,7 @@ Vrati SAMO validen JSON bez markdown, bez objasnuvanje:
             max_tokens=1200
         )
 
-        print(f"[GROQ LLaMA] Response: {response.choices[0].message.content}")
+        print(f"[LLaMA] Response: {response.choices[0].message.content}")
         raw = clean_json_response(response.choices[0].message.content)
         ai = json.loads(raw)
 
@@ -159,7 +225,7 @@ Vrati SAMO validen JSON bez markdown, bez objasnuvanje:
         traceback.print_exc()
         return {
             "transkripcija": "Greshka pri obrabotka",
-            "rezime":        "Neuspeshna obrabotka",
+            "rezime":        f"Neuspeshna obrabotka: {str(e)}",
             "glavni_tocki":  "- Nema podatoci",
             "odluki":        "- Nema podatoci",
             "zadaci":        "- Nema podatoci",

@@ -1,34 +1,29 @@
-# Основен Flask + extensions (web + realtime)
 Flask==2.3.3
-Flask-SocketIO==5.3.6          # малку понова верзија, но стабилна
-python-socketio==5.11.0        # синхронизирано со Flask-SocketIO
-eventlet==0.33.3               # или gevent ако сакаш алтернатива
-Werkzeug==2.3.8                # малку понова, компатибилна
-
-# Аутентикација + 2FA
-argon2-cffi==23.1.0            # понова и подобрена
-pyotp==2.9.0                   # актуелна верзија
-qrcode[pil]==8.0               # понова + pil за подобри слики
-
-# База + миграции
-Flask-SQLAlchemy==3.1.1        # многу често се користи
+Flask-SocketIO==5.3.6
+python-socketio==5.11.0
+eventlet==0.33.3
+Werkzeug==2.3.8
+argon2-cffi==23.1.0
+pyotp==2.9.0
+qrcode[pil]==8.0
+Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.7
-Flask-Login==0.6.3             # ако имаш login систем
-SQLAlchemy==2.0.35             # компатибилно со Flask-SQLAlchemy
-
-# Excel / податоци / извештаи
+Flask-Login==0.6.3
+SQLAlchemy==2.0.35
 openpyxl==3.1.5
-pandas==2.2.3                  # понова стабилна верзија
-numpy==2.1.1                   # pandas го бара
-
-# Други многу корисни (development + production)
-python-dotenv==1.0.1           # .env фајлови
-gunicorn==23.0.0               # production сервер (на Heroku, Render, VPS...)
-flask-talisman==1.1.0          # security headers (HTTPS, CSP...)
-flask-limiter==3.8.0           # rate limiting
-email-validator==2.2.0         # валидација на емаил
-
-# Опционално – ако користиш forms, bootstrap, logging итн.
+pandas==2.2.3
+numpy==2.1.1
+python-dotenv==1.0.1
+gunicorn==23.0.0
+flask-talisman==1.1.0
+flask-limiter==3.8.0
+email-validator==2.2.0
 Flask-WTF==1.2.1
 WTForms==3.2.1
-Flask-Bootstrap5==0.0.1        # или Bootstrap-Flask ако сакаш
+waitress==3.0.0
+APScheduler==3.10.4
+reportlab==4.2.2
+pywebpush==2.0.3
+Pillow==10.4.0
+groq==0.11.0
+pytest==8.3.5

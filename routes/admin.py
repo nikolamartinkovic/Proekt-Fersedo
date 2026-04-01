@@ -6,11 +6,11 @@ import time
 import threading
 from datetime import date, datetime, timedelta
 from collections import defaultdict
-from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify, send_file, session
+from flask import Blueprint, current_app, render_template, request, flash, redirect, url_for, jsonify, send_file, session
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, A5
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import inch, mm
 from reportlab.pdfbase import pdfmetrics
@@ -18,12 +18,16 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import BaseDocTemplate, Frame, Image, PageBreak, PageTemplate, Paragraph, Spacer, Table, TableStyle
 from werkzeug.utils import secure_filename
 from PIL import Image as PILImage
+from utils.audit import get_audit_log, log_audit_event
 from utils.db import get_db
-from utils.decorators import login_required, admin_required
+from utils.decorators import admin_or_module_required, admin_required, login_required
 from argon2 import PasswordHasher, exceptions
-from utils.helpers import POZICII_FOLDER, STATIC_FOLDER, add_page_number, get_compressed_image_buffer
-from io import BytesIO
 from utils.config import POZICII_FOLDER, STATIC_FOLDER
+from utils.helpers import add_page_number, get_compressed_image_buffer
+from utils.odmori_helpers import get_email_log
+from utils.runtime import read_app_log_entries
+from utils.stock_reports import isprati_zaliha_email
+from io import BytesIO
 
 ph = PasswordHasher()
 
@@ -39,11 +43,12 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 # ─────────────────────────────────────────────────────────────
 
 ALL_MODULES = (
-    "select_kamin,add_part,moj_zapisi,kalkulacija,artikli,nabavki,dashboard,"
-    "pregled_greski,admin_users,plan_proizvodstvo,izvestaj,procesni_cekori,"
+    "select_kamin,add_part,moj_zapisi,kalkulacija,artikli,nabavki,nabavki_arhiva,"
+    "dashboard,system_logs,pregled_greski,admin_users,email_recipients,plan_proizvodstvo,izvestaj,procesni_cekori,"
     "odmori,baranje_odmor,odmori_vraboteni,odmori_kalendar,odmori_pregled_odmori,"
     "odmori_sekojdnevni_otsustva,odmori_manager_emails,zalihi,"
-    "kvalitet_nova,kvalitet_arhiva,kvalitet_template"
+    "kvalitet,kvalitet_nova,kvalitet_arhiva,kvalitet_template,"
+    "ponudi,ponudi_arhiva,sostanoci,chat"
 )
 
 # Читливи имиња за секој модул (за приказ во admin_users.html)
@@ -54,9 +59,12 @@ MODULE_LABELS = {
     "kalkulација":                "Калкулација",
     "artikli":                    "Артикли",
     "nabavki":                    "Набавки",
+    "nabavki_arhiva":             "Архива на набавки",
     "dashboard":                  "Dashboard",
+    "system_logs":                "Системски логови",
     "pregled_greski":             "Преглед на грешки",
     "admin_users":                "Управување со корисници",
+    "email_recipients":           "Email примачи",
     "plan_proizvodstvo":          "План за производство",
     "izvestaj":                   "Извештај",
     "procesni_cekori":            "Процесни чекори",
@@ -68,15 +76,20 @@ MODULE_LABELS = {
     "odmori_sekojdnevni_otsustva":"Одмори — Секојдневни отсуства",
     "odmori_manager_emails":      "Одмори — Email менаџери",
     "zalihi":                     "Залихи",
+    "kvalitet":                   "Квалитет",
     "kvalitet_nova":              "Квалитет — Нова контрола",
     "kvalitet_arhiva":            "Квалитет — Архива",
     "kvalitet_template":          "Квалитет — QC Шаблони",
+    "ponudi":                     "Понуди",
+    "ponudi_arhiva":              "Архива на понуди",
+    "sostanoci":                  "Состаноци",
+    "chat":                       "Чат",
 }
 
 
 @admin_bp.route("/users", methods=["GET", "POST"])
 @login_required
-@admin_required
+@admin_or_module_required("admin_users")
 def admin_users():
     conn   = get_db()
     cursor = conn.cursor()
@@ -169,13 +182,22 @@ def admin_users():
             {"value": "moj_zapisi",        "label": "Мои записи"},
             {"value": "kalkulacija",       "label": "Калкулација"},
             {"value": "artikli",           "label": "Артикли"},
-            {"value": "nabavki",           "label": "Набавки"},
             {"value": "dashboard",         "label": "Dashboard"},
+            {"value": "system_logs",       "label": "Системски логови"},
             {"value": "pregled_greski",    "label": "Грешки"},
             {"value": "admin_users",       "label": "Корисници"},
+            {"value": "email_recipients",  "label": "Email примачи"},
             {"value": "plan_proizvodstvo", "label": "План за производство"},
             {"value": "izvestaj",          "label": "Извештај"},
             {"value": "procesni_cekori",   "label": "Процесни чекори"},
+        ],
+        "nabavki": [
+            {"value": "nabavki",           "label": "Набавки"},
+            {"value": "nabavki_arhiva",    "label": "Архива на набавки"},
+            {"value": "ponudi",            "label": "Понуди"},
+            {"value": "ponudi_arhiva",     "label": "Архива на понуди"},
+            {"value": "sostanoci",         "label": "Состаноци"},
+            {"value": "chat",              "label": "Чат"},
         ],
         "odmori": [
             {"value": "odmori",                      "label": "Одмори (главна)"},
@@ -190,6 +212,7 @@ def admin_users():
             {"value": "zalihi", "label": "Залихи"},
         ],
         "kvalitet": [
+            {"value": "kvalitet",          "label": "Квалитет"},
             {"value": "kvalitet_nova",     "label": "Нова контрола"},
             {"value": "kvalitet_arhiva",   "label": "Архива на контроли"},
             {"value": "kvalitet_template", "label": "QC Шаблони"},
@@ -206,14 +229,43 @@ def admin_users():
 # ─────────────────────────────────────────────────────────────
 @admin_bp.route("/dashboard")
 @login_required
-@admin_required
+@admin_or_module_required("dashboard")
 def dashboard():
     return render_template("dashboard.html", today=date.today().isoformat())
 
 
+@admin_bp.route("/system_logs")
+@login_required
+@admin_or_module_required("system_logs")
+def system_logs():
+    log_audit_event(
+        "admin",
+        "system_logs_view",
+        status="info",
+        details="Отворен е прегледот за системски логови",
+    )
+    runtime_log = read_app_log_entries(current_app, limit=80)
+    audit_log = get_audit_log(limit=40)
+    email_log = get_email_log(limit=25)
+
+    error_count = sum(1 for entry in runtime_log if entry.get("level") in {"ERROR", "CRITICAL"})
+    warning_count = sum(1 for entry in runtime_log if entry.get("level") == "WARNING")
+    info_count = sum(1 for entry in runtime_log if entry.get("level") == "INFO")
+
+    return render_template(
+        "system_logs.html",
+        runtime_log=runtime_log,
+        audit_log=audit_log,
+        email_log=email_log,
+        error_count=error_count,
+        warning_count=warning_count,
+        info_count=info_count,
+    )
+
+
 @admin_bp.route("/api/greski")
 @login_required
-@admin_required
+@admin_or_module_required("pregled_greski")
 def api_greski():
     datum_od = request.args.get("datum_od")
     datum_do = request.args.get("datum_do")
@@ -257,7 +309,7 @@ def api_greski():
 # ─────────────────────────────────────────────────────────────
 @admin_bp.route("/greski", methods=["GET", "POST"])
 @login_required
-@admin_required
+@admin_or_module_required("pregled_greski")
 def pregled_greski():
     global last_deleted_records, last_deleted_datum_od, last_deleted_datum_do, last_deleted_oddel
     datum_od = (request.form if request.method == "POST" else request.args).get("datum_od")
@@ -325,7 +377,7 @@ def pregled_greski():
 
 @admin_bp.route("/greski/export")
 @login_required
-@admin_required
+@admin_or_module_required("pregled_greski")
 def export_greski():
     datum_od = request.args.get("datum_od")
     datum_do = request.args.get("datum_do")
@@ -362,7 +414,7 @@ def export_greski():
 # ─────────────────────────────────────────────────────────────
 @admin_bp.route("/procesni_cekori")
 @login_required
-@admin_required
+@admin_or_module_required("procesni_cekori")
 def procesni_cekori():
     conn   = get_db()
     kamini = [r["ime"] for r in conn.execute("SELECT ime FROM kamini ORDER BY ime").fetchall()]
@@ -372,7 +424,7 @@ def procesni_cekori():
 
 @admin_bp.route("/procesni_cekori/<kamin>", methods=["GET", "POST"])
 @login_required
-@admin_required
+@admin_or_module_required("procesni_cekori")
 def pozicii_kamin(kamin):
     conn   = get_db()
     cursor = conn.cursor()
@@ -418,7 +470,7 @@ def pozicii_kamin(kamin):
 
 @admin_bp.route("/procesni_cekori/<kamin>/delete/<int:pozicija_id>", methods=["POST"])
 @login_required
-@admin_required
+@admin_or_module_required("procesni_cekori")
 def delete_pozicija(kamin, pozicija_id):
     conn   = get_db()
     cursor = conn.cursor()
@@ -442,7 +494,7 @@ def delete_pozicija(kamin, pozicija_id):
 
 @admin_bp.route("/procesni_cekori/<kamin>/edit/<int:pozicija_id>", methods=["GET", "POST"])
 @login_required
-@admin_required
+@admin_or_module_required("procesni_cekori")
 def edit_pozicija(kamin, pozicija_id):
     conn     = get_db()
     cursor   = conn.cursor()
@@ -492,7 +544,7 @@ def edit_pozicija(kamin, pozicija_id):
 
 @admin_bp.route("/procesni_cekori/<kamin>/export")
 @login_required
-@admin_required
+@admin_or_module_required("procesni_cekori")
 def export_procesen_cekor(kamin):
     conn    = get_db()
     pozicii = conn.execute("""
@@ -518,7 +570,7 @@ def export_procesen_cekor(kamin):
 # ─────────────────────────────────────────────────────────────
 @admin_bp.route("/email_recipients", methods=["GET", "POST"])
 @login_required
-@admin_required
+@admin_or_module_required("email_recipients")
 def email_recipients():
     conn   = get_db()
     cursor = conn.cursor()
@@ -563,9 +615,8 @@ def email_recipients():
 
 @admin_bp.route("/test_zaliha_email")
 @login_required
-@admin_required
+@admin_or_module_required("email_recipients")
 def test_zaliha_email():
-    from app import isprati_zaliha_email
     try:
         isprati_zaliha_email()
         flash("✅ Email за залиха е успешно испратен!", "success")
@@ -636,7 +687,7 @@ def test_auto_assign():
 
 @admin_bp.route("/procesni_cekori/<kamin>/pdf")
 @login_required
-@admin_required
+@admin_or_module_required("procesni_cekori")
 def export_procesen_cekor_pdf(kamin):
     conn = get_db()
     rows = conn.execute("""
@@ -648,15 +699,15 @@ def export_procesen_cekor_pdf(kamin):
         flash(f"Нема позиции за {kamin}!", "error")
         return redirect(url_for("admin.pozicii_kamin", kamin=kamin))
     buffer   = BytesIO()
-    doc      = BaseDocTemplate(buffer, pagesize=A4, rightMargin=35*mm, leftMargin=20*mm,
-                               topMargin=5*mm, bottomMargin=35*mm)
+    doc      = BaseDocTemplate(buffer, pagesize=A5, rightMargin=10*mm, leftMargin=10*mm,
+                               topMargin=8*mm, bottomMargin=16*mm)
     frame    = Frame(doc.leftMargin, doc.bottomMargin, doc.width, doc.height, id="normal")
     template = PageTemplate(id="All", frames=frame, onPage=add_page_number)
     doc.addPageTemplates([template])
-    title_style   = ParagraphStyle("Title", fontName="DejaVuSans-Bold", fontSize=30, leading=36,
-                                   textColor=colors.HexColor("#111827"), alignment=1, spaceAfter=55, spaceBefore=15)
-    heading_style = ParagraphStyle("Heading", fontName="DejaVuSans-Bold", fontSize=22,
-                                   textColor=colors.HexColor("#1e40af"), spaceAfter=25, spaceBefore=45)
+    title_style   = ParagraphStyle("Title", fontName="DejaVuSans-Bold", fontSize=17, leading=20,
+                                   textColor=colors.HexColor("#111827"), alignment=1, spaceAfter=10, spaceBefore=2)
+    heading_style = ParagraphStyle("Heading", fontName="DejaVuSans-Bold", fontSize=11, leading=13,
+                                   textColor=colors.HexColor("#1e40af"), spaceAfter=8, spaceBefore=10)
     grouped = defaultdict(list)
     for row in rows:
         grouped[row["pozicija_broj"]].append(row)
@@ -671,47 +722,50 @@ def export_procesen_cekor_pdf(kamin):
             try:
                 with open(logo_path, "rb") as f:
                     logo_buf = BytesIO(f.read())
-                logo       = Image(logo_buf, width=1.4*inch, height=0.55*inch)
+                logo       = Image(logo_buf, width=1.05*inch, height=0.4*inch)
                 logo.hAlign = "LEFT"
                 elements.append(logo)
             except Exception:
                 pass
         elements.append(Paragraph(f"Процесни чекори за камин: {kamin}", title_style))
-        elements.append(Spacer(1, 0.4*inch))
+        elements.append(Spacer(1, 0.12*inch))
         count = len(grouped[poz_broj])
         elements.append(Paragraph(f"Позиција {poz_broj} ({count} елемент{'и' if count > 1 else ''})", heading_style))
-        elements.append(Spacer(1, 0.3*inch))
+        elements.append(Spacer(1, 0.08*inch))
         data = [["Part Number", "Слика"]]
         for p in grouped[poz_broj]:
             slika_cell = "Нема слика"
             if p["slika"]:
                 slika_path = os.path.join(POZICII_FOLDER, p["slika"])
                 if os.path.exists(slika_path):
-                    img_buf = get_compressed_image_buffer(slika_path)
+                    img_buf = get_compressed_image_buffer(slika_path, max_size=(240, 240), quality=48)
                     if img_buf:
                         try:
-                            img        = Image(img_buf, width=1.4*inch, height=1.0*inch, kind="direct")
+                            img        = Image(img_buf, width=0.95*inch, height=0.72*inch, kind="direct")
                             img.hAlign = "CENTER"
                             slika_cell = img
                         except Exception:
                             slika_cell = "Грешка"
             data.append([p["part_number"] or "— (без артикл)", slika_cell])
-        table = Table(data, colWidths=[3.0*inch, 3.0*inch])
+        table = Table(data, colWidths=[doc.width * 0.58, doc.width * 0.42], repeatRows=1)
         table.setStyle(TableStyle([
             ("BACKGROUND",    (0,0), (-1,0), colors.HexColor("#1e40af")),
             ("TEXTCOLOR",     (0,0), (-1,0), colors.white),
             ("ALIGN",         (0,0), (-1,-1), "CENTER"),
             ("FONTNAME",      (0,0), (-1,0), "DejaVuSans-Bold"),
-            ("FONTSIZE",      (0,0), (-1,0), 12),
-            ("BOTTOMPADDING", (0,0), (-1,0), 14),
+            ("FONTSIZE",      (0,0), (-1,0), 9),
             ("BACKGROUND",    (0,1), (-1,-1), colors.white),
-            ("GRID",          (0,0), (-1,-1), 1, colors.HexColor("#cbd5e1")),
+            ("GRID",          (0,0), (-1,-1), 0.7, colors.HexColor("#cbd5e1")),
             ("VALIGN",        (0,0), (-1,-1), "MIDDLE"),
             ("FONTNAME",      (0,1), (-1,-1), "DejaVuSans"),
-            ("BOX",           (0,0), (-1,-1), 1.2, colors.HexColor("#93c5fd")),
+            ("BOX",           (0,0), (-1,-1), 0.9, colors.HexColor("#93c5fd")),
+            ("LEFTPADDING",   (0,0), (-1,-1), 6),
+            ("RIGHTPADDING",  (0,0), (-1,-1), 6),
+            ("TOPPADDING",    (0,0), (-1,-1), 5),
+            ("BOTTOMPADDING", (0,0), (-1,-1), 5),
         ]))
         elements.append(table)
-        elements.append(Spacer(1, 1.0*inch))
+        elements.append(Spacer(1, 0.16*inch))
     doc.build(elements)
     buffer.seek(0)
     return send_file(buffer, mimetype="application/pdf", as_attachment=True,

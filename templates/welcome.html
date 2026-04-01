@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+
+{% block title %}Fersedo - Почетна{% endblock %}
+
+{% block content %}
+<section class="control-deck">
+    <div class="control-deck__hero">
+        <div class="control-deck__hero-copy">
+            <div class="control-deck__brand">
+                <img src="{{ url_for('static', filename='logo2.png') }}" alt="Fersedo" class="control-deck__brand-logo">
+            </div>
+
+            <div class="control-deck__eyebrow">
+                <span class="control-deck__eyebrow-dot"></span>
+                <span>Работна станица</span>
+            </div>
+
+            <h1>Добредојде, {{ user_name }}.</h1>
+            <p>
+                Ова е твојот почетен екран. Сите модули што ги гледаш подолу и во sidebar-от
+                се контролирани од дозволите што ти се доделени во системот.
+            </p>
+
+            <div class="control-deck__meta">
+                <div class="control-chip">
+                    <span class="control-chip__label">Улога</span>
+                    <strong>{{ "Администратор" if is_admin else "Корисник" }}</strong>
+                </div>
+                <div class="control-chip">
+                    <span class="control-chip__label">Група</span>
+                    <strong>{{ user_group if user_group else "Без група" }}</strong>
+                </div>
+                <div class="control-chip control-chip--accent">
+                    <span class="control-chip__label">Достапни модули</span>
+                    <strong>{{ module_cards|length }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="control-deck__hero-panel">
+            <div class="control-deck__panel-title">Брз влез</div>
+            <div class="control-deck__quick-list">
+                {% for module in module_cards[:4] %}
+                <a class="control-deck__quick-item" href="{{ module.href }}">
+                    <span class="control-deck__quick-icon"><i class="{{ module.icon }}"></i></span>
+                    <span class="control-deck__quick-text">
+                        <strong>{{ module.label }}</strong>
+                        <small>{{ module.group }}</small>
+                    </span>
+                    <i class="fas fa-arrow-up-right-from-square"></i>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {% if module_cards %}
+        {% for group in module_cards|groupby('group') %}
+        <section class="control-group">
+            <div class="control-group__header">
+                <div>
+                    <div class="control-group__eyebrow">{{ group.grouper }}</div>
+                    <h2>{{ group.grouper }}</h2>
+                </div>
+                <div class="control-group__count">{{ group.list|length }} модули</div>
+            </div>
+
+            <div class="control-group__grid">
+                {% for module in group.list %}
+                <a class="control-card" href="{{ module.href }}">
+                    <div class="control-card__top">
+                        <div class="control-card__icon">
+                            <i class="{{ module.icon }}"></i>
+                        </div>
+                        <div class="control-card__arrow">
+                            <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </div>
+
+                    <div class="control-card__body">
+                        <div class="control-card__label">{{ module.group }}</div>
+                        <div class="control-card__title">{{ module.label }}</div>
+                        <p>{{ module.description }}</p>
+                    </div>
+
+                    <div class="control-card__footer">
+                        <span class="control-card__cta">
+                            <span class="control-card__cta-text control-card__cta-text--front">
+                                <em>Отвори модул</em>
+                            </span>
+                            <span class="control-card__cta-text control-card__cta-text--back">
+                                <em>Отвори модул</em>
+                            </span>
+                            <span class="control-card__cta-icon">
+                                <i class="fas fa-arrow-right"></i>
+                            </span>
+                        </span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    {% else %}
+        <div class="control-empty">
+            <i class="fas fa-lock"></i>
+            <h2>Нема активни модули</h2>
+            <p>Контактирај администратор за да ти додели пристап до модулите што ти се потребни.</p>
+        </div>
+    {% endif %}
+</section>
+
+<style>
+    .control-deck {
+        position: relative;
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 0.65rem 0.85rem 1.5rem;
+        background:
+            radial-gradient(circle at top right, rgba(102, 126, 234, 0.06), transparent 22rem),
+            radial-gradient(circle at bottom left, rgba(200, 32, 46, 0.05), transparent 18rem);
+    }
+
+    .control-deck__hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.72fr);
+        gap: 0.85rem;
+        margin-bottom: 1.1rem;
+    }
+
+    .control-deck__hero-copy,
+    .control-deck__hero-panel {
+        position: relative;
+        overflow: hidden;
+        border-radius: 24px;
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.07);
+    }
+
+    .control-deck__hero-copy {
+        padding: clamp(1.25rem, 2.2vw, 2rem);
+        background:
+            linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(248,250,254,0.98) 45%, rgba(255,255,255,0.97) 100%);
+    }
+
+    .control-deck__hero-copy::before {
+        content: "";
+        position: absolute;
+        top: -2rem;
+        right: -2rem;
+        width: 16rem;
+        height: 16rem;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(102,126,234,0.10) 0%, rgba(102,126,234,0) 72%);
+        pointer-events: none;
+    }
+
+    .control-deck__hero-copy::after {
+        content: "";
+        position: absolute;
+        right: 2.5rem;
+        bottom: -1rem;
+        width: 10rem;
+        height: 10rem;
+        border-radius: 28px;
+        transform: rotate(18deg);
+        background: linear-gradient(135deg, rgba(200,32,46,0.08), rgba(102,126,234,0.03));
+        pointer-events: none;
+    }
+
+    .control-deck__brand {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 0.65rem;
+    }
+
+    .control-deck__brand-logo {
+        width: clamp(128px, 12vw, 164px);
+        height: auto;
+        opacity: 0.9;
+    }
+
+    .control-deck__eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        margin-bottom: 1rem;
+        padding: 0.55rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(88, 104, 142, 0.08);
+        color: #546786;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .control-deck__eyebrow-dot {
+        width: 0.55rem;
+        height: 0.55rem;
+        border-radius: 999px;
+        background: #c8202e;
+        box-shadow: 0 0 0 6px rgba(200, 32, 46, 0.08);
+    }
+
+    .control-deck__hero-copy h1 {
+        position: relative;
+        z-index: 1;
+        margin: 0 0 0.65rem;
+        font-size: clamp(1.9rem, 3.3vw, 3.1rem);
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        color: #172033;
+    }
+
+    .control-deck__hero-copy p {
+        position: relative;
+        z-index: 1;
+        max-width: 38rem;
+        margin: 0;
+        color: #5f6f89;
+        font-size: 0.98rem;
+        line-height: 1.75;
+    }
+
+    .control-deck__meta {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
+        margin-top: 1rem;
+    }
+
+    .control-chip {
+        min-width: 140px;
+        padding: 0.75rem 0.9rem;
+        border-radius: 16px;
+        background: rgba(255,255,255,0.82);
+        border: 1px solid rgba(214, 223, 235, 0.9);
+    }
+
+    .control-chip--accent {
+        background: linear-gradient(135deg, rgba(88,104,142,0.08), rgba(200,32,46,0.05));
+        border-color: rgba(88,104,142,0.12);
+    }
+
+    .control-chip__label {
+        display: block;
+        margin-bottom: 0.2rem;
+        color: #6b7b93;
+        font-size: 0.75rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    .control-chip strong {
+        color: #172033;
+        font-size: 0.95rem;
+        font-weight: 800;
+    }
+
+    .control-deck__hero-panel {
+        padding: 0.95rem;
+        background: linear-gradient(160deg, #1c2739 0%, #253143 100%);
+        color: #fff;
+    }
+
+    .control-deck__panel-title {
+        margin-bottom: 0.95rem;
+        color: rgba(255,255,255,0.72);
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .control-deck__quick-list {
+        display: grid;
+        gap: 0.6rem;
+    }
+
+    .control-deck__quick-item {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 0.8rem 0.9rem;
+        border-radius: 16px;
+        text-decoration: none;
+        color: #fff;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.07);
+        transition: transform .2s ease, background .2s ease, border-color .2s ease;
+    }
+
+    .control-deck__quick-item:hover {
+        transform: translateY(-2px);
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.12);
+        color: #fff;
+    }
+
+    .control-deck__quick-icon {
+        width: 2.8rem;
+        height: 2.8rem;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(102,126,234,0.18), rgba(200,32,46,0.14));
+        color: #fff;
+        flex: 0 0 2.8rem;
+    }
+
+    .control-deck__quick-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+        flex: 1;
+    }
+
+    .control-deck__quick-text strong {
+        font-size: 1rem;
+        font-weight: 800;
+    }
+
+    .control-deck__quick-text small {
+        color: rgba(255,255,255,0.68);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .control-group {
+        margin-top: 0.95rem;
+    }
+
+    .control-group__header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .control-group__eyebrow {
+        color: #7386a3;
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .control-group__header h2 {
+        margin: 0.18rem 0 0;
+        font-size: 1.45rem;
+        font-weight: 900;
+        color: #172033;
+    }
+
+    .control-group__count {
+        padding: 0.55rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(88,104,142,0.08);
+        color: #546786;
+        font-size: 0.82rem;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+
+    .control-group__grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.85rem;
+    }
+
+    .control-card {
+        display: flex;
+        flex-direction: column;
+        min-height: 190px;
+        padding: 0.9rem;
+        border-radius: 20px;
+        text-decoration: none;
+        background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(251,252,254,0.98) 100%);
+        border: 1px solid rgba(220, 227, 238, 0.95);
+        box-shadow: 0 14px 34px rgba(15, 23, 42, 0.06);
+        transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+    }
+
+    .control-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 20px 38px rgba(15, 23, 42, 0.10);
+        border-color: rgba(88,104,142,0.22);
+    }
+
+    .control-card__top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+    }
+
+    .control-card__icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, rgba(88,104,142,0.10), rgba(200,32,46,0.07));
+        color: #4b5f82;
+        font-size: 1.15rem;
+    }
+
+    .control-card__arrow {
+        width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(88,104,142,0.07);
+        color: #5b6f90;
+        transition: transform .22s ease, background .22s ease, color .22s ease;
+    }
+
+    .control-card__label {
+        margin-bottom: 0.35rem;
+        color: #667892;
+        font-size: 0.76rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+
+    .control-card__title {
+        color: #172033;
+        font-size: 1.18rem;
+        font-weight: 900;
+        line-height: 1.08;
+    }
+
+    .control-card__body p {
+        margin: 0.45rem 0 0;
+        color: #62748f;
+        font-size: 0.9rem;
+        line-height: 1.55;
+    }
+
+    .control-card__footer {
+        margin-top: auto;
+        padding-top: 0.9rem;
+        border-top: 1px solid rgba(220, 227, 238, 0.9);
+    }
+
+    .control-card__cta {
+        --control-cta-bg: #182338;
+        --control-cta-fg: #f8fafc;
+        --control-cta-hover: #556b93;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        min-width: 148px;
+        justify-content: center;
+        padding: 0.7rem 0.95rem;
+        border-radius: 999px;
+        background: var(--control-cta-bg);
+        color: var(--control-cta-fg);
+        font-size: 0.82rem;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+        transition: transform .22s ease, background .28s ease, color .22s ease, box-shadow .22s ease;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .control-card__cta-text {
+        position: relative;
+        display: block;
+        perspective: 108px;
+        line-height: 1;
+    }
+
+    .control-card__cta-text em {
+        font-style: normal;
+        display: inline-block;
+        color: inherit;
+        transition: transform 0.55s cubic-bezier(.645,.045,.355,1), opacity 0.35s linear 0.2s;
+        will-change: transform, opacity;
+    }
+
+    .control-card__cta-text--front em {
+        transform-origin: top;
+    }
+
+    .control-card__cta-text--back {
+        position: absolute;
+        left: 0.95rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    .control-card__cta-text--back em {
+        opacity: 0;
+        transform: rotateX(-90deg) scaleX(.9) translate3d(0,10px,0);
+        transform-origin: bottom;
+    }
+
+    .control-card__cta-icon {
+        width: 1.4rem;
+        height: 1.4rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255,255,255,0.08);
+        color: #d7dfef;
+        font-size: 0.72rem;
+        transition: transform .22s ease, background .22s ease, color .22s ease;
+    }
+
+    .control-card:hover .control-card__arrow {
+        transform: translateX(3px);
+        background: rgba(88,104,142,0.12);
+        color: #3f5270;
+    }
+
+    .control-card:hover .control-card__cta {
+        transform: translateY(-1px);
+        background: var(--control-cta-hover);
+        color: #ffffff;
+        box-shadow: 0 8px 18px rgba(15,23,42,0.12);
+    }
+
+    .control-card:hover .control-card__cta-text--front em {
+        opacity: 0;
+        transform: rotateX(90deg) scaleX(.9) translate3d(0,-10px,0);
+    }
+
+    .control-card:hover .control-card__cta-text--back em {
+        opacity: 1;
+        transform: rotateX(0deg) scaleX(1) translateZ(0);
+        transition: transform 0.75s cubic-bezier(.645,.045,.355,1), opacity 0.35s linear 0.3s;
+    }
+
+    .control-card:hover .control-card__cta-icon {
+        transform: translateX(2px);
+        background: rgba(255,255,255,0.14);
+        color: #ffffff;
+    }
+
+    .control-empty {
+        padding: 2.5rem 1.5rem;
+        border-radius: 28px;
+        text-align: center;
+        background: #fff;
+        border: 1px solid var(--border);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .control-empty i {
+        font-size: 2rem;
+        color: #c8202e;
+        margin-bottom: 0.8rem;
+    }
+
+    .control-empty h2 {
+        margin: 0 0 0.5rem;
+        font-weight: 900;
+        color: #172033;
+    }
+
+    .control-empty p {
+        margin: 0;
+        color: #64748b;
+    }
+
+    @media (max-width: 980px) {
+        .control-deck__hero {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 640px) {
+        .control-deck {
+            padding: 0.55rem 0.35rem 1.2rem;
+        }
+
+        .control-deck__brand {
+            justify-content: flex-start;
+            margin-bottom: 0.9rem;
+        }
+
+        .control-group__header {
+            flex-direction: column;
+            align-items: start;
+        }
+
+        .control-card {
+            min-height: 200px;
+        }
+
+        .control-deck__hero-copy h1 {
+            font-size: 2.35rem;
+        }
+    }
+</style>
+{% endblock %}

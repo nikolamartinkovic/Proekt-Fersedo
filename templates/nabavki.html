@@ -267,9 +267,10 @@
                                     </td>
                                     <td>
                                         {% if r.slika %}
-                                        <a href="{{ url_for('static', filename='nabavki/' + r.slika) }}" target="_blank">
+                                        <!-- ── LIGHTBOX: табела слика ── -->
+                                        <a href="#" onclick="openLightbox('{{ url_for('static', filename='nabavki/' + r.slika) }}'); return false;">
                                             <img src="{{ url_for('static', filename='nabavki/' + r.slika) }}"
-                                                 alt="Слика" class="rounded shadow" style="max-width:90px;height:auto;">
+                                                 alt="Слика" class="rounded shadow" style="max-width:90px;height:auto;cursor:zoom-in;">
                                         </a>
                                         {% else %}
                                         <span class="text-muted">Нема</span>
@@ -374,9 +375,11 @@
                                 {# ── СЛИКА или КОПЧЕ ЗА ПОСТАВИ СЛИКА ── #}
                                 {% if r.slika %}
                                     <p class="mb-0"><strong>Прикачена слика:</strong></p>
-                                    <a href="{{ url_for('static', filename='nabavki/' + r.slika) }}" target="_blank">
+                                    <!-- ── LIGHTBOX: модал слика ── -->
+                                    <a href="#" onclick="openLightbox('{{ url_for('static', filename='nabavki/' + r.slika) }}'); return false;">
                                         <img src="{{ url_for('static', filename='nabavki/' + r.slika) }}"
-                                             alt="Слика" class="img-fluid rounded shadow mt-2" style="max-height:320px;">
+                                             alt="Слика" class="img-fluid rounded shadow mt-2"
+                                             style="max-height:320px;cursor:zoom-in;">
                                     </a>
                                 {% else %}
                                     <div>
@@ -520,7 +523,8 @@
                                         <p class="mb-0">{{ c.comment }}</p>
                                         {% endif %}
                                         {% if c.slika %}
-                                        <a href="/static/nabavki_chat/{{ c.slika }}" target="_blank" class="d-block mt-2">
+                                        <!-- ── LIGHTBOX: Jinja чат слика ── -->
+                                        <a href="#" onclick="openLightbox('/static/nabavki_chat/{{ c.slika }}'); return false;" class="d-block mt-2">
                                             <img src="/static/nabavki_chat/{{ c.slika }}"
                                                  alt="Слика во чат"
                                                  class="rounded shadow-sm"
@@ -594,8 +598,82 @@
     {% endfor %}
 </div>
 
+<!-- ══════════════════════════════════════════════════════════
+     LIGHTBOX OVERLAY
+════════════════════════════════════════════════════════════ -->
+<style>
+#lightbox-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.88);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+}
+#lightbox-overlay.active {
+    display: flex;
+}
+#lightbox-overlay img {
+    max-width: 92vw;
+    max-height: 92vh;
+    border-radius: 10px;
+    object-fit: contain;
+    box-shadow: 0 12px 60px rgba(0, 0, 0, 0.7);
+    user-select: none;
+}
+#lightbox-close {
+    position: fixed;
+    top: 18px;
+    right: 24px;
+    color: #fff;
+    font-size: 2.2rem;
+    font-weight: 300;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 100000;
+    opacity: 0.85;
+    transition: opacity 0.15s;
+    background: none;
+    border: none;
+    padding: 0;
+}
+#lightbox-close:hover {
+    opacity: 1;
+}
+</style>
+
+<div id="lightbox-overlay" onclick="closeLightbox()">
+    <button id="lightbox-close" onclick="closeLightbox()" title="Затвори">&times;</button>
+    <img id="lightbox-img" src="" alt="Зголемена слика">
+</div>
+
 <script>
-// ── Коментар за новото барање ──
+// ══════════════════════════════════════════════════════════
+// LIGHTBOX
+// ══════════════════════════════════════════════════════════
+function openLightbox(src) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox-overlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+    document.getElementById('lightbox-overlay').classList.remove('active');
+    document.getElementById('lightbox-img').src = '';
+    document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeLightbox();
+});
+// Спречи затворање кога се клика на самата слика (само на overlay-от)
+document.getElementById('lightbox-img').addEventListener('click', function(e) {
+    e.stopPropagation();
+});
+
+// ══════════════════════════════════════════════════════════
+// Коментар за новото барање
+// ══════════════════════════════════════════════════════════
 function saveKomentar() {
     const text = document.getElementById('komentarText').value.trim();
     document.getElementById('hiddenChatComment').value = text;
@@ -615,7 +693,7 @@ function handleGallerySelect(input) {
 function handleCameraCapture(input) {
     if (!input.files || !input.files[0]) return;
     const file = input.files[0];
-    const spinner  = document.getElementById('cameraUploadSpinner');
+    const spinner   = document.getElementById('cameraUploadSpinner');
     const labelText = document.getElementById('cameraLabelText');
     spinner.classList.remove('d-none');
     labelText.textContent = 'Се прикачува...';
@@ -752,8 +830,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const currentUser = '{{ session.user }}';
                     chatBox.innerHTML = comments.map(c => {
                         const isMe = c.user === currentUser;
+                        // ── LIGHTBOX: AJAX чат слика ──
                         const imgHtml = c.slika
-                            ? `<a href="/static/nabavki_chat/${c.slika}" target="_blank" class="d-block mt-2">
+                            ? `<a href="#" onclick="openLightbox('/static/nabavki_chat/${c.slika}'); return false;" class="d-block mt-2">
                                  <img src="/static/nabavki_chat/${c.slika}"
                                       class="rounded shadow-sm"
                                       style="max-width:220px;max-height:200px;object-fit:cover;cursor:zoom-in;">

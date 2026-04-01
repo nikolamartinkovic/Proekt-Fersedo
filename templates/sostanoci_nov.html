@@ -1,54 +1,54 @@
 {% extends "base.html" %}
 
-{% block title %}Nov sostanok - Fersedo{% endblock %}
+{% block title %}Нов состанок - Fersedo{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
-    <h1 class="fw-bold mb-4">Nov sostanok</h1>
+    <h1 class="fw-bold mb-4">Нов состанок</h1>
 
     <div class="card shadow-lg border-0">
         <div class="card-body p-5">
             <form method="POST" enctype="multipart/form-data" id="sostanokForm">
                 <div class="mb-4">
-                    <label for="naslov" class="form-label fw-bold">Naslov na sostanokot *</label>
-                    <input type="text" class="form-control form-control-lg" id="naslov" name="naslov" required placeholder="Pr. Sostanok za proizvodstvo - 15.03.2026">
+                    <label for="naslov" class="form-label fw-bold">Наслов на состанокот *</label>
+                    <input type="text" class="form-control form-control-lg" id="naslov" name="naslov" required placeholder="Пр. Состанок за производство - 15.03.2026">
                 </div>
 
                 <div class="mb-4">
-                    <label for="ucesnici" class="form-label fw-bold">Ucesnici</label>
-                    <input type="text" class="form-control" id="ucesnici" name="ucesnici" placeholder="Ime1, Ime2, Ime3...">
-                    <small class="text-muted">Razdeli so zapirka</small>
+                    <label for="ucesnici" class="form-label fw-bold">Учесници</label>
+                    <input type="text" class="form-control" id="ucesnici" name="ucesnici" placeholder="Име1, Име2, Име3...">
+                    <small class="text-muted">Раздели со запирка</small>
                 </div>
 
                 <div class="mb-5">
-                    <label class="form-label fw-bold">Snimi ili prikachi audio</label>
+                    <label class="form-label fw-bold">Сними или прикачи аудио</label>
                     <div class="d-flex gap-3 flex-wrap">
                         <button type="button" class="btn btn-outline-danger btn-lg px-5 py-3" id="startRecordBtn">
-                            <i class="fas fa-microphone fa-2x me-2"></i> Pochni snimanje
+                            <i class="fas fa-microphone fa-2x me-2"></i> Почни снимање
                         </button>
 
                         <div class="position-relative">
                             <input type="file" class="form-control form-control-lg" id="audioFile" name="audio" accept="audio/*">
-                            <small class="text-muted">Ili prikachi postojechka snimka (mp3, wav, m4a...)</small>
+                            <small class="text-muted">Или прикачи постоечка снимка (mp3, wav, m4a...)</small>
                         </div>
                     </div>
 
                     <div id="recordingStatus" class="mt-3 d-none">
                         <div class="alert alert-warning d-flex align-items-center">
                             <i class="fas fa-circle-notch fa-spin me-3 fa-2x"></i>
-                            <span>Snimanje vo tek... <span id="timer">00:00</span></span>
+                            <span>Снимање во тек... <span id="timer">00:00</span></span>
                         </div>
-                        <button type="button" class="btn btn-danger mt-2" id="stopRecordBtn">Zapri i zachuvaj</button>
+                        <button type="button" class="btn btn-danger mt-2" id="stopRecordBtn">Запри и зачувај</button>
                     </div>
 
                     <audio id="audioPreview" controls class="mt-3 w-100 d-none"></audio>
                     <div id="recordedLabel" class="mt-2 d-none">
-                        <span class="badge bg-success fs-6"><i class="fas fa-check me-1"></i> Snimkata e podgotvena za zachuvuvanje</span>
+                        <span class="badge bg-success fs-6"><i class="fas fa-check me-1"></i> Снимката е подготвена за зачувување</span>
                     </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary btn-lg px-5 py-3" id="submitBtn">
-                    <i class="fas fa-save me-2"></i> Zachuvaj i procesiraj so AI
+                    <i class="fas fa-save me-2"></i> Зачувај и процесирај со AI
                 </button>
             </form>
         </div>
@@ -81,21 +81,15 @@ startBtn.addEventListener('click', async () => {
 
         mediaRecorder.onstop = () => {
             const blob = new Blob(audioChunks, { type: 'audio/webm' });
-
-            // Prikazi preview
             audioPreview.src = URL.createObjectURL(blob);
             audioPreview.classList.remove('d-none');
 
-            // Stavi go blob vo file input preku DataTransfer
             const file = new File([blob], 'snimka.webm', { type: 'audio/webm' });
             const dt = new DataTransfer();
             dt.items.add(file);
             audioFileInput.files = dt.files;
 
-            // Pokazi label deka e podgotveno
             recordedLabel.classList.remove('d-none');
-
-            // Stoppi gi site tracks od mikrofonot
             stream.getTracks().forEach(track => track.stop());
         };
 
@@ -114,7 +108,7 @@ startBtn.addEventListener('click', async () => {
         }, 1000);
 
     } catch (err) {
-        alert('Greshka pri pristap do mikrofon: ' + err.message);
+        alert('Грешка при пристап до микрофон: ' + err.message);
     }
 });
 
@@ -130,11 +124,11 @@ stopBtn.addEventListener('click', () => {
 form.addEventListener('submit', (e) => {
     if (audioFileInput.files.length === 0) {
         e.preventDefault();
-        alert('Prikachi audio fajl ili snimi preku mikrofon!');
+        alert('Прикачи аудио фајл или сними преку микрофон!');
         return;
     }
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Procesiranje... (moze da trae 1-2 min)';
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Процесирање... (може да трае 1-2 мин)';
 });
 </script>
 

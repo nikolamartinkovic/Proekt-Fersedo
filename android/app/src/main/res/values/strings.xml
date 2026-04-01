@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Fersedo Mobile</string>
+    <string name="web_base_url">https://192.168.0.20</string>
+    <string name="trusted_internal_host">192.168.0.20</string>
+    <string name="file_chooser_title">Избери датотека</string>
+    <string name="download_description">Преземање од Fersedo</string>
+    <string name="download_started">Преземањето е започнато</string>
+    <string name="ssl_error_message">SSL сертификатот не е доверлив за овој домен.</string>
+    <string name="camera_error_message">Камерата не можеше да се отвори на уредот.</string>
+    <string name="error_title">Не може да се отвори системот</string>
+    <string name="error_message_default">Провери дали телефонот е на истата мрежа и дали серверот работи.</string>
+    <string name="retry">Обиди се повторно</string>
+    <string name="external_browser">Линкот е отворен во надворешен прелистувач.</string>
+    <string name="notification_channel_name">Fersedo известувања</string>
+    <string name="notification_channel_description">Известувања од модулите во Fersedo.</string>
+    <string name="notification_permission_rationale">Дозволи известувања за да добиваш пораки од набавки и други модули.</string>
+    <string name="no_pdf_viewer_found">Нема апликација за отворање PDF на уредот.</string>
+</resources>

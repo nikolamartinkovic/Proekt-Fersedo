@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.FersedoMobile" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/fersedo_primary</item>
+        <item name="colorSecondary">@color/fersedo_accent</item>
+        <item name="android:statusBarColor">@color/fersedo_primary_dark</item>
+        <item name="android:navigationBarColor">@color/fersedo_primary_dark</item>
+        <item name="android:windowBackground">@color/fersedo_surface</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">false</item>
+    </style>
+
+    <style name="Theme.FersedoMobile.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/fersedo_surface</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/fersedo_logo</item>
+        <item name="windowSplashScreenIconBackgroundColor">@color/fersedo_surface</item>
+        <item name="postSplashScreenTheme">@style/Theme.FersedoMobile</item>
+    </style>
+</resources>

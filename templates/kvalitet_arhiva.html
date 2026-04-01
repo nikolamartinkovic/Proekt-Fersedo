@@ -50,7 +50,7 @@
                             <td>{{ k.seriski_broj or '—' }}</td>
                             <td>
                                 {% if k.datum %}
-                                    {{ k.datum | datetimeformat("%d.%m.%Y %H:%M") }}
+                                        {{ k.datum | datetimeformat("%d-%m-%Y %H:%M") }}
                                 {% else %}
                                     —
                                 {% endif %}
