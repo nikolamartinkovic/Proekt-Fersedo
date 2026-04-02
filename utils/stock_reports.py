@@ -2,6 +2,7 @@ import os
 import smtplib
 import traceback
 from datetime import datetime
+from email.utils import formataddr
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -217,7 +218,12 @@ def isprati_zaliha_email():
         pdf_filename = f"stock_report_{datum_str.replace('.', '')}.pdf"
 
         msg = MIMEMultipart()
-        msg["From"] = current_app.config["EMAIL_HOST_USER"]
+        msg["From"] = formataddr(
+            (
+                current_app.config.get("EMAIL_FROM_NAME", "Info Fersedo"),
+                current_app.config["EMAIL_HOST_USER"],
+            )
+        )
         msg["To"] = ", ".join(to_list)
         if cc_list:
             msg["Cc"] = ", ".join(cc_list)

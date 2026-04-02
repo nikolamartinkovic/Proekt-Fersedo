@@ -1,6 +1,7 @@
 # config.py
 import os
 from pathlib import Path
+from email.utils import formataddr
 
 from dotenv import load_dotenv
 
@@ -24,6 +25,8 @@ class Config:
     EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
     EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
     EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+    EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "Info Fersedo")
+    EMAIL_FROM = formataddr((EMAIL_FROM_NAME, EMAIL_HOST_USER)) if EMAIL_HOST_USER else EMAIL_FROM_NAME
 
     AUTO_ASSIGN_INTERVAL_SECONDS = int(os.getenv("AUTO_ASSIGN_INTERVAL_SECONDS", "14400"))
     APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
@@ -34,6 +37,11 @@ class Config:
     HTTPS_KEY_PATH = os.getenv("HTTPS_KEY_PATH", str(BASE_DIR / "192.168.0.20-key.pem"))
     APP_LOG_DIR = os.getenv("APP_LOG_DIR", str(BASE_DIR / "instance" / "logs"))
     APP_LOG_LEVEL = os.getenv("APP_LOG_LEVEL", "INFO")
+    COMPANY_NAME = os.getenv("COMPANY_NAME", "Fersedo")
+    COMPANY_ADDRESS = os.getenv("COMPANY_ADDRESS", "")
+    COMPANY_CITY = os.getenv("COMPANY_CITY", "")
+    COMPANY_PHONE = os.getenv("COMPANY_PHONE", "")
+    COMPANY_EMAIL = os.getenv("COMPANY_EMAIL", os.getenv("EMAIL_HOST_USER", ""))
 
     # Додадени патеки (ако ги користиш)
     STATIC_FOLDER = str(BASE_DIR / "static")

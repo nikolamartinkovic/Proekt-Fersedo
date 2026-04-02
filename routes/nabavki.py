@@ -127,6 +127,7 @@ def nabavki():
                     title="Ново барање за набавка!",
                     body=f"{naslov} (број {nalog}) - од {session['user']}",
                     url="/nabavki",
+                    exclude_user=session["user"],
                 )
                 notify_novo_baranje(
                     nalog=nalog,

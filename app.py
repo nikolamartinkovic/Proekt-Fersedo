@@ -18,6 +18,7 @@ from pywebpush import webpush
 
 from extensions import db, migrate
 from config import Config
+from utils.app_updates import announce_android_release_if_needed
 from utils.app_bootstrap import register_blueprints, register_fonts
 from utils.db import init_db, get_db
 from utils.config import FONT_DIR, POZICII_FOLDER, STATIC_FOLDER, TEMPLATE_FOLDER
@@ -149,6 +150,13 @@ def get_android_release_metadata():
 def inject_app_install_meta():
     android_release = get_android_release_metadata()
     android_release["download_url"] = url_for("download_latest_android_apk")
+    try:
+        announce_android_release_if_needed(
+            android_release,
+            url_for("download_latest_android_apk", _external=True),
+        )
+    except Exception as exc:
+        app.logger.warning("Android release announce failed in context processor: %s", exc)
     return {
         "app_install_meta": {
             "android": android_release,
@@ -349,6 +357,20 @@ def download_latest_android_apk():
         download_name=download_name,
         max_age=0,
     )
+
+
+@app.route("/android/release-meta")
+def android_release_meta():
+    metadata = get_android_release_metadata()
+    metadata["download_url"] = url_for("download_latest_android_apk", _external=True)
+    try:
+        announce_android_release_if_needed(metadata, metadata["download_url"])
+    except Exception as exc:
+        app.logger.warning("Android release announce failed in release-meta: %s", exc)
+    return jsonify({
+        "success": True,
+        "android": metadata,
+    })
 
 # ─────────────────────────────────────────────────────────────
 # AUTO-ASSIGN  (логика останува овде, scheduler исто)

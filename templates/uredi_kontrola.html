@@ -2,123 +2,212 @@
 {% block title %}Уреди контрола #{{ kontrola.id }}{% endblock %}
 
 {% block content %}
+<style>
+    .qc-edit-shell {
+        max-width: 1320px;
+    }
+    .qc-edit-hero {
+        border-radius: 30px;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 28%),
+            linear-gradient(135deg, #0f172a 0%, #1e3a8a 48%, #2563eb 100%);
+        box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
+    }
+    .qc-edit-panel,
+    .qc-edit-step-card,
+    .qc-edit-subcard {
+        border-radius: 24px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: #ffffff;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+    }
+    .qc-edit-input,
+    .qc-edit-textarea {
+        border-radius: 16px;
+        border: 1px solid #dbe3f0;
+        background: #f8fafc;
+    }
+    .qc-edit-input {
+        min-height: 54px;
+    }
+    .qc-edit-textarea {
+        min-height: 120px;
+    }
+    .qc-edit-input:focus,
+    .qc-edit-textarea:focus,
+    .qc-edit-switch:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+    }
+    .qc-edit-step-title {
+        padding-bottom: .75rem;
+        border-bottom: 1px solid #e2e8f0;
+        margin-bottom: 1rem;
+    }
+    .qc-edit-subcard {
+        padding: 1.15rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+    .qc-edit-check-wrap {
+        border-radius: 18px;
+        background: #eef2ff;
+        border: 1px solid #dbeafe;
+        padding: 1rem;
+        min-height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .qc-edit-switch {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    .qc-edit-preview {
+        min-height: 130px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        text-align: center;
+    }
+    .qc-existing-image {
+        max-width: 280px;
+        border-radius: 14px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+    }
+</style>
 
-<div class="container mt-5" style="max-width: 1200px;">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0 fw-bold text-primary">Уреди контрола #{{ kontrola.id }}</h2>
-        <a href="{{ url_for('kvalitet.kvalitet_arhiva') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Назад кон архива
-        </a>
+<div class="container py-4 py-lg-5 qc-edit-shell">
+    <div class="qc-edit-hero mb-4">
+        <div class="p-4 p-lg-5 text-white">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Уредување</div>
+                    <h1 class="display-6 fw-bold mb-3">Уреди контрола #{{ kontrola.id }}</h1>
+                    <p class="mb-0 fs-5" style="max-width:760px; color: rgba(255,255,255,.78);">Освежи сериски број, статуси, забелешки и фотографии за веќе зачуваната квалитетна контрола.</p>
+                </div>
+                <a href="{{ url_for('kvalitet.kvalitet_arhiva') }}" class="btn btn-light btn-lg rounded-pill px-4">
+                    <i class="fas fa-arrow-left me-2"></i>Назад кон архива
+                </a>
+            </div>
+        </div>
     </div>
 
     <form method="POST" enctype="multipart/form-data">
-        <!-- Основни информации -->
-        <div class="card shadow-lg border-0 rounded-4 mb-5">
-            <div class="card-header bg-primary text-white py-4 px-5 fw-bold">
-                <h5 class="mb-0">Основни информации</h5>
+        <div class="qc-edit-panel p-4 p-lg-5 mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <div>
+                    <h4 class="fw-bold mb-1">Основни информации</h4>
+                    <div class="text-muted small">Главни податоци за контролата што можат да се коригираат.</div>
+                </div>
             </div>
-            <div class="card-body p-5">
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Камин</label>
-                        <input type="text" class="form-control form-control-lg bg-light" value="{{ kontrola.kamin }}" disabled>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Сериски број</label>
-                        <input type="text" name="seriski_broj" class="form-control form-control-lg" value="{{ kontrola.seriski_broj }}" required>
-                    </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Камин</label>
+                    <input type="text" class="form-control qc-edit-input" value="{{ kontrola.kamin }}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Сериски број</label>
+                    <input type="text" name="seriski_broj" class="form-control qc-edit-input" value="{{ kontrola.seriski_broj }}" required>
                 </div>
             </div>
         </div>
 
-        <!-- Одговори од проверка -->
-        <div class="card shadow-lg border-0 rounded-4">
-            <div class="card-header bg-info text-white py-4 px-5 fw-bold">
-                <h5 class="mb-0">Одговори од проверка</h5>
+        <div class="qc-edit-panel p-4 p-lg-5">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <div>
+                    <h4 class="fw-bold mb-1">Одговори од проверка</h4>
+                    <div class="text-muted small">Промени статус, забелешка или слика за секој поединечен подчекор.</div>
+                </div>
             </div>
-            <div class="card-body p-5">
-                {% if cekori %}
-                    {% for cekor, podovi in cekori.items() %}
-                    <div class="mb-5">
-                        <h6 class="fw-bold fs-5 text-primary mb-3 border-bottom pb-2">{{ cekor }}</h6>
 
+            {% if cekori %}
+                {% for cekor, podovi in cekori.items() %}
+                <div class="qc-edit-step-card p-3 p-lg-4 mb-4">
+                    <div class="qc-edit-step-title">
+                        <div class="fw-bold fs-5 text-dark">{{ cekor }}</div>
+                        <div class="text-muted small">{{ podovi|length }} зачувани ставки во оваа група</div>
+                    </div>
+
+                    <div class="d-flex flex-column gap-3">
                         {% for pod in podovi %}
-                        <div class="row align-items-start mb-4 pb-4 border-bottom">
-
-                            <!-- Опис на подчекорот -->
-                            <div class="col-md-4 pt-2">
-                                <strong>{{ pod.podcekor_opis or 'Непознат опис' }}</strong>
-                            </div>
-
-                            <!-- Статус (чекбокс) -->
-                            <div class="col-md-2 text-center pt-2">
-                                <div class="form-check form-switch form-switch-lg d-flex justify-content-center">
-                                    <input class="form-check-input" type="checkbox"
-                                           name="status_{{ pod.id }}" value="1"
-                                           {% if pod.status == 1 %}checked{% endif %}
-                                           id="status_{{ pod.id }}">
-                                    <label class="form-check-label fw-bold" for="status_{{ pod.id }}">
-                                        ПОМИНАЛ
-                                    </label>
-                                </div>
-                            </div>
-
-                            <!-- Десна колона: забелешка + слика — СЕКОГАШ ВИДЛИВИ -->
-                            <div class="col-md-6">
-
-                                <!-- Забелешка — секогаш -->
-                                <label class="form-label fw-bold mt-1">Забелешка</label>
-                                <textarea name="zabeleska_{{ pod.id }}"
-                                          class="form-control mb-3" rows="3"
-                                          placeholder="Внеси забелешка...">{{ pod.zabeleska or '' }}</textarea>
-
-                                <!-- Постоечка слика — секогаш ако постои -->
-                                {% if pod.slika %}
-                                <div class="mb-3">
-                                    <small class="text-muted">Постоечка слика:</small><br>
-                                    <img src="{{ url_for('static', filename='kvalitet_sliki/' ~ pod.slika) }}"
-                                         alt="Слика од контрола"
-                                         class="img-thumbnail shadow-sm"
-                                         style="max-width: 280px; border-radius: 8px;">
-                                </div>
-                                {% endif %}
-
-                                <!-- Нова слика — секогаш -->
-                                <label class="form-label fw-bold">Додај / замени слика</label>
-                                <input type="file" name="slika_{{ pod.id }}"
-                                       class="form-control mb-2" accept="image/*"
-                                       id="slika_{{ pod.id }}">
-
-                                <!-- Live Preview -->
-                                <div id="preview_{{ pod.id }}" class="mt-3 text-center"
-                                     style="max-height: 280px; overflow: hidden;">
-                                    <small class="text-muted">Preview на новата слика ќе се прикаже тука</small>
+                        <div class="qc-edit-subcard">
+                            <div class="row g-3 align-items-start">
+                                <div class="col-lg-3">
+                                    <div class="fw-semibold text-dark mb-1">{{ pod.podcekor_opis or 'Непознат опис' }}</div>
+                                    <div class="text-muted small">Освежи го резултатот и приложената документација за оваа ставка.</div>
                                 </div>
 
+                                <div class="col-lg-2">
+                                    <div class="qc-edit-check-wrap">
+                                        <div class="form-check d-flex align-items-center justify-content-center gap-2 m-0">
+                                            <input class="form-check-input qc-edit-switch"
+                                                   type="checkbox"
+                                                   name="status_{{ pod.id }}"
+                                                   value="1"
+                                                   {% if pod.status == 1 %}checked{% endif %}
+                                                   id="status_{{ pod.id }}">
+                                            <label class="form-check-label fw-bold" for="status_{{ pod.id }}">
+                                                ПОМИНАЛ
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-7">
+                                    <label class="form-label fw-bold">Забелешка</label>
+                                    <textarea name="zabeleska_{{ pod.id }}"
+                                              class="form-control qc-edit-textarea mb-3"
+                                              rows="3"
+                                              placeholder="Внеси забелешка...">{{ pod.zabeleska or '' }}</textarea>
+
+                                    {% if pod.slika %}
+                                    <div class="mb-3">
+                                        <small class="text-muted d-block mb-2">Постоечка слика</small>
+                                        <img src="{{ url_for('static', filename='kvalitet_sliki/' ~ pod.slika) }}"
+                                             alt="Слика од контрола"
+                                             class="img-fluid qc-existing-image">
+                                    </div>
+                                    {% endif %}
+
+                                    <label class="form-label fw-bold">Додај / замени слика</label>
+                                    <input type="file" name="slika_{{ pod.id }}"
+                                           class="form-control qc-edit-input mb-3"
+                                           accept="image/*"
+                                           id="slika_{{ pod.id }}">
+
+                                    <div id="preview_{{ pod.id }}" class="qc-edit-preview">
+                                        <small class="text-muted">Preview на новата слика ќе се прикаже тука</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="alert alert-warning text-center py-5">
-                        <i class="fas fa-exclamation-triangle me-2 fs-4"></i>
-                        Нема зачувани одговори за оваа контрола.
-                    </div>
-                {% endif %}
-            </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-warning text-center py-5 rounded-4">
+                    <i class="fas fa-exclamation-triangle me-2 fs-4"></i>
+                    Нема зачувани одговори за оваа контрола.
+                </div>
+            {% endif %}
         </div>
 
-        <div class="text-end mt-5 mb-5">
-            <button type="submit" class="btn btn-primary btn-lg px-5 py-3 shadow-lg">
-                <i class="fas fa-save me-2"></i> Зачувај промени
+        <div class="text-end mt-4 mb-5">
+            <button type="submit" class="btn btn-primary btn-lg px-5 py-3 rounded-pill shadow-lg">
+                <i class="fas fa-save me-2"></i>Зачувај промени
             </button>
         </div>
     </form>
 </div>
 
 <script>
-// Live preview на нова слика
 document.querySelectorAll('input[type="file"]').forEach(input => {
     input.addEventListener('change', function () {
         const previewId = "preview_" + this.name.split('_')[1];
@@ -133,11 +222,13 @@ document.querySelectorAll('input[type="file"]').forEach(input => {
                 img.src = e.target.result;
                 img.style.maxWidth = '100%';
                 img.style.maxHeight = '280px';
-                img.style.borderRadius = '8px';
-                img.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                img.style.borderRadius = '12px';
+                img.style.boxShadow = '0 8px 20px rgba(15,23,42,0.12)';
                 previewDiv.appendChild(img);
             };
             reader.readAsDataURL(this.files[0]);
+        } else {
+            previewDiv.innerHTML = '<small class="text-muted">Preview на новата слика ќе се прикаже тука</small>';
         }
     });
 });

@@ -2,6 +2,7 @@ import os
 import smtplib
 from collections import defaultdict
 from datetime import datetime, timedelta
+from email.utils import formataddr
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -16,6 +17,7 @@ _EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
 _EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 _EMAIL_USER = os.getenv("EMAIL_HOST_USER", "")
 _EMAIL_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+_EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "Info Fersedo")
 
 _LOGO_PATH = os.path.join(STATIC_FOLDER, "logo2.png")
 
@@ -32,10 +34,11 @@ def _get_logo_path():
 
 def _build_email_with_logo(subject, html_body):
     email_user = current_app.config.get("EMAIL_HOST_USER", _EMAIL_USER)
+    email_from_name = current_app.config.get("EMAIL_FROM_NAME", _EMAIL_FROM_NAME)
     logo_path = _get_logo_path()
     if logo_path:
         msg_root = MIMEMultipart("related")
-        msg_root["From"] = email_user
+        msg_root["From"] = formataddr((email_from_name, email_user))
         msg_root["Subject"] = subject
         msg_alt = MIMEMultipart("alternative")
         msg_alt.attach(MIMEText(html_body, "html", "utf-8"))
@@ -52,7 +55,7 @@ def _build_email_with_logo(subject, html_body):
         except Exception as exc:
             print(f"[LOGO] Грешка при читање: {exc}")
     msg = MIMEMultipart("alternative")
-    msg["From"] = email_user
+    msg["From"] = formataddr((email_from_name, email_user))
     msg["Subject"] = subject
     msg.attach(MIMEText(html_body, "html", "utf-8"))
     return msg, False
@@ -84,6 +87,14 @@ def ensure_manager_emails_table(cursor):
         )
         """
     )
+    columns = {
+        row["name"]
+        for row in cursor.execute("PRAGMA table_info(otsustva_manager_emails)").fetchall()
+    }
+    if "dobiva_baranja" not in columns:
+        cursor.execute(
+            "ALTER TABLE otsustva_manager_emails ADD COLUMN dobiva_baranja INTEGER DEFAULT 0"
+        )
 
 
 def ensure_email_log_table(cursor):
@@ -225,6 +236,30 @@ def _get_manager_emails():
         return []
 
 
+def get_baranje_notification_target():
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        ensure_manager_emails_table(cursor)
+        conn.commit()
+        row = cursor.execute(
+            """
+            SELECT ime, email
+            FROM otsustva_manager_emails
+            WHERE aktiven = 1 AND COALESCE(dobiva_baranja, 0) = 1
+            ORDER BY ime, email
+            LIMIT 1
+            """
+        ).fetchone()
+        conn.close()
+        if not row or not (row["email"] or "").strip():
+            return None
+        return {"ime": (row["ime"] or "").strip(), "email": (row["email"] or "").strip()}
+    except Exception as exc:
+        print(f"[BARANJE EMAIL] Грешка: {exc}")
+        return None
+
+
 def _isprati_email_do_menadzeri(emails, subject, html, log_prefix="[EMAIL]"):
     if not emails:
         print(f"{log_prefix} \u041d\u0435\u043c\u0430 \u043f\u0440\u0438\u043c\u0430\u0447\u0438.")
@@ -250,6 +285,60 @@ def _isprati_email_do_menadzeri(emails, subject, html, log_prefix="[EMAIL]"):
     except Exception as exc:
         print(f"{log_prefix} \u0413\u0440\u0435\u0448\u043a\u0430: {exc}")
         return {"success": False, "message": str(exc)}
+
+
+def isprati_izvestuvanje_za_novo_baranje(
+    ime_prezime,
+    datum_od,
+    datum_do,
+    working_days,
+    zabeleska,
+    podneseno_od,
+    podneseno_na,
+):
+    recipient = get_baranje_notification_target()
+    if not recipient or not recipient.get("email"):
+        return {
+            "success": False,
+            "message": "Нема активни примачи за известување за ново барање.",
+        }
+
+    def fmt(datum_text):
+        try:
+            return datetime.strptime(datum_text, "%Y-%m-%d").strftime("%d-%m-%Y")
+        except Exception:
+            return datum_text
+
+    recipient_name = recipient["ime"] or recipient["email"]
+    subject = f"Ново барање за одмор - {ime_prezime}"
+    html = f"""
+    <html>
+    <body style="font-family:Arial,sans-serif;background:#f5f7fb;padding:24px;color:#1f2b43;">
+        <div style="max-width:720px;margin:auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #d7e0f0;">
+            <h2 style="margin-top:0;color:#1f2b43;">Ново барање за одмор</h2>
+            <p style="font-size:15px;line-height:1.6;">
+                Поднесено е ново барање за одмор и ова известување е испратено до:
+                <strong>{recipient_name}</strong>.
+            </p>
+            <table style="width:100%;border-collapse:collapse;margin-top:18px;">
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Вработен:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{ime_prezime}</td></tr>
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Од:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{fmt(datum_od)}</td></tr>
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>До:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{fmt(datum_do)}</td></tr>
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Работни денови:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{working_days}</td></tr>
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Поднесено од:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{podneseno_od}</td></tr>
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Поднесено на:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{podneseno_na}</td></tr>
+                <tr><td style="padding:10px;vertical-align:top;"><strong>Забелешка:</strong></td><td style="padding:10px;">{zabeleska or '-'}</td></tr>
+            </table>
+        </div>
+    </body>
+    </html>
+    """
+    return _isprati_email_do_menadzeri(
+        [recipient["email"]],
+        subject,
+        html,
+        log_prefix="[EMAIL ODMOR БАРАЊЕ]",
+    )
 
 
 def _get_odmori_for_date(cursor, date_str, praznici):

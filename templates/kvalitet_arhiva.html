@@ -2,110 +2,152 @@
 {% block title %}Архива - Контроли на квалитет{% endblock %}
 
 {% block content %}
+<style>
+  .kvalitet-archive-shell {
+    max-width: 1320px;
+  }
+  .kvalitet-archive-hero {
+    border-radius: 30px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top right, rgba(52, 211, 153, 0.16), transparent 28%),
+      linear-gradient(135deg, #0f172a 0%, #134e4a 55%, #0f766e 100%);
+    box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
+  }
+  .kvalitet-panel,
+  .kvalitet-table-card {
+    border-radius: 24px;
+    border: 1px solid rgba(148,163,184,.18);
+    background: #ffffff;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+  }
+  .kvalitet-search {
+    min-height: 56px;
+    border-radius: 18px;
+    border: 1px solid #dbe3f0;
+    box-shadow: none !important;
+  }
+  .kvalitet-search:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 0.2rem rgba(56,189,248,.14) !important;
+  }
+  .kvalitet-table-card .table thead th {
+    background: #0f172a;
+    color: #ffffff;
+    border-bottom: 0;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  .kvalitet-table-card .table tbody td {
+    vertical-align: middle;
+  }
+  .kvalitet-row-id {
+    font-weight: 800;
+    color: #1e3a8a;
+  }
+</style>
 
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">Архива на контроли на квалитет</h2>
-        <a href="{{ url_for('kvalitet.nova_kontrola') }}" class="btn btn-success">
-            <i class="fas fa-plus me-2"></i>Нова контрола
+<div class="container py-4 py-lg-5 kvalitet-archive-shell">
+  <div class="kvalitet-archive-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Архива</div>
+          <h1 class="display-6 fw-bold mb-3">Архива на контроли на квалитет</h1>
+          <p class="mb-0 fs-5" style="max-width:760px; color: rgba(255,255,255,.78);">Пребарај по сериски број, камин или датум и отвори ги тековните PDF извештаи и старите верзии од истото место.</p>
+        </div>
+        <a href="{{ url_for('kvalitet.nova_kontrola') }}" class="btn btn-light btn-lg rounded-pill px-4">
+          <i class="fas fa-plus me-2"></i>Нова контрола
         </a>
+      </div>
     </div>
+  </div>
 
-    <!-- Live Search bar -->
-    <div class="card shadow-sm border-0 mb-4">
-        <div class="card-body">
-            <div class="input-group input-group-lg">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="fas fa-search text-muted"></i>
-                </span>
-                <input type="text" id="searchInput" class="form-control"
-                       placeholder="Пребарај по сериски број, камин или датум...">
-                <button id="clearSearch" class="btn btn-outline-secondary d-none" type="button">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
+  <div class="kvalitet-panel p-4 mb-4">
+    <div class="row g-3 align-items-center">
+      <div class="col-lg-9">
+        <div class="input-group input-group-lg">
+          <span class="input-group-text bg-white border-end-0 rounded-start-4"><i class="fas fa-search text-muted"></i></span>
+          <input type="text" id="searchInput" class="form-control kvalitet-search border-start-0" placeholder="Пребарај по сериски број, камин или датум...">
+          <button id="clearSearch" class="btn btn-outline-secondary d-none rounded-end-4" type="button">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
+      </div>
+      <div class="col-lg-3 text-lg-end">
+        <div class="small text-muted">Вкупно контроли</div>
+        <div class="fs-3 fw-bold text-dark" id="totalCount">{{ kontroli | length }}</div>
+      </div>
     </div>
+  </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-striped align-middle mb-0" id="arhivaTable">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>ID</th>
-                            <th>Камин</th>
-                            <th>Сериски број</th>
-                            <th>Датум и време</th>
-                            <th>Тековен PDF</th>
-                            <th>Претходни верзии</th>
-                            <th>Акција</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody">
-                        {% for k in kontroli %}
-                        <tr>
-                            <td><strong>{{ k.id }}</strong></td>
-                            <td>{{ k.kamin }}</td>
-                            <td>{{ k.seriski_broj or '—' }}</td>
-                            <td>
-                                {% if k.datum %}
-                                        {{ k.datum | datetimeformat("%d-%m-%Y %H:%M") }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-
-                            <!-- Тековен PDF -->
-                            <td>
-                                {% if k.pdf_file %}
-                                    <a href="{{ url_for('static', filename='kvalitet_pdf/' ~ k.pdf_file) }}"
-                                       class="btn btn-sm btn-primary"
-                                       target="_blank"
-                                       title="Тековен PDF">
-                                        <i class="fas fa-file-pdf me-1"></i> PDF
-                                    </a>
-                                {% else %}
-                                    <span class="text-muted">Нема PDF</span>
-                                {% endif %}
-                            </td>
-
-                            <!-- Претходни верзии -->
-                            <td>
-                                {% if k.pdf_verzii %}
-                                    <div class="d-flex flex-column gap-1">
-                                        {% for v in k.pdf_verzii %}
-                                        <a href="{{ url_for('static', filename='kvalitet_pdf/' ~ v.pdf_file) }}"
-                                           target="_blank"
-                                           class="btn btn-outline-secondary btn-sm"
-                                           title="Зачувано: {{ v.datum }}">
-                                            <i class="fas fa-file-pdf me-1"></i> Верзија {{ v.verzija }}
-                                        </a>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    <span class="text-muted small">—</span>
-                                {% endif %}
-                            </td>
-
-                            <!-- Акција -->
-                            <td>
-                                <a href="{{ url_for('kvalitet.uredi_kontrola', kontrola_id=k.id) }}"
-                                   class="btn btn-sm btn-outline-secondary">
-                                    <i class="fas fa-edit"></i> Уреди
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+  <div class="kvalitet-table-card overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" id="arhivaTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Камин</th>
+            <th>Сериски број</th>
+            <th>Датум и време</th>
+            <th>Тековен PDF</th>
+            <th>Претходни верзии</th>
+            <th>Акција</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          {% for k in kontroli %}
+          <tr>
+            <td><span class="kvalitet-row-id">#{{ k.id }}</span></td>
+            <td>{{ k.kamin }}</td>
+            <td>{{ k.seriski_broj or '—' }}</td>
+            <td>
+              {% if k.datum %}
+                {{ k.datum | datetimeformat("%d-%m-%Y %H:%M") }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>
+              {% if k.pdf_file %}
+                <a href="{{ url_for('static', filename='kvalitet_pdf/' ~ k.pdf_file) }}"
+                   class="btn btn-sm btn-primary rounded-pill px-3"
+                   target="_blank"
+                   title="Тековен PDF">
+                  <i class="fas fa-file-pdf me-1"></i>PDF
+                </a>
+              {% else %}
+                <span class="text-muted">Нема PDF</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if k.pdf_verzii %}
+                <div class="d-flex flex-column gap-1">
+                  {% for v in k.pdf_verzii %}
+                  <a href="{{ url_for('static', filename='kvalitet_pdf/' ~ v.pdf_file) }}"
+                     target="_blank"
+                     class="btn btn-outline-secondary btn-sm text-start"
+                     title="Зачувано: {{ v.datum }}">
+                    <i class="fas fa-file-pdf me-1"></i>Верзија {{ v.verzija }}
+                  </a>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('kvalitet.uredi_kontrola', kontrola_id=k.id) }}"
+                 class="btn btn-sm btn-outline-dark rounded-pill px-3">
+                <i class="fas fa-edit me-1"></i>Уреди
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
-
-    <div class="mt-4 text-muted small">
-        Вкупно контроли: <strong id="totalCount">{{ kontroli | length }}</strong>
-    </div>
+  </div>
 </div>
 
 <script>
@@ -124,10 +166,10 @@ function filterTable() {
         const cells = row.querySelectorAll('td');
         if (cells.length < 4) return;
 
-        const id     = cells[0].textContent.toLowerCase();
-        const kamin  = cells[1].textContent.toLowerCase();
+        const id = cells[0].textContent.toLowerCase();
+        const kamin = cells[1].textContent.toLowerCase();
         const seriski = cells[2].textContent.toLowerCase();
-        const datum  = cells[3].textContent.toLowerCase();
+        const datum = cells[3].textContent.toLowerCase();
 
         const match = id.includes(query) ||
                       kamin.includes(query) ||

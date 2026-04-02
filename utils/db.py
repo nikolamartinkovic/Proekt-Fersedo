@@ -125,6 +125,20 @@ def init_db():
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS app_release_announcements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            version_key TEXT NOT NULL UNIQUE,
+            version_name TEXT NOT NULL,
+            version_code INTEGER NOT NULL,
+            push_sent_at TEXT DEFAULT NULL,
+            email_sent_at TEXT DEFAULT NULL,
+            push_count INTEGER DEFAULT 0,
+            email_count INTEGER DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS audit_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             category TEXT NOT NULL,

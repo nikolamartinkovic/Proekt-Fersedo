@@ -2,126 +2,305 @@
 {% block title %}Нова контрола{% endblock %}
 
 {% block content %}
+<style>
+    .qc-form-shell {
+        max-width: 1320px;
+    }
+    .qc-form-hero {
+        border-radius: 30px;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 28%),
+            linear-gradient(135deg, #0f172a 0%, #172554 52%, #1e3a8a 100%);
+        box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
+    }
+    .qc-form-panel,
+    .qc-form-step-card,
+    .qc-form-subcard {
+        border-radius: 24px;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: #ffffff;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+    }
+    .qc-form-kamin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem;
+    }
+    .qc-form-kamin-card {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        background: #ffffff;
+        box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+        transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+    }
+    .qc-form-kamin-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+        border-color: rgba(96, 165, 250, 0.48);
+    }
+    .qc-form-kamin-card.active {
+        border-color: rgba(59, 130, 246, 0.72);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12), 0 24px 48px rgba(15, 23, 42, 0.12);
+    }
+    .qc-form-kamin-thumb {
+        min-height: 190px;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.35rem;
+    }
+    .qc-form-kamin-thumb img {
+        width: 100%;
+        max-width: 150px;
+        height: 145px;
+        object-fit: contain;
+        filter: drop-shadow(0 12px 18px rgba(15, 23, 42, 0.12));
+    }
+    .qc-form-kamin-body {
+        padding: 1.15rem 1.15rem 1.3rem;
+    }
+    .qc-form-kamin-title {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: .35rem;
+    }
+    .qc-form-kamin-text {
+        font-size: .9rem;
+        line-height: 1.5;
+        color: #64748b;
+        margin-bottom: 0;
+    }
+    .qc-form-input {
+        min-height: 54px;
+        border-radius: 16px;
+        border: 1px solid #dbe3f0;
+        background: #f8fafc;
+    }
+    .qc-form-input:focus,
+    .qc-form-check:focus,
+    .qc-form-textarea:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+    }
+    .qc-form-step-head {
+        display: flex;
+        align-items: center;
+        gap: .9rem;
+        margin-bottom: 1.25rem;
+    }
+    .qc-form-step-index {
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+        color: #1d4ed8;
+        font-weight: 800;
+        flex-shrink: 0;
+    }
+    .qc-form-subcard {
+        padding: 1.1rem 1.1rem 1.2rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    }
+    .qc-form-pod-title {
+        font-weight: 700;
+        color: #0f172a;
+        margin-bottom: .35rem;
+    }
+    .qc-form-check-wrap {
+        border-radius: 18px;
+        background: #eef2ff;
+        padding: 1rem;
+        border: 1px solid #dbeafe;
+        min-height: 100%;
+    }
+    .qc-form-check {
+        width: 1.2rem;
+        height: 1.2rem;
+        margin-top: 0.2rem;
+    }
+    .qc-form-textarea {
+        border-radius: 16px;
+        border: 1px solid #dbe3f0;
+        background: #ffffff;
+        min-height: 108px;
+    }
+    .qc-preview-box {
+        min-height: 120px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        background: #f8fafc;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        text-align: center;
+    }
+    .qc-empty-warning {
+        border-radius: 24px;
+        border: 1px dashed #f59e0b;
+        background: linear-gradient(180deg, #fff7ed 0%, #fffbeb 100%);
+    }
+    @media (max-width: 767.98px) {
+        .qc-form-kamin-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+    }
+</style>
 
-<div class="container mt-5" style="max-width: 1200px;">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0 fw-bold text-primary">Нова контрола</h2>
- <a href="{{ url_for('kvalitet.kvalitet_arhiva') }}" class="btn btn-outline-secondary">
-    <i class="fas fa-arrow-left me-2"></i>Назад кон архива
-</a>
+<div class="container py-4 py-lg-5 qc-form-shell">
+    <div class="qc-form-hero mb-4">
+        <div class="p-4 p-lg-5 text-white">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Нова контрола</div>
+                    <h1 class="display-6 fw-bold mb-3">QC внес за нова контрола</h1>
+                    <p class="mb-0 fs-5" style="max-width:760px; color: rgba(255,255,255,.78);">Избери камин, внеси сериски број и пополни ги сите проверочни чекори со забелешки и слики таму каде што е потребно.</p>
+                </div>
+                <a href="{{ url_for('kvalitet.kvalitet_arhiva') }}" class="btn btn-light btn-lg rounded-pill px-4">
+                    <i class="fas fa-arrow-left me-2"></i>Назад кон архива
+                </a>
+            </div>
+        </div>
     </div>
 
-    <!-- 1️⃣ ИЗБОР НА КАМИН -->
-    <div class="card shadow-lg border-0 rounded-4 mb-5">
-        <div class="card-body p-4 p-md-5">
-            <form method="GET">
-                <div class="row g-4 align-items-end">
-                    <div class="col-md-8">
-                        <label class="form-label fw-bold fs-5">Избери камин</label>
-                        <select name="kamin" class="form-select form-select-lg" onchange="this.form.submit()">
-                            <option value="">-- Избери камин --</option>
-                            {% for k in kamini %}
-                                <option value="{{ k }}" {% if k == selected_kamin %}selected{% endif %}>
-                                    {{ k }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+    <div class="qc-form-panel p-4 p-lg-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div>
+                <h5 class="fw-bold mb-1">Избор на камин</h5>
+                <div class="text-muted small">Избери модел за кој ќе се отвори соодветниот сет на QC чекори.</div>
+            </div>
+            {% if selected_kamin %}
+            <span class="badge rounded-pill text-bg-primary px-3 py-2">{{ selected_kamin }}</span>
+            {% endif %}
+        </div>
+
+        <div class="qc-form-kamin-grid">
+            {% for k in kamini %}
+            <a href="{{ url_for('kvalitet.nova_kontrola', kamin=k) }}" class="qc-form-kamin-card {% if k == selected_kamin %}active{% endif %}">
+                <div class="qc-form-kamin-thumb">
+                    <img src="{{ url_for('main.kamin_static', filename=k ~ '.png') }}"
+                         alt="{{ k }}"
+                         onerror="this.onerror=null; this.src='{{ url_for('main.kamin_static', filename='default-kamin.png') }}';">
                 </div>
-            </form>
+                <div class="qc-form-kamin-body">
+                    <div class="qc-form-kamin-title">{{ k }}</div>
+                    <p class="qc-form-kamin-text">Кликни за да отвoриш нова контрола за овој камин.</p>
+                </div>
+            </a>
+            {% endfor %}
         </div>
     </div>
 
     {% if selected_kamin %}
-    <!-- 2️⃣ ФОРМА ЗА ЗАЧУВУВАЊЕ -->
     <form method="POST" enctype="multipart/form-data">
         <input type="hidden" name="kamin" value="{{ selected_kamin }}">
 
-        <div class="card shadow-lg border-0 rounded-4 mb-5">
-            <div class="card-header bg-primary text-white py-4 px-5 fw-bold">
-                <h4 class="mb-0">Детали за контролата</h4>
+        <div class="qc-form-panel p-4 p-lg-5 mb-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <div>
+                    <h4 class="fw-bold mb-1">Детали за контролата</h4>
+                    <div class="text-muted small">Основните информации за записот се внесуваат пред проверката.</div>
+                </div>
             </div>
-            <div class="card-body p-5">
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Камин</label>
-                        <input type="text" class="form-control form-control-lg" value="{{ selected_kamin }}" disabled>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold">Сериски број <span class="text-danger">*</span></label>
-                        <input type="text" name="seriski_broj" class="form-control form-control-lg" required placeholder="Внеси сериски број...">
-                    </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Камин</label>
+                    <input type="text" class="form-control qc-form-input" value="{{ selected_kamin }}" disabled>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Сериски број <span class="text-danger">*</span></label>
+                    <input type="text" name="seriski_broj" class="form-control qc-form-input" required placeholder="Внеси сериски број...">
                 </div>
             </div>
         </div>
 
-        <!-- 3️⃣ ЧЕКОРИ -->
-        <div class="card shadow-lg border-0 rounded-4">
-            <div class="card-header bg-gradient-primary text-white py-4 px-5 fw-bold">
-                <h4 class="mb-0">Чекори за проверка</h4>
+        <div class="qc-form-panel p-4 p-lg-5">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                <div>
+                    <h4 class="fw-bold mb-1">Чекори за проверка</h4>
+                    <div class="text-muted small">Означи што е поминато, а за непоминатите ставки додади забелешка и слика ако е потребно.</div>
+                </div>
             </div>
-            <div class="card-body p-5">
-                {% if cekori %}
-                    {% for cekor in cekori %}
-                    <div class="card mb-5 border-0 shadow-sm rounded-4">
-                        <div class="card-header bg-light fw-bold fs-5 py-3">
-                            {{ cekor.naslov }}
+
+            {% if cekori %}
+                {% for cekor in cekori %}
+                <div class="qc-form-step-card p-3 p-lg-4 mb-4">
+                    <div class="qc-form-step-head">
+                        <div class="qc-form-step-index">{{ loop.index }}</div>
+                        <div>
+                            <div class="fw-bold fs-5 text-dark">{{ cekor.naslov }}</div>
+                            <div class="text-muted small">{{ cekor.podcekori|length }} подчекори за проверка</div>
                         </div>
-                        <div class="card-body">
-                            {% for pod in cekor.podcekori %}
-                            <div class="row align-items-start mb-4 pb-4 border-bottom">
-                                <!-- Опис -->
-                                <div class="col-md-5 pt-2">
-                                    <strong>{{ pod.opis }}</strong>
+                    </div>
+
+                    <div class="d-flex flex-column gap-3">
+                        {% for pod in cekor.podcekori %}
+                        <div class="qc-form-subcard">
+                            <div class="row g-3 align-items-start">
+                                <div class="col-lg-4">
+                                    <div class="qc-form-pod-title">{{ pod.opis }}</div>
+                                    <div class="text-muted small">Оцени дали ставката е помината. Ако не е, внеси забелешка и приложи фотографија.</div>
                                 </div>
 
-                                <!-- Checkbox OK -->
-                                <div class="col-md-2 text-center pt-2">
-                                    <div class="form-check form-check-lg d-flex justify-content-center">
-                                        <input class="form-check-input" type="checkbox" name="pod_{{ pod.id }}" value="1" id="ok_{{ pod.id }}"
-                                               onchange="toggleNok({{ pod.id }}, this)">
-                                        <label class="form-check-label ms-2 fw-semibold" for="ok_{{ pod.id }}">
-                                            ПОМИНАЛ
-                                        </label>
+                                <div class="col-lg-2">
+                                    <div class="qc-form-check-wrap">
+                                        <div class="form-check d-flex align-items-center justify-content-center gap-2 m-0">
+                                            <input class="form-check-input qc-form-check"
+                                                   type="checkbox"
+                                                   name="pod_{{ pod.id }}"
+                                                   value="1"
+                                                   id="ok_{{ pod.id }}"
+                                                   onchange="toggleNok({{ pod.id }}, this)">
+                                            <label class="form-check-label fw-semibold" for="ok_{{ pod.id }}">
+                                                ПОМИНАЛ
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- NOK дел -->
-                                <div class="col-md-5 d-none" id="nok_{{ pod.id }}">
-                                    <label class="form-label fw-bold mt-1">Забелешка (ако не поминал)</label>
-                                    <textarea name="zabeleska_{{ pod.id }}" class="form-control mb-3" rows="2" placeholder="Внеси забелешка..."></textarea>
+                                <div class="col-lg-6 d-none" id="nok_{{ pod.id }}">
+                                    <label class="form-label fw-bold">Забелешка (ако не поминал)</label>
+                                    <textarea name="zabeleska_{{ pod.id }}" class="form-control qc-form-textarea mb-3" rows="3" placeholder="Внеси забелешка..."></textarea>
 
                                     <label class="form-label fw-bold">Приложи слика (опционално)</label>
-                                    <input type="file" name="slika_{{ pod.id }}" class="form-control mb-2" accept="image/*" id="slika_{{ pod.id }}">
+                                    <input type="file" name="slika_{{ pod.id }}" class="form-control qc-form-input mb-3" accept="image/*" id="slika_{{ pod.id }}">
 
-                                    <!-- Preview на сликата -->
-                                    <div id="preview_{{ pod.id }}" class="mt-3 text-center" style="max-height: 180px; overflow: hidden;">
+                                    <div id="preview_{{ pod.id }}" class="qc-preview-box">
                                         <small class="text-muted">Ќе се прикаже preview по избор</small>
                                     </div>
                                 </div>
                             </div>
-                            {% endfor %}
                         </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="alert alert-warning text-center py-5">
-                        <i class="fas fa-exclamation-triangle me-2 fs-4"></i>
-                        Нема дефинирани чекори за овој камин.
-                    </div>
-                {% endif %}
-            </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="qc-empty-warning text-center py-5 px-4">
+                    <i class="fas fa-exclamation-triangle me-2 fs-4"></i>
+                    <div class="fw-semibold mt-2">Нема дефинирани чекори за овој камин.</div>
+                </div>
+            {% endif %}
         </div>
 
-        <div class="text-end mt-5 mb-5">
-            <button type="submit" class="btn btn-success btn-lg px-5 py-3 shadow-lg">
-                <i class="fas fa-save me-2"></i> Зачувај контрола
+        <div class="text-end mt-4 mb-5">
+            <button type="submit" class="btn btn-success btn-lg px-5 py-3 rounded-pill shadow-lg">
+                <i class="fas fa-save me-2"></i>Зачувај контрола
             </button>
         </div>
     </form>
     {% endif %}
-
 </div>
 
 <script>
@@ -131,12 +310,10 @@ function toggleNok(id, checkbox) {
         nokDiv.classList.remove("d-none");
     } else {
         nokDiv.classList.add("d-none");
-        // Исчисти preview ако се скрие NOK
         document.getElementById("preview_" + id).innerHTML = '<small class="text-muted">Ќе се прикаже preview по избор</small>';
     }
 }
 
-// Preview на слика за секое поле
 document.querySelectorAll('input[type="file"]').forEach(input => {
     input.addEventListener('change', function() {
         const previewId = "preview_" + this.name.split('_')[1];
@@ -150,11 +327,13 @@ document.querySelectorAll('input[type="file"]').forEach(input => {
                 img.src = e.target.result;
                 img.style.maxWidth = '100%';
                 img.style.maxHeight = '180px';
-                img.style.borderRadius = '8px';
-                img.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                img.style.borderRadius = '12px';
+                img.style.boxShadow = '0 8px 20px rgba(15,23,42,0.12)';
                 previewDiv.appendChild(img);
             }
             reader.readAsDataURL(this.files[0]);
+        } else {
+            previewDiv.innerHTML = '<small class="text-muted">Ќе се прикаже preview по избор</small>';
         }
     });
 });

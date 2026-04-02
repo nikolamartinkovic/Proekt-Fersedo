@@ -3,12 +3,14 @@ import os
 import smtplib
 import sqlite3
 from datetime import date, datetime, timedelta
+from email.utils import formataddr
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for, send_from_directory
 from utils.db import get_db
 from utils.decorators import login_required, admin_required, module_required
 from utils.config import STATIC_FOLDER, POZICII_FOLDER
+from utils.odmori_helpers import isprati_izvestuvanje_za_novo_baranje
 
 main_bp = Blueprint('main', __name__)
 
@@ -72,6 +74,127 @@ _EMAIL_HOST     = "smtp.gmail.com"
 _EMAIL_PORT     = 587
 _EMAIL_USER     = "fersedoo@gmail.com"
 _EMAIL_PASSWORD = "ejvu srce tvls wqtw"
+_EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "Info Fersedo")
+
+
+def _get_odmor_notification_targets(cursor):
+    targets = []
+    seen_emails = set()
+
+    try:
+        ensure_manager_emails_table(cursor)
+        manager_rows = cursor.execute(
+            """
+            SELECT id, ime, email
+            FROM otsustva_manager_emails
+            WHERE aktiven = 1
+            ORDER BY ime, email
+            """
+        ).fetchall()
+        for row in manager_rows:
+            email = (row["email"] or "").strip()
+            if not email or email.lower() in seen_emails:
+                continue
+            seen_emails.add(email.lower())
+            name = (row["ime"] or "").strip() or email
+            targets.append(
+                {
+                    "key": f"manager:{row['id']}",
+                    "email": email,
+                    "name": name,
+                    "label": f"{name} ({email})",
+                    "source": "manager_email",
+                }
+            )
+    except Exception:
+        pass
+
+    user_rows = cursor.execute(
+        """
+        SELECT username, email
+        FROM users
+        WHERE email IS NOT NULL AND TRIM(email) != ''
+        ORDER BY username
+        """
+    ).fetchall()
+    for row in user_rows:
+        email = (row["email"] or "").strip()
+        if not email or email.lower() in seen_emails:
+            continue
+        seen_emails.add(email.lower())
+        username = (row["username"] or "").strip() or email
+        targets.append(
+            {
+                "key": f"user:{username}",
+                "email": email,
+                "name": username,
+                "label": f"{username} ({email})",
+                "source": "user",
+            }
+        )
+
+    return targets
+
+
+def _isprati_baranje_notification_email(
+    recipient_email,
+    recipient_name,
+    ime_prezime,
+    datum_od,
+    datum_do,
+    working_days,
+    zabeleska,
+    podneseno_od,
+    podneseno_na,
+):
+    if not recipient_email:
+        return
+
+    def fmt(datum_text):
+        try:
+            return datetime.strptime(datum_text, "%Y-%m-%d").strftime("%d-%m-%Y")
+        except Exception:
+            return datum_text
+
+    subject = f"Ново барање за одмор - {ime_prezime}"
+    html = f"""
+    <html>
+    <body style="font-family:Arial,sans-serif;background:#f5f7fb;padding:24px;color:#1f2b43;">
+        <div style="max-width:720px;margin:auto;background:#ffffff;border-radius:16px;padding:28px;border:1px solid #d7e0f0;">
+            <h2 style="margin-top:0;color:#1f2b43;">Ново барање за одмор</h2>
+            <p style="font-size:15px;line-height:1.6;">
+                До <strong>{recipient_name or recipient_email}</strong> е испратено известување за ново поднесено барање.
+            </p>
+            <table style="width:100%;border-collapse:collapse;margin-top:18px;">
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Вработен:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{ime_prezime}</td></tr>
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Од:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{fmt(datum_od)}</td></tr>
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>До:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{fmt(datum_do)}</td></tr>
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Работни денови:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{working_days}</td></tr>
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Поднесено од:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{podneseno_od}</td></tr>
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Поднесено на:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{podneseno_na}</td></tr>
+                <tr><td style="padding:10px;vertical-align:top;"><strong>Забелешка:</strong></td><td style="padding:10px;">{zabeleska or '-'}</td></tr>
+            </table>
+        </div>
+    </body>
+    </html>
+    """
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["From"] = formataddr((_EMAIL_FROM_NAME, _EMAIL_USER))
+        msg["To"] = recipient_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(html, "html", "utf-8"))
+        with smtplib.SMTP(_EMAIL_HOST, _EMAIL_PORT, timeout=15) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(_EMAIL_USER, _EMAIL_PASSWORD)
+            server.sendmail(_EMAIL_USER, [recipient_email], msg.as_string())
+        print(f"[EMAIL ODMOR NOTIFY] Испратено до {recipient_email}")
+    except Exception as exc:
+        flash(f"Известувањето до {recipient_email} не беше испратено: {exc}", "warning")
+        print(f"[EMAIL ODMOR NOTIFY] Грешка: {exc}")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -468,7 +591,6 @@ def baranje_odmor():
     conn   = get_db()
     cursor = conn.cursor()
     vraboteni = cursor.execute("SELECT id, ime, prezime FROM vraboteni ORDER BY prezime, ime").fetchall()
-
     if request.method == "POST":
         _email_data = None
 
@@ -577,11 +699,26 @@ def baranje_odmor():
 
         if _email_data:
             _isprati_odmor_email(**_email_data)
+            notify_result = isprati_izvestuvanje_za_novo_baranje(
+                ime_prezime=_email_data["ime_prezime"],
+                datum_od=_email_data["datum_od"],
+                datum_do=_email_data["datum_do"],
+                working_days=_email_data["working_days"],
+                zabeleska=_email_data["zabeleska"],
+                podneseno_od=_email_data["podneseno_od"],
+                podneseno_na=_email_data["podneseno_na"],
+            )
+            if notify_result.get("success"):
+                print(f"[ODMOR BARAЊE] {notify_result['message']}")
 
         return redirect(url_for("main.baranje_odmor"))
 
     conn.close()
-    return render_template("baranje_odmor.html", vraboteni=vraboteni, today=dt_date.today().isoformat())
+    return render_template(
+        "baranje_odmor.html",
+        vraboteni=vraboteni,
+        today=dt_date.today().isoformat(),
+    )
 
 
 # ─────────────────────────────────────────────────────────────
@@ -607,7 +744,7 @@ def test_odmor_email():
                 server.starttls()
                 server.login(_EMAIL_USER, _EMAIL_PASSWORD)
                 msg = MIMEMultipart("alternative")
-                msg["From"]    = _EMAIL_USER
+                msg["From"]    = formataddr((_EMAIL_FROM_NAME, _EMAIL_USER))
                 msg["To"]      = v["email"]
                 msg["Subject"] = "✅ Тест email — Fersedo систем"
                 msg.attach(MIMEText(
@@ -717,7 +854,7 @@ def _isprati_odmor_email(vraboten_email, ime_prezime, datum_od, datum_do,
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["From"]    = _EMAIL_USER
+        msg["From"]    = formataddr((_EMAIL_FROM_NAME, _EMAIL_USER))
         msg["To"]      = vraboten_email
         msg["Subject"] = subject
         msg.attach(MIMEText(html, "html", "utf-8"))
@@ -817,7 +954,7 @@ def _isprati_odobruvanje_email(vraboten_email, ime_prezime, datum_od, datum_do,
 
     try:
         msg = MIMEMultipart("alternative")
-        msg["From"]    = _EMAIL_USER
+        msg["From"]    = formataddr((_EMAIL_FROM_NAME, _EMAIL_USER))
         msg["To"]      = vraboten_email
         msg["Subject"] = subject
         msg.attach(MIMEText(html, "html", "utf-8"))

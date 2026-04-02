@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container" style="max-width: 860px; margin: 4rem auto 5rem; padding: 0 1rem;">
+<div class="container" style="max-width: 960px; margin: 4rem auto 5rem; padding: 0 1rem;">
 
     <div class="text-center mb-5">
         <h1 style="font-weight:800;color:var(--primary);font-size:clamp(1.8rem,6vw,2.6rem);margin-bottom:.5rem;">
             <i class="fas fa-envelope-open-text me-2"></i> Email примачи за отсуства
         </h1>
         <p style="font-size:1.1rem;color:var(--text-secondary);">
-            Менаџери кои ги добиваат дневните и неделните извештаи за отсуства.
+            Менаџери кои ги добиваат дневните и неделните извештаи, а по избор и известување за ново поднесено барање.
         </p>
     </div>
 
@@ -46,7 +46,7 @@
     <div class="card border-0 shadow-sm rounded-4 mb-4">
         <div class="card-header text-white py-3 px-4 fw-bold rounded-top-4"
              style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));">
-            <i class="fas fa-user-plus me-2"></i> Додади менаџер
+            <i class="fas fa-user-plus me-2"></i> Додади примач
         </div>
         <div class="card-body p-4">
             <form method="POST">
@@ -76,68 +76,87 @@
         <div class="card-header py-3 px-4 fw-bold rounded-top-4"
              style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
             <i class="fas fa-users me-2 text-primary"></i>
-            Регистрирани менаџери
+            Регистрирани примачи
             <span class="badge bg-primary ms-2">{{ managers | length }}</span>
         </div>
         <div class="card-body p-0">
             {% if managers %}
-            <table class="table table-hover mb-0 align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th class="px-4">Име</th>
-                        <th>Email</th>
-                        <th class="text-center">Статус</th>
-                        <th class="text-center">Акции</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for m in managers %}
-                    <tr>
-                        <td class="px-4 fw-semibold">{{ m.ime or '—' }}</td>
-                        <td>
-                            <i class="fas fa-envelope me-1 text-muted"></i>
-                            {{ m.email }}
-                        </td>
-                        <td class="text-center">
-                            {% if m.aktiven %}
-                                <span class="badge bg-success px-3 py-2">
-                                    <i class="fas fa-check me-1"></i> Активен
-                                </span>
-                            {% else %}
-                                <span class="badge bg-secondary px-3 py-2">
-                                    <i class="fas fa-pause me-1"></i> Неактивен
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center">
-                            <div class="d-flex gap-1 justify-content-center">
-                                <form method="POST" class="d-inline">
-                                    <input type="hidden" name="action" value="toggle">
-                                    <input type="hidden" name="manager_id" value="{{ m.id }}">
-                                    <button type="submit"
-                                            class="btn btn-sm {% if m.aktiven %}btn-outline-secondary{% else %}btn-outline-success{% endif %} px-2">
-                                        <i class="fas {% if m.aktiven %}fa-pause{% else %}fa-play{% endif %} me-1"></i>
-                                        {% if m.aktiven %}Исклучи{% else %}Вклучи{% endif %}
-                                    </button>
-                                </form>
-                                <form method="POST" class="d-inline"
-                                      onsubmit="return confirm('Дали сте сигурни дека сакате да го избришете {{ m.email }}?')">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="manager_id" value="{{ m.id }}">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger px-2">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="px-4">Име</th>
+                            <th>Email</th>
+                            <th class="text-center">Статус</th>
+                            <th class="text-center">Примач за барања</th>
+                            <th class="text-center">Акции</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in managers %}
+                        <tr>
+                            <td class="px-4 fw-semibold">{{ m.ime or '—' }}</td>
+                            <td>
+                                <i class="fas fa-envelope me-1 text-muted"></i>
+                                {{ m.email }}
+                            </td>
+                            <td class="text-center">
+                                {% if m.aktiven %}
+                                    <span class="badge bg-success px-3 py-2">
+                                        <i class="fas fa-check me-1"></i> Активен
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary px-3 py-2">
+                                        <i class="fas fa-pause me-1"></i> Неактивен
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                {% if m.dobiva_baranja %}
+                                    <span class="badge text-bg-primary px-3 py-2">Избран</span>
+                                {% else %}
+                                    <span class="badge text-bg-light border px-3 py-2">Не е избран</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center">
+                                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                                    <form method="POST" class="d-inline">
+                                        <input type="hidden" name="action" value="toggle">
+                                        <input type="hidden" name="manager_id" value="{{ m.id }}">
+                                        <button type="submit"
+                                                class="btn btn-sm {% if m.aktiven %}btn-outline-secondary{% else %}btn-outline-success{% endif %} px-2">
+                                            <i class="fas {% if m.aktiven %}fa-pause{% else %}fa-play{% endif %} me-1"></i>
+                                            {% if m.aktiven %}Исклучи{% else %}Вклучи{% endif %}
+                                        </button>
+                                    </form>
+                                    <form method="POST" class="d-inline">
+                                        <input type="hidden" name="action" value="toggle_baranja">
+                                        <input type="hidden" name="manager_id" value="{{ m.id }}">
+                                        <button type="submit"
+                                                class="btn btn-sm {% if m.dobiva_baranja %}btn-outline-primary{% else %}btn-outline-dark{% endif %} px-2">
+                                            <i class="fas fa-bell me-1"></i>
+                                            {% if m.dobiva_baranja %}Тргни како примач{% else %}Постави како примач{% endif %}
+                                        </button>
+                                    </form>
+                                    <form method="POST" class="d-inline"
+                                          onsubmit="return confirm('Дали сте сигурни дека сакате да го избришете {{ m.email }}?')">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="manager_id" value="{{ m.id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger px-2">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
             {% else %}
             <div class="text-center text-muted py-5">
                 <i class="fas fa-envelope fa-3x mb-3 opacity-30"></i><br>
-                Нема регистрирани менаџери.<br>
+                Нема регистрирани примачи.<br>
                 <small>Додадете email адреса за да почнат да пристигнуваат извештаите.</small>
             </div>
             {% endif %}
@@ -194,9 +213,11 @@
                             <td class="px-4 text-nowrap">{{ item.created_at }}</td>
                             <td>
                                 {% if item.tip == 'dneven' %}
-                                <span class="badge text-bg-primary">Дневен</span>
+                                    <span class="badge text-bg-primary">Дневен</span>
+                                {% elif item.tip == 'nedelen' %}
+                                    <span class="badge text-bg-success">Неделен</span>
                                 {% else %}
-                                <span class="badge text-bg-success">Неделен</span>
+                                    <span class="badge text-bg-dark">{{ item.tip }}</span>
                                 {% endif %}
                             </td>
                             <td style="min-width:220px;">{{ item.subject }}</td>
@@ -217,7 +238,7 @@
             {% else %}
             <div class="text-center text-muted py-5">
                 <i class="fas fa-clock-rotate-left fa-3x mb-3 opacity-30"></i><br>
-                Сѐ уште нема историја на испратени извештаи.
+                Сè уште нема историја на испратени извештаи.
             </div>
             {% endif %}
         </div>

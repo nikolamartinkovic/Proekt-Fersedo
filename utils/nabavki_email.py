@@ -2,12 +2,15 @@
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from email.utils import formataddr
+import os
 from utils.db import get_db
 
 _EMAIL_HOST     = "smtp.gmail.com"
 _EMAIL_PORT     = 587
 _EMAIL_USER     = "fersedoo@gmail.com"
 _EMAIL_PASSWORD = "ejvu srce tvls wqtw"
+_EMAIL_FROM_NAME = os.getenv("EMAIL_FROM_NAME", "Info Fersedo")
 
 
 def _isprati(to_emails, subject, html):
@@ -16,7 +19,7 @@ def _isprati(to_emails, subject, html):
         return
     try:
         msg = MIMEMultipart("alternative")
-        msg["From"]    = _EMAIL_USER
+        msg["From"]    = formataddr((_EMAIL_FROM_NAME, _EMAIL_USER))
         msg["To"]      = ", ".join(to_emails)
         msg["Subject"] = subject
         msg.attach(MIMEText(html, "html", "utf-8"))
@@ -148,6 +151,7 @@ def notify_promena_status(nalog, naslov, star_status, nov_status, kreator, prome
         "Dostaveno": "#8b5cf6",
         "Zavrseno":  "#10b981",
         "Prevzemeno":"#10b981",
+        "Otkazano":  "#ef4444",
     }
     boja = status_boi.get(nov_status, "#6b7280")
 

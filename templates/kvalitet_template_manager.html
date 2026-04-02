@@ -2,165 +2,374 @@
 {% block title %}QC Template Manager{% endblock %}
 
 {% block content %}
+<style>
+    .qc-template-shell {
+        max-width: 1200px;
+    }
+    .qc-hero {
+        border: 0;
+        border-radius: 28px;
+        overflow: hidden;
+        background:
+            radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 26%),
+            linear-gradient(135deg, #0f172a 0%, #172554 52%, #1e3a8a 100%);
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.18);
+    }
+    .qc-hero-subtitle {
+        max-width: 720px;
+        color: rgba(255,255,255,.74);
+    }
+    .qc-kamin-card,
+    .qc-steps-card,
+    .qc-step-card {
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 24px;
+        background: #ffffff;
+        box-shadow: 0 16px 32px rgba(15, 23, 42, 0.06);
+    }
+    .qc-select-wrap {
+        position: relative;
+    }
+    .qc-kamin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.25rem;
+    }
+    .qc-kamin-option {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        border-radius: 26px;
+        overflow: hidden;
+        background: #ffffff;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        box-shadow: 0 18px 36px rgba(15, 23, 42, 0.07);
+        transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+        height: 100%;
+    }
+    .qc-kamin-option:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+        border-color: rgba(96, 165, 250, 0.48);
+    }
+    .qc-kamin-option.active {
+        border-color: rgba(59, 130, 246, 0.7);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12), 0 24px 48px rgba(15, 23, 42, 0.12);
+    }
+    .qc-kamin-option-thumb {
+        min-height: 210px;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+    }
+    .qc-kamin-option-thumb img {
+        width: 100%;
+        max-width: 170px;
+        height: 160px;
+        object-fit: contain;
+        filter: drop-shadow(0 12px 18px rgba(15, 23, 42, 0.12));
+    }
+    .qc-kamin-option-body {
+        padding: 1.3rem 1.25rem 1.45rem;
+    }
+    .qc-kamin-option-title {
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin-bottom: 0.4rem;
+    }
+    .qc-kamin-option-text {
+        font-size: 0.93rem;
+        line-height: 1.55;
+        color: #64748b;
+        margin-bottom: 0;
+    }
+    .qc-select-wrap::after {
+        content: "\f282";
+        font-family: "bootstrap-icons";
+        position: absolute;
+        right: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #475569;
+        pointer-events: none;
+        font-size: 1rem;
+    }
+    .qc-select {
+        min-height: 58px;
+        padding: 0.95rem 3rem 0.95rem 1rem;
+        border-radius: 18px;
+        border: 1px solid #cbd5e1;
+        box-shadow: none;
+        appearance: none;
+    }
+    .qc-step-index {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+        color: #1d4ed8;
+        font-weight: 800;
+        font-size: 0.95rem;
+        flex-shrink: 0;
+    }
+    .qc-step-actions .btn,
+    .qc-sub-actions .btn {
+        min-width: 40px;
+    }
+    .qc-input,
+    .qc-sub-input {
+        min-height: 46px;
+        border-radius: 14px;
+        border: 1px solid #dbe3f0;
+        background: #f8fafc;
+    }
+    .qc-input:focus,
+    .qc-sub-input:focus,
+    .qc-select:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.15);
+    }
+    .qc-sub-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #f8fafc;
+    }
+    .qc-empty-state {
+        border: 1px dashed #cbd5e1;
+        border-radius: 24px;
+        background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    }
+    @media (max-width: 767.98px) {
+        .qc-step-toolbar {
+            flex-direction: column;
+            align-items: stretch !important;
+        }
+        .qc-step-actions,
+        .qc-sub-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+</style>
 
-<div class="container mt-4" style="max-width:1100px">
-
-<h2 class="mb-4">QC Template Manager</h2>
-
-<!-- ============================= -->
-<!-- ИЗБОР НА КАМИН -->
-<!-- ============================= -->
-<form method="GET" class="mb-4">
-    <select name="kamin" class="form-select" onchange="this.form.submit()">
-        <option value="">-- Избери камин --</option>
-        {% for k in kamini %}
-        <option value="{{ k }}"
-        {% if k == selected_kamin %}selected{% endif %}>
-            {{ k }}
-        </option>
-        {% endfor %}
-    </select>
-</form>
-
-{% if selected_kamin and template %}
-
-<input type="hidden" id="template_id" value="{{ template.id }}">
-
-<div class="card p-4 shadow-sm rounded-4">
-
-<h4 class="mb-4">Чекори за: {{ selected_kamin }}</h4>
-
-<!-- ============================= -->
-<!-- ДОДАВАЊЕ ЧЕКОР -->
-<!-- ============================= -->
-<div class="input-group mb-4">
-    <input type="text"
-           id="nov_cekor"
-           class="form-control"
-           placeholder="Нов чекор">
-    <button type="button"
-            class="btn btn-primary"
-            onclick="dodadiCekor()">
-        ➕ Додади чекор
-    </button>
-</div>
-
-<!-- ============================= -->
-<!-- ЛИСТА НА ЧЕКОРИ -->
-<!-- ============================= -->
-{% for cekor in cekori %}
-<div class="card p-3 mb-3 border rounded-4">
-
-    <div class="d-flex align-items-center mb-3">
-
-        <form method="POST"
-              action="{{ url_for('kvalitet.edit_template_cekor', cekor_id=cekor.id) }}"
-              class="d-flex align-items-center w-100">
-
-            <input type="text"
-                   name="naslov"
-                   value="{{ cekor.naslov }}"
-                   class="form-control me-2"
-                   readonly
-                   id="cekor_{{ cekor.id }}">
-
-            <!-- EDIT -->
-            <button type="button"
-                    class="btn btn-warning btn-sm me-2"
-                    onclick="enableEdit('cekor_{{ cekor.id }}', this)">
-                ✏
-            </button>
-
-            <!-- SAVE -->
-            <button type="submit"
-                    class="btn btn-success btn-sm me-2 d-none"
-                    id="save_cekor_{{ cekor.id }}">
-                💾
-            </button>
-
-            <!-- MOVE UP -->
-            <a href="{{ url_for('kvalitet.move_template_cekor', cekor_id=cekor.id, direction='up') }}"
-               class="btn btn-secondary btn-sm me-1">
-               ⬆
-            </a>
-
-            <!-- MOVE DOWN -->
-            <a href="{{ url_for('kvalitet.move_template_cekor', cekor_id=cekor.id, direction='down') }}"
-               class="btn btn-secondary btn-sm me-2">
-               ⬇
-            </a>
-
-            <!-- DELETE -->
-            <a href="{{ url_for('kvalitet.delete_template_cekor', cekor_id=cekor.id) }}"
-               class="btn btn-danger btn-sm"
-               onclick="return confirm('Да се избрише чекорот?')">
-               ❌
-            </a>
-
-        </form>
-
+<div class="container py-4 py-lg-5 qc-template-shell">
+    <div class="qc-hero mb-4">
+        <div class="p-4 p-lg-5 text-white">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Квалитет</div>
+                    <h1 class="display-6 fw-bold mb-3">QC Template Manager</h1>
+                    <p class="mb-0 qc-hero-subtitle">Избери камин и организирај го шаблонот за квалитетна контрола со јасни чекори и подчекори. Сè останува на едно место и лесно се менува.</p>
+                </div>
+                <div class="rounded-4 px-4 py-3" style="background: rgba(255,255,255,.08); min-width: 170px;">
+                    <div class="small text-uppercase opacity-75 mb-1">Камини</div>
+                    <div class="fs-3 fw-bold">{{ kamini|length }}</div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- ============================= -->
-    <!-- ДОДАВАЊЕ ПОДЧЕКОР -->
-    <!-- ============================= -->
-    <div class="input-group mb-3">
-        <input type="text"
-               id="pod_{{ cekor.id }}"
-               class="form-control"
-               placeholder="Нов подчекор">
-        <button type="button"
-                class="btn btn-outline-primary"
-                onclick="dodadiPodcekor({{ cekor.id }})">
-            ➕
-        </button>
+    <div class="qc-kamin-card p-4 p-lg-4 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div>
+                <h5 class="fw-bold mb-1">Избор на камин</h5>
+                <div class="text-muted small">Кликни на картичка за да го отвориш шаблонот за избраниот камин.</div>
+            </div>
+            {% if selected_kamin %}
+            <span class="badge rounded-pill text-bg-primary px-3 py-2">{{ selected_kamin }}</span>
+            {% endif %}
+        </div>
+
+        <div class="qc-kamin-grid">
+            {% for k in kamini %}
+            <a href="{{ url_for('kvalitet.kvalitet_template_manager', kamin=k) }}"
+               class="qc-kamin-option {% if k == selected_kamin %}active{% endif %}">
+                <div class="qc-kamin-option-thumb">
+                    <img src="{{ url_for('main.kamin_static', filename=k ~ '.png') }}"
+                         alt="{{ k }}"
+                         onerror="this.onerror=null; this.src='{{ url_for('main.kamin_static', filename='default-kamin.png') }}';">
+                </div>
+                <div class="qc-kamin-option-body">
+                    <div class="qc-kamin-option-title">{{ k }}</div>
+                    <p class="qc-kamin-option-text">Кликни за да го отвориш и уредиш QC шаблонот за овој камин.</p>
+                </div>
+            </a>
+            {% endfor %}
+            {% if not kamini %}
+            <div class="qc-empty-state text-center p-5">
+                <div class="mb-3" style="font-size:2rem;color:#4338ca;">
+                    <i class="bi bi-house-gear"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Нема внесени камини</h5>
+                <p class="text-muted mb-0">Кога ќе има креирани камини, тука ќе се појават картички за избор.</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
 
-    <!-- ============================= -->
-    <!-- ПОДЧЕКОРИ -->
-    <!-- ============================= -->
-    {% for pod in cekor.podcekori %}
-    <form method="POST"
-          action="{{ url_for('kvalitet.edit_template_podcekor', pod_id=pod.id) }}"
-          class="d-flex align-items-center mb-2">
+    {% if selected_kamin and template %}
+    <input type="hidden" id="template_id" value="{{ template.id }}">
 
-        <input type="text"
-               name="opis"
-               value="{{ pod.opis }}"
-               class="form-control me-2"
-               readonly
-               id="podcekor_{{ pod.id }}">
+    <div class="qc-steps-card p-4 p-lg-5">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <h4 class="fw-bold mb-1">Чекори за: {{ selected_kamin }}</h4>
+                <div class="text-muted small">Подреди, менувај и проширувај ги чекорите за контрола по истиот редослед по кој ќе се користат.</div>
+            </div>
+            <div class="badge rounded-pill px-3 py-2" style="background:#eef2ff;color:#4338ca;">{{ cekori|length }} чекори</div>
+        </div>
 
-        <!-- EDIT -->
-        <button type="button"
-                class="btn btn-warning btn-sm me-2"
-                onclick="enableEdit('podcekor_{{ pod.id }}', this)">
-            ✏
-        </button>
+        <div class="rounded-4 border p-3 p-lg-4 mb-4" style="background:#f8fafc;border-color:#e2e8f0 !important;">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+                <div>
+                    <div class="fw-semibold">Додавање нов чекор</div>
+                    <div class="small text-muted">Внеси краток и јасен наслов за следниот чекор.</div>
+                </div>
+            </div>
+            <div class="input-group">
+                <input type="text"
+                       id="nov_cekor"
+                       class="form-control qc-input"
+                       placeholder="Нов чекор">
+                <button type="button"
+                        class="btn btn-primary px-4"
+                        onclick="dodadiCekor()">
+                    <i class="bi bi-plus-circle me-2"></i>Додади чекор
+                </button>
+            </div>
+        </div>
 
-        <!-- SAVE -->
-        <button type="submit"
-                class="btn btn-success btn-sm me-2 d-none"
-                id="save_podcekor_{{ pod.id }}">
-            💾
-        </button>
+        {% if cekori %}
+            {% for cekor in cekori %}
+            <div class="qc-step-card p-3 p-lg-4 mb-4">
+                <div class="d-flex align-items-start gap-3 mb-3">
+                    <div class="qc-step-index">{{ loop.index }}</div>
+                    <div class="flex-grow-1">
+                        <form method="POST"
+                              action="{{ url_for('kvalitet.edit_template_cekor', cekor_id=cekor.id) }}"
+                              class="d-flex align-items-center gap-2 flex-wrap qc-step-toolbar">
 
-        <!-- DELETE -->
-        <a href="{{ url_for('kvalitet.delete_template_podcekor', pod_id=pod.id) }}"
-           class="btn btn-danger btn-sm"
-           onclick="return confirm('Да се избрише подчекорот?')">
-           ❌
-        </a>
+                            <input type="text"
+                                   name="naslov"
+                                   value="{{ cekor.naslov }}"
+                                   class="form-control qc-input flex-grow-1"
+                                   readonly
+                                   id="cekor_{{ cekor.id }}">
 
-    </form>
-    {% endfor %}
+                            <div class="d-flex align-items-center gap-2 qc-step-actions">
+                                <button type="button"
+                                        class="btn btn-outline-warning btn-sm"
+                                        onclick="enableEdit('cekor_{{ cekor.id }}', this)"
+                                        title="Едит">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
 
-</div>
-{% endfor %}
+                                <button type="submit"
+                                        class="btn btn-success btn-sm d-none"
+                                        id="save_cekor_{{ cekor.id }}"
+                                        title="Зачувај">
+                                    <i class="bi bi-check2-circle"></i>
+                                </button>
 
-</div>
-{% endif %}
+                                <a href="{{ url_for('kvalitet.move_template_cekor', cekor_id=cekor.id, direction='up') }}"
+                                   class="btn btn-outline-secondary btn-sm"
+                                   title="Премести нагоре">
+                                   <i class="bi bi-arrow-up"></i>
+                                </a>
 
+                                <a href="{{ url_for('kvalitet.move_template_cekor', cekor_id=cekor.id, direction='down') }}"
+                                   class="btn btn-outline-secondary btn-sm"
+                                   title="Премести надолу">
+                                   <i class="bi bi-arrow-down"></i>
+                                </a>
+
+                                <a href="{{ url_for('kvalitet.delete_template_cekor', cekor_id=cekor.id) }}"
+                                   class="btn btn-outline-danger btn-sm"
+                                   onclick="return confirm('Да се избрише чекорот?')"
+                                   title="Избриши">
+                                   <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="rounded-4 border p-3 mb-3" style="background:#ffffff;border-color:#e2e8f0 !important;">
+                    <div class="small fw-semibold text-muted mb-2">Нов подчекор</div>
+                    <div class="input-group">
+                        <input type="text"
+                               id="pod_{{ cekor.id }}"
+                               class="form-control qc-sub-input"
+                               placeholder="Нов подчекор">
+                        <button type="button"
+                                class="btn btn-outline-primary"
+                                onclick="dodadiPodcekor({{ cekor.id }})">
+                            <i class="bi bi-plus-circle me-1"></i>Додај
+                        </button>
+                    </div>
+                </div>
+
+                {% if cekor.podcekori %}
+                    <div class="d-flex flex-column gap-2">
+                        {% for pod in cekor.podcekori %}
+                        <form method="POST"
+                              action="{{ url_for('kvalitet.edit_template_podcekor', pod_id=pod.id) }}"
+                              class="qc-sub-item p-2 p-lg-3 d-flex align-items-center gap-2 flex-wrap">
+
+                            <input type="text"
+                                   name="opis"
+                                   value="{{ pod.opis }}"
+                                   class="form-control qc-sub-input flex-grow-1"
+                                   readonly
+                                   id="podcekor_{{ pod.id }}">
+
+                            <div class="d-flex align-items-center gap-2 qc-sub-actions">
+                                <button type="button"
+                                        class="btn btn-outline-warning btn-sm"
+                                        onclick="enableEdit('podcekor_{{ pod.id }}', this)"
+                                        title="Едит">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+
+                                <button type="submit"
+                                        class="btn btn-success btn-sm d-none"
+                                        id="save_podcekor_{{ pod.id }}"
+                                        title="Зачувај">
+                                    <i class="bi bi-check2-circle"></i>
+                                </button>
+
+                                <a href="{{ url_for('kvalitet.delete_template_podcekor', pod_id=pod.id) }}"
+                                   class="btn btn-outline-danger btn-sm"
+                                   onclick="return confirm('Да се избрише подчекорот?')"
+                                   title="Избриши">
+                                   <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </form>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-muted small">Сè уште нема подчекори за овој чекор.</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="qc-empty-state text-center p-5">
+                <div class="mb-3" style="font-size:2rem;color:#4338ca;">
+                    <i class="bi bi-ui-checks-grid"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Нема внесени чекори</h5>
+                <p class="text-muted mb-0">Додај го првиот чекор за да почнеш со шаблонот за {{ selected_kamin }}.</p>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 
 <!-- ============================= -->

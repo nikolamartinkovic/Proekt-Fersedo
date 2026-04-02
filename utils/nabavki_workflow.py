@@ -56,6 +56,13 @@ def add_request_comment(req_id, current_user, is_admin, user_group, comment, sli
                     url="/nabavki",
                 )
                 notify_nov_komentar(nalog, naslov, comment or "[Слика]", current_user, prevzemeno)
+            else:
+                send_push_to_nabavki_group(
+                    title=f"Нов коментар на барање {nalog}",
+                    body=f"{current_user}: {comment[:80] if comment else '[Слика]'}",
+                    url="/nabavki",
+                    exclude_user=current_user,
+                )
         else:
             if creator and creator != current_user:
                 send_push_to_user(
@@ -116,11 +123,6 @@ def take_request(req_id, current_user, user_group, is_admin):
                 body=f"Барање {nalog} го превзеде {current_user}",
                 url="/nabavki",
             )
-        send_push_to_nabavki_group(
-            title="Барање превземено",
-            body=f"Барање {nalog} го превзеде {current_user}",
-            url="/nabavki",
-        )
         notify_promena_status(
             nalog=nalog,
             naslov=naslov,
@@ -209,7 +211,7 @@ def transfer_request(req_id, current_user, user_group, is_admin, new_user):
 
 
 def update_request_status(req_id, new_status, current_user, is_admin=False, user_group=""):
-    valid_statuses = {"Videno", "Naracano", "Dostaveno", "Zavrseno", "Prevzemeno"}
+    valid_statuses = {"Videno", "Naracano", "Dostaveno", "Zavrseno", "Prevzemeno", "Otkazano"}
     if new_status not in valid_statuses:
         return {"success": False, "message": "Невалиден статус!"}
     if not (is_admin or user_group == "Nabavki"):
@@ -232,7 +234,7 @@ def update_request_status(req_id, new_status, current_user, is_admin=False, user
         cursor.execute("UPDATE nabavki_requests SET status=? WHERE id=?", (new_status, req_id))
 
         success_message = f"Статусот е сменет на {new_status}!"
-        if new_status == "Zavrseno":
+        if new_status in {"Zavrseno", "Otkazano"}:
             max_row = cursor.execute(
                 """
                 SELECT MAX(CAST(SUBSTR(arhiva_broj, 4) AS INTEGER)) AS max_num
@@ -292,6 +294,7 @@ def update_request_status(req_id, new_status, current_user, is_admin=False, user
 
             cursor.execute("DELETE FROM nabavki_comments WHERE req_id=?", (req_id,))
             cursor.execute("DELETE FROM nabavki_requests WHERE id=?", (req_id,))
+            archive_action = "завршено" if new_status == "Zavrseno" else "откажано"
             archive_notification = {
                 "title": "Барање архивирано",
                 "body": f"Барање {nalog} е завршено и архивирано.",
@@ -300,13 +303,6 @@ def update_request_status(req_id, new_status, current_user, is_admin=False, user
             success_message = f"Барањето {nalog} е архивирано како {arhiva_broj}!"
 
         conn.commit()
-
-        if archive_notification:
-            send_push_to_nabavki_group(
-                title=archive_notification["title"],
-                body=archive_notification["body"],
-                url=archive_notification["url"],
-            )
 
         for recipient in {creator, prevzemeno_od} - {None, current_user}:
             send_push_to_user(

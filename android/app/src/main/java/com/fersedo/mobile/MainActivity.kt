@@ -2,6 +2,7 @@ package com.fersedo.mobile
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
 import android.content.ActivityNotFoundException
@@ -57,6 +58,7 @@ import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
+import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     private lateinit var binding: ActivityMainBinding
@@ -64,6 +66,7 @@ class MainActivity : ComponentActivity() {
     private var pendingPermissionRequest: PermissionRequest? = null
     private var cameraCaptureUri: Uri? = null
     private val pendingPdfDownloads = mutableSetOf<Long>()
+    private var hasCheckedForAppUpdate = false
 
     private val downloadCompleteReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -249,6 +252,7 @@ class MainActivity : ComponentActivity() {
                     binding.progressBar.visibility = View.GONE
                     binding.swipeRefreshLayout.isRefreshing = false
                     applyAndroidSafeAreaInset()
+                    checkForAppUpdateOnce()
                 }
 
                 override fun onReceivedSslError(
@@ -482,6 +486,144 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun checkForAppUpdateOnce() {
+        if (hasCheckedForAppUpdate) return
+        hasCheckedForAppUpdate = true
+
+        Thread {
+            try {
+                val metadataUrl = getString(R.string.web_base_url).trimEnd('/') + "/android/release-meta"
+                val endpoint = URL(metadataUrl)
+                val connection = (endpoint.openConnection() as HttpURLConnection).apply {
+                    requestMethod = "GET"
+                    connectTimeout = 12000
+                    readTimeout = 15000
+                    setRequestProperty("Accept", "application/json")
+                }
+
+                if (connection is HttpsURLConnection && endpoint.host == getString(R.string.trusted_internal_host)) {
+                    trustInternalHost(connection)
+                }
+
+                connection.connect()
+                if (connection.responseCode !in 200..299) {
+                    connection.disconnect()
+                    return@Thread
+                }
+
+                val rawJson = connection.inputStream.bufferedReader().use { it.readText() }
+                connection.disconnect()
+
+                val root = JSONObject(rawJson)
+                val androidMeta = root.optJSONObject("android") ?: return@Thread
+                val remoteVersionCode = androidMeta.optLong("version_code", 0L)
+                val remoteVersionName = androidMeta.optString("version_name", "").trim()
+                val remoteVersionKey = androidMeta.optString("version_key", "").trim()
+                val remoteDownloadUrl = androidMeta.optString("download_url", "").trim()
+
+                if (remoteVersionCode <= 0L || remoteDownloadUrl.isBlank()) return@Thread
+
+                val installedVersion = getInstalledVersionInfo()
+                val hasUpdate =
+                    remoteVersionCode > installedVersion.code ||
+                    (remoteVersionCode == installedVersion.code &&
+                        remoteVersionName.isNotBlank() &&
+                        remoteVersionName != installedVersion.name)
+
+                if (!hasUpdate) return@Thread
+
+                val prefs = getSharedPreferences("fersedo_updates", Context.MODE_PRIVATE)
+                val dismissedVersionKey = prefs.getString(KEY_DISMISSED_UPDATE_VERSION, null)
+                if (!remoteVersionKey.isNullOrBlank() && dismissedVersionKey == remoteVersionKey) {
+                    return@Thread
+                }
+
+                runOnUiThread {
+                    if (isFinishing || isDestroyed) return@runOnUiThread
+                    showAppUpdateDialog(
+                        remoteVersionName = remoteVersionName.ifBlank { remoteVersionCode.toString() },
+                        remoteVersionKey = remoteVersionKey,
+                        downloadUrl = remoteDownloadUrl,
+                    )
+                }
+            } catch (_: Exception) {
+                // Silent by design: update check should never block app usage.
+            }
+        }.start()
+    }
+
+    private fun showAppUpdateDialog(
+        remoteVersionName: String,
+        remoteVersionKey: String,
+        downloadUrl: String,
+    ) {
+        AlertDialog.Builder(this)
+            .setTitle("Достапно е ажурирање")
+            .setMessage(
+                "Инсталирана е постара верзија на Fersedo. " +
+                    "Достапна е нова APK верзија $remoteVersionName. " +
+                    "Дали сакаш сега да ја преземеш?"
+            )
+            .setNegativeButton("Подоцна") { dialog, _ ->
+                if (remoteVersionKey.isNotBlank()) {
+                    getSharedPreferences("fersedo_updates", Context.MODE_PRIVATE)
+                        .edit()
+                        .putString(KEY_DISMISSED_UPDATE_VERSION, remoteVersionKey)
+                        .apply()
+                }
+                dialog.dismiss()
+            }
+            .setPositiveButton("Ажурирај") { dialog, _ ->
+                startApkUpdateDownload(downloadUrl, remoteVersionName)
+                dialog.dismiss()
+            }
+            .setCancelable(true)
+            .show()
+    }
+
+    private fun startApkUpdateDownload(downloadUrl: String, remoteVersionName: String) {
+        val uri = Uri.parse(downloadUrl)
+        val fileName = "Fersedo-v${remoteVersionName}.apk"
+        val userAgent = binding.webView.settings.userAgentString ?: "FersedoMobileWebView"
+        val referer = binding.webView.url ?: getString(R.string.web_base_url)
+        val cookie = CookieManager.getInstance().getCookie(getString(R.string.web_base_url))
+
+        if (uri.host == getString(R.string.trusted_internal_host)) {
+            downloadInternalFile(
+                url = downloadUrl,
+                fileName = fileName,
+                mimeType = "application/vnd.android.package-archive",
+                userAgent = userAgent,
+                cookie = cookie,
+                referer = referer,
+            )
+            return
+        }
+
+        startActivity(Intent(Intent.ACTION_VIEW, uri))
+    }
+
+    private fun getInstalledVersionInfo(): InstalledVersionInfo {
+        val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getPackageInfo(packageName, 0)
+        }
+
+        val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            packageInfo.longVersionCode
+        } else {
+            @Suppress("DEPRECATION")
+            packageInfo.versionCode.toLong()
+        }
+
+        return InstalledVersionInfo(
+            name = packageInfo.versionName.orEmpty(),
+            code = versionCode,
+        )
+    }
+
     private fun guessMimeTypeFromName(fileName: String): String {
         return when {
             fileName.endsWith(".pdf", ignoreCase = true) -> "application/pdf"
@@ -611,7 +753,13 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    data class InstalledVersionInfo(
+        val name: String,
+        val code: Long,
+    )
+
     companion object {
+        private const val KEY_DISMISSED_UPDATE_VERSION = "dismissed_update_version"
         const val EXTRA_TARGET_URL = "target_url"
     }
 }

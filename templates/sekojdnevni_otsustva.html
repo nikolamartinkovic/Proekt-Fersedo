@@ -1,6 +1,13 @@
 ﻿{% extends "base.html" %}
 
 {% block content %}
+{% macro mk_date(datum) -%}
+    {%- if datum and datum|length >= 10 and datum[4] == '-' and datum[7] == '-' -%}
+        {{- datum[8:10] -}}-{{- datum[5:7] -}}-{{- datum[0:4] -}}
+    {%- else -%}
+        {{- datum or '—' -}}
+    {%- endif -%}
+{%- endmacro %}
 
 <div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
     <div class="text-center mb-5 pb-4">
@@ -126,18 +133,23 @@
                                 <th>Датум</th>
                                 <th>Тип</th>
                                 <th>Забелешка</th>
-                                {% if session.get('is_admin') %}<th class="text-center">Акција</th>{% endif %}
+                                <th class="text-center">Акции</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for i in otsustva_denes %}
                             <tr>
                                 <td class="fw-bold">{{ i.prezime }} {{ i.ime }}</td>
-                                <td>{{ i.datum }}</td>
+                                <td>{{ mk_date(i.datum) }}</td>
                                 <td>{{ i.tip }}</td>
                                 <td>{{ i.zabeleska or '—' }}</td>
-                                {% if session.get('is_admin') %}
                                 <td class="text-center">
+                                    <button type="button" class="btn btn-warning btn-sm px-3 py-1 me-1"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editModal{{ i.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    {% if session.get('is_admin') %}
                                     <form method="POST" class="d-inline">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="otsustvo_id" value="{{ i.id }}">
@@ -146,8 +158,8 @@
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
+                                    {% endif %}
                                 </td>
-                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -181,11 +193,9 @@
                                 <td style="padding:9px 14px; font-size:11px; font-weight:bold; color:#ffffff; font-family:Arial,Helvetica,sans-serif; text-align:right;">
                                     Статус ({{ vtora_smena_denes | length }})
                                 </td>
-                                {% if session.get('is_admin') %}
-                                <td style="padding:9px 14px; font-size:11px; font-weight:bold; color:#ffffff; font-family:Arial,Helvetica,sans-serif; text-align:center; width:80px;">
-                                    Акција
+                                <td style="padding:9px 14px; font-size:11px; font-weight:bold; color:#ffffff; font-family:Arial,Helvetica,sans-serif; text-align:center; width:140px;">
+                                    Акции
                                 </td>
-                                {% endif %}
                             </tr>
                         </thead>
                         <tbody>
@@ -198,7 +208,7 @@
                                     <p style="margin:0; font-size:12px; font-weight:bold; color:#7c3aed;">
                                         {{ i.casovi }}ч
                                         &nbsp;&middot;&nbsp;
-                                        <span style="font-weight:normal; color:#64748b;">{{ i.datum }}</span>
+                                        <span style="font-weight:normal; color:#64748b;">{{ mk_date(i.datum) }}</span>
                                     </p>
                                     {% if i.zabeleska %}
                                     <p style="margin:4px 0 0 0; font-size:12px; color:#94a3b8;">
@@ -211,8 +221,13 @@
                                         <i class="fas fa-moon me-1"></i> Втора смена
                                     </span>
                                 </td>
-                                {% if session.get('is_admin') %}
                                 <td style="padding:11px 14px; vertical-align:middle; text-align:center; border-bottom:1px solid #ede9fe;">
+                                    <button type="button" class="btn btn-warning btn-sm px-3 py-1 me-1"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#editModal{{ i.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    {% if session.get('is_admin') %}
                                     <form method="POST" class="d-inline">
                                         <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="otsustvo_id" value="{{ i.id }}">
@@ -221,8 +236,8 @@
                                             <i class="fas fa-trash-alt"></i>
                                         </button>
                                     </form>
+                                    {% endif %}
                                 </td>
-                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -261,9 +276,9 @@
                                 <td class="fw-bold">{{ o.prezime }} {{ o.ime }}</td>
                                 <td>
                                     <span class="badge" style="background:#10b981; font-size:0.85rem; padding:5px 10px;">
-                                        {{ o.datum_od | replace('-', '.') | reverse | replace('.', '-', 2) }}
+                                        {{ mk_date(o.datum_od) }}
                                         –
-                                        {{ o.datum_do | replace('-', '.') | reverse | replace('.', '-', 2) }}
+                                        {{ mk_date(o.datum_do) }}
                                     </span>
                                 </td>
                                 <td class="text-center fw-bold" style="color:#10b981;">{{ o.working_days }}</td>
@@ -455,6 +470,7 @@
                             <th class="px-3 py-2 text-center">Часови / Период</th>
                             <th class="px-3 py-2 text-center">Статус</th>
                             <th class="px-3 py-2">Забелешка</th>
+                            <th class="px-3 py-2 text-center">Акции</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -481,6 +497,23 @@
                                 {% endif %}
                             </td>
                             <td class="px-3 text-muted small">{{ r.zabeleska or '—' }}</td>
+                            <td class="px-3 text-center">
+                                <button type="button" class="btn btn-warning btn-sm px-3 py-1 me-1"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editModal{{ r.id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if session.get('is_admin') %}
+                                <form method="POST" class="d-inline">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="otsustvo_id" value="{{ r.id }}">
+                                    <button type="submit" class="btn btn-danger btn-sm px-3 py-1"
+                                            onclick="return confirm('Дали сте сигурни дека сакате да го избришете ова отсуство?');">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
 
@@ -503,6 +536,23 @@
                                 {% endif %}
                             </td>
                             <td class="px-3 text-muted small">{{ r.zabeleska or '—' }}</td>
+                            <td class="px-3 text-center">
+                                <button type="button" class="btn btn-warning btn-sm px-3 py-1 me-1"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editModal{{ r.id }}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if session.get('is_admin') %}
+                                <form method="POST" class="d-inline">
+                                    <input type="hidden" name="action" value="delete">
+                                    <input type="hidden" name="otsustvo_id" value="{{ r.id }}">
+                                    <button type="submit" class="btn btn-danger btn-sm px-3 py-1"
+                                            onclick="return confirm('Дали сте сигурни дека сакате да го избришете ова отсуство?');">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
 
@@ -525,6 +575,7 @@
                                 <span class="badge" style="background:#d1fae5; color:#065f46; border:1px solid #10b981;">Одобрен</span>
                             </td>
                             <td class="px-3 text-muted small">{{ o.zabeleska or '—' }}</td>
+                            <td class="px-3 text-center text-muted">—</td>
                         </tr>
                         {% endfor %}
                     </tbody>

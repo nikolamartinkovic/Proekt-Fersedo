@@ -1,33 +1,69 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 {% block title %}Квалитет{% endblock %}
 
 {% block content %}
+<style>
+  .kvalitet-start-shell {
+    max-width: 980px;
+  }
+  .kvalitet-start-hero {
+    border-radius: 30px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 26%),
+      linear-gradient(135deg, #0f172a 0%, #172554 52%, #1e3a8a 100%);
+    box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
+  }
+  .kvalitet-start-card {
+    border-radius: 26px;
+    border: 1px solid rgba(148,163,184,.18);
+    background: #ffffff;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+    padding: 1.6rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+  }
+  .kvalitet-start-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+    border-color: rgba(96,165,250,.45);
+  }
+  .kvalitet-start-icon {
+    width: 74px;
+    height: 74px;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    font-size: 1.9rem;
+    flex-shrink: 0;
+  }
+</style>
 
-<div class="container py-5" style="max-width: 1100px;">
-  <div class="text-center mb-5">
-    <h1 class="fw-bold" style="color: var(--primary);">Квалитет</h1>
-    <p class="text-muted fs-5 mb-0">Започни нова контрола и избери камин.</p>
-  </div>
-
-  <div class="row g-4 justify-content-center">
-    <div class="col-lg-6 col-md-8 col-sm-10">
-      <!-- Поправено: користи постоечка рута -->
-      <a href="{{ url_for('main.select_kamin') }}" class="module-card">
-        <div class="module-icon">
-          <i class="fas fa-clipboard-check"></i>
-        </div>
-
-        <div class="module-text">
-          <div class="module-title">Започни контрола</div>
-          <div class="module-subtitle">Избор на камин →</div>
-        </div>
-
-        <div class="module-arrow">
-          <i class="fas fa-arrow-right"></i>
-        </div>
-      </a>
+<div class="container py-4 py-lg-5 kvalitet-start-shell">
+  <div class="kvalitet-start-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Квалитет</div>
+      <h1 class="display-6 fw-bold mb-3">Започни нова контрола</h1>
+      <p class="mb-0 fs-5" style="max-width: 680px; color: rgba(255,255,255,.78);">Избери камин и отвори нов QC запис со стандардните чекори и подчекори за проверка.</p>
     </div>
   </div>
+
+  <a href="{{ url_for('main.select_kamin') }}" class="kvalitet-start-card">
+    <div class="kvalitet-start-icon">
+      <i class="fas fa-clipboard-check"></i>
+    </div>
+    <div class="flex-grow-1">
+      <div class="fs-4 fw-bold text-dark mb-1">Избор на камин</div>
+      <div class="text-muted">Продолжи кон избор на модел и отвори нова квалитетна контрола.</div>
+    </div>
+    <div class="fs-4 text-secondary"><i class="fas fa-arrow-right"></i></div>
+  </a>
 </div>
 
 {% endblock %}

@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 import openpyxl
 from flask import (
     Blueprint, flash, redirect, render_template,
-    request, send_file, url_for
+    request, send_file, session, url_for
 )
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -115,6 +115,46 @@ def odmori_manager_emails():
                             ),
                         )
                     flash("Статусот е ажуриран!", "success")
+                except Exception as e:
+                    flash(f"Грешка: {e}", "danger")
+
+        elif action == "toggle_baranja":
+            mid = request.form.get("manager_id")
+            if mid:
+                try:
+                    current_manager = cursor.execute(
+                        "SELECT ime, email, COALESCE(dobiva_baranja, 0) AS dobiva_baranja FROM otsustva_manager_emails WHERE id=?",
+                        (mid,),
+                    ).fetchone()
+                    if current_manager and current_manager["dobiva_baranja"]:
+                        cursor.execute("UPDATE otsustva_manager_emails SET dobiva_baranja = 0 WHERE id=?", (mid,))
+                    else:
+                        cursor.execute("UPDATE otsustva_manager_emails SET dobiva_baranja = 0")
+                        cursor.execute(
+                            "UPDATE otsustva_manager_emails SET dobiva_baranja = 1 WHERE id=?",
+                            (mid,),
+                        )
+                    conn.commit()
+                    updated_manager = cursor.execute(
+                        "SELECT ime, email, dobiva_baranja FROM otsustva_manager_emails WHERE id=?",
+                        (mid,),
+                    ).fetchone()
+                    if updated_manager:
+                        status_label = (
+                            "вклучено известување"
+                            if updated_manager["dobiva_baranja"]
+                            else "исклучено известување"
+                        )
+                        log_audit_event(
+                            "odmori",
+                            "manager_email_toggle_baranja",
+                            status="success",
+                            details=(
+                                f"Променето известување за ново барање за "
+                                f"{updated_manager['ime'] or '-'} <{updated_manager['email']}> во {status_label}"
+                            ),
+                        )
+                    flash("Поставката за известување за ново барање е ажурирана!", "success")
                 except Exception as e:
                     flash(f"Грешка: {e}", "danger")
 
@@ -569,11 +609,13 @@ def odmori_sekojdnevni_otsustva():
                 except Exception as e: flash(f"Грешка: {e}", "danger")
         elif action == "delete":
             oid = request.form.get("otsustvo_id")
-            if oid:
+            if not session.get("is_admin"):
+                flash("???? ????????????? ???? ?? ????? ??????.", "danger")
+            elif oid:
                 try:
                     cursor.execute("DELETE FROM sekojdnevni_otsustva WHERE id=?", (oid,))
-                    conn.commit(); flash("Отсуството е успешно избришано!", "success")
-                except Exception as e: flash(f"Грешка: {e}", "danger")
+                    conn.commit(); flash("?????????? ? ??????? ?????????!", "success")
+                except Exception as e: flash(f"??????: {e}", "danger")
         elif action == "edit":
             oid = request.form.get("otsustvo_id")
             if oid:
@@ -730,11 +772,15 @@ def odmori_nedeli():
     nedeli_sorted = sorted(nedeli.items(), key=lambda x: x[0], reverse=True)
 
     selected_kn = request.args.get("kn", None)
+    selected_ned = None
+    if selected_kn:
+        selected_ned = next((ned for key, ned in nedeli_sorted if key == selected_kn), None)
 
     return render_template(
         "odmori_nedeli.html",
         nedeli=nedeli_sorted,
         selected_kn=selected_kn,
+        selected_ned=selected_ned,
         TIP_COLORS=TIP_COLORS,
         TIP_LABELS=TIP_LABELS,
     )

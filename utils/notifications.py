@@ -72,19 +72,21 @@ def send_push_to_user(username, title, body, url="/nabavki", category="general")
         return queued_mobile
 
 
-def send_push_to_nabavki_group(title, body, url="/nabavki", category="nabavki"):
+def send_push_to_nabavki_group(title, body, url="/nabavki", category="nabavki", exclude_user=None):
     conn = get_db()
     cursor = conn.cursor()
     users = cursor.execute(
         """
         SELECT username FROM users
-        WHERE user_group = 'Nabavki' OR is_admin = 1
+        WHERE user_group = 'Nabavki'
         """
     ).fetchall()
     conn.close()
 
     sent = 0
     for user in users:
+        if exclude_user and user["username"] == exclude_user:
+            continue
         if send_push_to_user(user["username"], title, body, url, category=category):
             sent += 1
     return sent
