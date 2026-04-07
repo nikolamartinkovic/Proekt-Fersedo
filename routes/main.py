@@ -2,6 +2,7 @@
 import os
 import smtplib
 import sqlite3
+import uuid
 from datetime import date, datetime, timedelta
 from email.utils import formataddr
 from email.mime.multipart import MIMEMultipart
@@ -10,6 +11,7 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from utils.db import get_db
 from utils.decorators import login_required, admin_required, module_required
 from utils.config import STATIC_FOLDER, POZICII_FOLDER
+from utils.nabavki_images import save_compressed_image
 from utils.odmori_helpers import isprati_izvestuvanje_za_novo_baranje
 
 main_bp = Blueprint('main', __name__)
@@ -245,6 +247,7 @@ def _isprati_baranje_notification_email(
 # в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 
 KAMINI_FOLDER = r"C:\Users\Server\Desktop\Proekt Fersedo\static\kamini"
+POLUGOTOV_ERRORS_FOLDER = os.path.join(STATIC_FOLDER, "polugotov_errors")
 
 @main_bp.route("/kamini-img/<path:filename>")
 def kamin_static(filename):
@@ -294,6 +297,7 @@ def add_kamin():
     conn = get_db()
     cursor = conn.cursor()
     if request.method == "POST":
+        saved_paths = []
         ime = request.form.get("ime", "").strip()
         if ime:
             try:
@@ -333,6 +337,72 @@ def delete_kamin():
 # в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 # PRODUCTION INPUT
 # в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
+def _cleanup_polugotov_files(saved_paths):
+    for path in saved_paths:
+        try:
+            if path and os.path.exists(path):
+                os.remove(path)
+        except Exception:
+            pass
+
+
+def _ensure_performance_error_images_table(cursor):
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS performance_error_images (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            performance_id INTEGER NOT NULL,
+            error_index INTEGER NOT NULL,
+            image_path TEXT NOT NULL,
+            uploaded_by TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (performance_id) REFERENCES performance(id) ON DELETE CASCADE
+        )
+        """
+    )
+    cursor.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_perf_error_images_perf
+        ON performance_error_images (performance_id)
+        """
+    )
+    cursor.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_perf_error_images_perf_idx
+        ON performance_error_images (performance_id, error_index)
+        """
+    )
+
+
+def _save_polugotov_error_images(cursor, performance_id, greski_count, username):
+    _ensure_performance_error_images_table(cursor)
+    saved_paths = []
+    os.makedirs(POLUGOTOV_ERRORS_FOLDER, exist_ok=True)
+
+    for error_index in range(1, greski_count + 1):
+        field_name = f"error_image_{error_index}"
+        slika = request.files.get(field_name)
+        if not slika or not (slika.filename or "").strip():
+            continue
+
+        filename_base = f"pg_{performance_id}_{error_index}_{uuid.uuid4().hex[:10]}"
+        saved_name = save_compressed_image(slika, POLUGOTOV_ERRORS_FOLDER, filename_base)
+        if not saved_name:
+            raise ValueError(f"Ne uspeav da zacuvam slika za greska #{error_index}.")
+
+        image_path = f"polugotov_errors/{saved_name}"
+        cursor.execute(
+            """
+            INSERT INTO performance_error_images (performance_id, error_index, image_path, uploaded_by)
+            VALUES (?, ?, ?, ?)
+            """,
+            (performance_id, error_index, image_path, username),
+        )
+        saved_paths.append(os.path.join(POLUGOTOV_ERRORS_FOLDER, saved_name))
+
+    return saved_paths
+
+
 @main_bp.route("/add_gotov/<kamin>", methods=["GET", "POST"])
 @login_required
 def add_gotov(kamin):
@@ -342,8 +412,8 @@ def add_gotov(kamin):
     has_plan = plan_exists is not None and plan_exists["plan_kolicina"] > 0
     if request.method == "POST":
         if not has_plan:
-            flash("Нема поставен план за производство! Прво додај план.", "error")
             conn.close()
+            flash("Нема поставен план за производство! Прво додај план.", "error")
             return redirect(url_for("main.select_kamin"))
         try:
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -378,8 +448,13 @@ def add_polugotov(kamin):
     conn = get_db()
     cursor = conn.cursor()
     if request.method == "POST":
+        saved_paths = []
         try:
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            proizvedeni = int(request.form.get("proizvedeni", 0) or 0)
+            greski = int(request.form.get("greski", 0) or 0)
+            if proizvedeni < 0 or greski < 0:
+                raise ValueError("Brojot na proizvedeni i greski ne moze da bide negativen.")
             cursor.execute("""
                 INSERT INTO performance
                 (datum, oddel, proizvod, proizvedeni, greski, vid_greska, zabeleska,
@@ -389,13 +464,22 @@ def add_polugotov(kamin):
                 request.form.get("datum", date.today().isoformat()),
                 request.form.get("oddel", "").strip(),
                 kamin,
-                int(request.form.get("proizvedeni", 0)),
-                int(request.form.get("greski", 0)),
+                proizvedeni,
+                greski,
                 request.form.get("vid_greska", "-").strip(),
                 request.form.get("zabeleska", "").strip(),
                 session["user"], now, kamin,
                 request.form.get("part_number", "").strip(),
             ))
+
+            performance_id = cursor.lastrowid
+            if greski > 0:
+                saved_paths = _save_polugotov_error_images(
+                    cursor=cursor,
+                    performance_id=performance_id,
+                    greski_count=greski,
+                    username=session["user"],
+                )
             conn.commit()
             flash(f"Полуготов производ зачуван за {kamin}!", "success")
             conn.close()
@@ -403,26 +487,130 @@ def add_polugotov(kamin):
         except Exception as e:
             flash(f"Грешка при зачувување: {e}", "error")
             conn.rollback()
+            _cleanup_polugotov_files(saved_paths)
         finally:
             conn.close()
     conn.close()
     return render_template("add_polugotov.html", today=date.today().isoformat(), kamin=kamin)
+
+@main_bp.route("/polugotov_greski/<kamin>")
+@login_required
+@module_required("select_kamin")
+def polugotov_greski(kamin):
+    datum_od = request.args.get("datum_od", "").strip()
+    datum_do = request.args.get("datum_do", "").strip()
+    selected_oddel = request.args.get("oddel", "").strip()
+
+    if not datum_do:
+        datum_do = date.today().isoformat()
+    if not datum_od:
+        datum_od = (date.today() - timedelta(days=30)).isoformat()
+
+    try:
+        datetime.strptime(datum_od, "%Y-%m-%d")
+        datum_do_plus = (datetime.strptime(datum_do, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+    except ValueError:
+        datum_od = (date.today() - timedelta(days=30)).isoformat()
+        datum_do = date.today().isoformat()
+        datum_do_plus = (datetime.strptime(datum_do, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
+        flash("Nevaliden datum filter. Prikazan e posledniot 30-denoven period.", "warning")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    _ensure_performance_error_images_table(cursor)
+
+    oddeli_rows = cursor.execute(
+        """
+        SELECT DISTINCT oddel
+        FROM performance
+        WHERE tip_proizvod = 'polugotov' AND kamin = ? AND oddel IS NOT NULL AND TRIM(oddel) != ''
+        ORDER BY oddel
+        """,
+        (kamin,),
+    ).fetchall()
+    oddeli = [row["oddel"] for row in oddeli_rows]
+
+    sql = """
+        SELECT id, datum, timestamp, oddel, proizvod, proizvedeni, greski, vid_greska, zabeleska, username, part_number
+        FROM performance
+        WHERE tip_proizvod = 'polugotov'
+          AND kamin = ?
+          AND datum >= ?
+          AND datum < ?
+    """
+    params = [kamin, datum_od, datum_do_plus]
+
+    if selected_oddel:
+        sql += " AND oddel = ?"
+        params.append(selected_oddel)
+
+    sql += " ORDER BY timestamp DESC"
+
+    records = cursor.execute(sql, tuple(params)).fetchall()
+    performance_ids = [record["id"] for record in records]
+
+    images_by_record = {}
+    if performance_ids:
+        placeholders = ",".join("?" for _ in performance_ids)
+        image_rows = cursor.execute(
+            f"""
+            SELECT id, performance_id, error_index, image_path, created_at
+            FROM performance_error_images
+            WHERE performance_id IN ({placeholders})
+            ORDER BY performance_id DESC, error_index ASC, id ASC
+            """,
+            tuple(performance_ids),
+        ).fetchall()
+
+        for row in image_rows:
+            images_by_record.setdefault(row["performance_id"], []).append(row)
+
+    conn.close()
+
+    return render_template(
+        "polugotov_greski_pregled.html",
+        kamin=kamin,
+        records=records,
+        images_by_record=images_by_record,
+        datum_od=datum_od,
+        datum_do=datum_do,
+        oddeli=oddeli,
+        selected_oddel=selected_oddel,
+    )
+
 
 @main_bp.route("/moj_zapisi", methods=["GET", "POST"])
 @login_required
 def moj_zapisi():
     conn = get_db()
     cursor = conn.cursor()
+    _ensure_performance_error_images_table(cursor)
     if request.method == "POST" and request.form.get("action") == "delete":
         tip = request.form.get("tip")
         selected_ids = request.form.getlist("selected_ids")
         if selected_ids:
             placeholders = ",".join("?" for _ in selected_ids)
+            image_rows = cursor.execute(
+                f"""
+                SELECT image_path
+                FROM performance_error_images
+                WHERE performance_id IN ({placeholders})
+                """,
+                tuple(selected_ids),
+            ).fetchall()
+            image_paths = [row["image_path"] for row in image_rows if row.get("image_path")]
             cursor.execute(
                 f"DELETE FROM performance WHERE id IN ({placeholders}) AND username = ? AND tip_proizvod = ?",
                 (*selected_ids, session["user"], tip),
             )
             conn.commit()
+            for image_path in image_paths:
+                abs_path = os.path.join(STATIC_FOLDER, image_path.replace("/", os.sep))
+                try:
+                    if os.path.exists(abs_path):
+                        os.remove(abs_path)
+                except Exception:
+                    pass
             flash(f"Успешно избришани {cursor.rowcount} записи!", "success")
         else:
             flash("Нема избрани записи за бришење", "error")

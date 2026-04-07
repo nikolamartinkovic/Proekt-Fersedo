@@ -14,5 +14,6 @@ instance/logs/
 static/nabavki/
 static/nabavki_chat/
 static/pozicii/
+static/polugotov_errors/
 static/kvalitet_pdf/
 static/kvalitet_sliki/

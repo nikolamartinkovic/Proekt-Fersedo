@@ -107,6 +107,18 @@ def init_db():
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS performance_error_images (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            performance_id INTEGER NOT NULL,
+            error_index INTEGER NOT NULL,
+            image_path TEXT NOT NULL,
+            uploaded_by TEXT DEFAULT '',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (performance_id) REFERENCES performance(id) ON DELETE CASCADE
+        )
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS planovi (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             kamin TEXT NOT NULL,

@@ -29,6 +29,11 @@ class Config:
     EMAIL_FROM = formataddr((EMAIL_FROM_NAME, EMAIL_HOST_USER)) if EMAIL_HOST_USER else EMAIL_FROM_NAME
 
     AUTO_ASSIGN_INTERVAL_SECONDS = int(os.getenv("AUTO_ASSIGN_INTERVAL_SECONDS", "14400"))
+    AUTO_BACKUP_ENABLED = os.getenv("AUTO_BACKUP_ENABLED", "1").strip().lower() not in {"0", "false", "no", "off"}
+    AUTO_BACKUP_HOUR = int(os.getenv("AUTO_BACKUP_HOUR", "2"))
+    AUTO_BACKUP_MINUTE = int(os.getenv("AUTO_BACKUP_MINUTE", "30"))
+    AUTO_BACKUP_KEEP = int(os.getenv("AUTO_BACKUP_KEEP", "30"))
+    BACKUP_DIR = os.getenv("BACKUP_DIR", str(BASE_DIR / "instance" / "backups"))
     APP_HOST = os.getenv("APP_HOST", "0.0.0.0")
     APP_PORT = int(os.getenv("APP_PORT", "8080"))
     APP_URL_SCHEME = os.getenv("APP_URL_SCHEME", "http")

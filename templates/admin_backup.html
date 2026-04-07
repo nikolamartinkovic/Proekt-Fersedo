@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Backup i Restore - Fersedo{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 1280px;">
+    <div class="page-hero mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <span class="badge rounded-pill text-bg-light mb-3">Admin</span>
+                <h1 class="display-6 mb-2">Backup i Restore</h1>
+                <p class="mb-0">Avtomatski dneven backup + racen backup/restore. Pristap ima samo administrator.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <form method="post" action="{{ url_for('admin.admin_backup_create') }}">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-database me-2"></i>Kreiraj backup sega
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Auto backup</small>
+                    <strong class="fs-5 {{ 'text-success' if auto_backup_enabled else 'text-danger' }}">
+                        {{ 'Vklucen' if auto_backup_enabled else 'Isklucen' }}
+                    </strong>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Vreme (sekoj den)</small>
+                    <strong class="fs-5">{{ "%02d:%02d"|format(auto_backup_hour, auto_backup_minute) }}</strong>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Retention</small>
+                    <strong class="fs-5">Posledni {{ backup_keep }}</strong>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <small class="text-muted d-block">Backup papka</small>
+                    <div class="small text-break">{{ backup_dir }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-clock-rotate-left me-2"></i>Dostapni backup-i</h5>
+            <span class="badge text-bg-light">{{ backups|length }}</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Datoteka</th>
+                            <th>Vreme</th>
+                            <th>Golemina</th>
+                            <th class="text-end">Akcii</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if backups %}
+                            {% for b in backups %}
+                            <tr>
+                                <td><code>{{ b.name }}</code></td>
+                                <td>{{ b.modified }}</td>
+                                <td>{{ "%.2f"|format((b.size or 0) / 1048576) }} MB</td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-2 flex-wrap">
+                                        <a class="btn btn-outline-primary btn-sm"
+                                           href="{{ url_for('admin.admin_backup_download', backup_name=b.name) }}">
+                                            <i class="fas fa-download me-1"></i>Prezemi
+                                        </a>
+                                        <form method="post" action="{{ url_for('admin.admin_backup_restore') }}"
+                                              onsubmit="return confirm('Sigurno sakas restore od {{ b.name }}?')">
+                                            <input type="hidden" name="backup_name" value="{{ b.name }}">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="fas fa-rotate-left me-1"></i>Restore
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">Nema backup datoteki.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

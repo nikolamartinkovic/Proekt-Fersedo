@@ -6,6 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from utils.db import get_db
+from utils.backup_manager import create_backup
 from utils.odrzuvanje_notifications import notify_due_maintenance_plans
 from utils.odmori_notifications import (
     isprati_dnevni_izvestaj_otsustva,
@@ -71,6 +72,14 @@ def auto_assign_nabavki():
             print(f"[AUTO ASSIGN ERROR] {e}")
 
 
+def run_auto_backup():
+    try:
+        created = create_backup(reason="auto")
+        print(f"[AUTO BACKUP] Created: {created['name']} (size={created['size']} bytes)")
+    except Exception as exc:
+        print(f"[AUTO BACKUP ERROR] {exc}")
+
+
 def _with_app_context(app, fn):
     def wrapped():
         with app.app_context():
@@ -123,10 +132,27 @@ def init_scheduler(app, auto_assign_interval_seconds):
         id="odrzuvanje_due_plans",
         replace_existing=True,
     )
+    if app.config.get("AUTO_BACKUP_ENABLED", True):
+        scheduler.add_job(
+            _with_app_context(app, run_auto_backup),
+            trigger="cron",
+            day_of_week="mon-sun",
+            hour=int(app.config.get("AUTO_BACKUP_HOUR", 2)),
+            minute=int(app.config.get("AUTO_BACKUP_MINUTE", 30)),
+            id="auto_backup_daily",
+            replace_existing=True,
+        )
     scheduler.start()
     print("[SCHEDULER] Auto-assign started - interval 4 hours")
     print("[SCHEDULER] Zaliha email started - every Wednesday at 08:00")
     print("[SCHEDULER] Otsustva dnevni started - every day at 08:00")
     print("[SCHEDULER] Otsustva nedelen started - every Friday at 15:00")
     print("[SCHEDULER] Odrzuvanje due plans started - every day at 07:00")
+    if app.config.get("AUTO_BACKUP_ENABLED", True):
+        print(
+            "[SCHEDULER] Auto backup started - every day at "
+            f"{int(app.config.get('AUTO_BACKUP_HOUR', 2)):02d}:{int(app.config.get('AUTO_BACKUP_MINUTE', 30)):02d}"
+        )
+    else:
+        print("[SCHEDULER] Auto backup is disabled")
     return scheduler

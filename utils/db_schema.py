@@ -108,3 +108,12 @@ def ensure_common_indexes(cursor):
     ensure_index(cursor, "idx_zaliha_izvoz_log_datum", "zaliha_izvoz_log", "datum")
     ensure_index(cursor, "idx_baranja_odmor_vraboten", "baranja_odmor", "vraboten_id, status")
     ensure_index(cursor, "idx_odmor_salda_vraboten_godina", "odmor_salda", "vraboten_id, godina", unique=True)
+    if table_exists(cursor, "performance_error_images"):
+        ensure_index(cursor, "idx_perf_error_images_perf", "performance_error_images", "performance_id")
+        ensure_index(
+            cursor,
+            "idx_perf_error_images_perf_idx",
+            "performance_error_images",
+            "performance_id, error_index",
+            unique=True,
+        )

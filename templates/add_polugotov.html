@@ -10,11 +10,14 @@
         <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
             за камин: <strong style="color: var(--text);">{{ kamin }}</strong>
         </p>
+        <a href="{{ url_for('main.polugotov_greski', kamin=kamin) }}" class="btn btn-outline-primary btn-sm mt-2">
+            <i class="fas fa-images me-1"></i> Pregled na greski i sliki
+        </a>
     </div>
 
     <div class="card shadow-xl border-0 rounded-4 overflow-hidden" style="background: var(--surface);">
         <div class="card-body p-4 p-md-5">
-            <form method="post" id="polugotovForm" novalidate>
+            <form method="post" id="polugotovForm" novalidate enctype="multipart/form-data">
                 <input type="hidden" name="kamin" value="{{ kamin }}">
 
                 <!-- Датум -->
@@ -74,6 +77,14 @@
                     </div>
                 </div>
 
+                <div class="mb-4">
+                    <label class="form-label fw-bold fs-5">Sliki za greski</label>
+                    <p class="text-muted mb-2" style="font-size: 0.95rem;">
+                        Vnesi broj vo poleto "Greski" i avtomatski ke se pojavat tolku image polinja.
+                    </p>
+                    <div id="errorImageFields" class="d-grid" style="gap: 0.75rem;"></div>
+                </div>
+
                 <!-- Part Number + Preview -->
                 <div class="mb-4">
                     <label for="part_number" class="form-label fw-bold fs-5">Part Number</label>
@@ -117,8 +128,55 @@
 // ================================================
 // Efektivnost - динамички бои и број
 // ================================================
-document.getElementById('proizvedeni')?.addEventListener('input', updateEfektivnost);
-document.getElementById('greski')?.addEventListener('input', updateEfektivnost);
+const proizvedeniInput = document.getElementById('proizvedeni');
+const greskiInput = document.getElementById('greski');
+
+proizvedeniInput?.addEventListener('input', updateEfektivnost);
+greskiInput?.addEventListener('input', () => {
+    updateEfektivnost();
+    renderErrorImageFields();
+});
+
+function renderErrorImageFields() {
+    const container = document.getElementById('errorImageFields');
+    if (!container) return;
+
+    const greski = Math.max(0, parseInt(greskiInput?.value || '0', 10) || 0);
+    container.innerHTML = '';
+
+    if (greski === 0) {
+        container.innerHTML = '<div class="text-muted small">Nema greski vo ovoj zapis.</div>';
+        return;
+    }
+
+    for (let i = 1; i <= greski; i += 1) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'border rounded-3 p-2 p-md-3';
+        wrapper.style.borderColor = 'var(--border)';
+        wrapper.style.background = 'var(--background)';
+
+        const label = document.createElement('label');
+        label.className = 'form-label fw-semibold mb-1';
+        label.setAttribute('for', `error_image_${i}`);
+        label.textContent = `Slika za greska #${i}`;
+
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.id = `error_image_${i}`;
+        input.name = `error_image_${i}`;
+        input.accept = 'image/*';
+        input.className = 'form-control';
+
+        const help = document.createElement('div');
+        help.className = 'form-text';
+        help.textContent = 'Dozvoleno: JPG, PNG, WEBP.';
+
+        wrapper.appendChild(label);
+        wrapper.appendChild(input);
+        wrapper.appendChild(help);
+        container.appendChild(wrapper);
+    }
+}
 
 function updateEfektivnost() {
     const p = parseInt(document.getElementById('proizvedeni').value) || 0;
@@ -208,6 +266,9 @@ document.getElementById('polugotovForm')?.addEventListener('submit', function(e)
         }, false);
     }
 })();
+
+updateEfektivnost();
+renderErrorImageFields();
 </script>
 
 <style>

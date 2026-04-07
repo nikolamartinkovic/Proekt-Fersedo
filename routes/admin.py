@@ -19,6 +19,12 @@ from reportlab.platypus import BaseDocTemplate, Frame, Image, PageBreak, PageTem
 from werkzeug.utils import secure_filename
 from PIL import Image as PILImage
 from utils.audit import get_audit_log, log_audit_event
+from utils.backup_manager import (
+    backup_path,
+    create_backup,
+    list_backups,
+    restore_backup,
+)
 from utils.db import get_db
 from utils.decorators import admin_or_module_required, admin_required, login_required
 from argon2 import PasswordHasher, exceptions
@@ -245,6 +251,98 @@ def admin_users():
 @admin_or_module_required("dashboard")
 def dashboard():
     return render_template("dashboard.html", today=date.today().isoformat())
+
+
+@admin_bp.route("/backup")
+@login_required
+@admin_required
+def admin_backup():
+    backups = list_backups(limit=200)
+    return render_template(
+        "admin_backup.html",
+        backups=backups,
+        auto_backup_enabled=current_app.config.get("AUTO_BACKUP_ENABLED", True),
+        auto_backup_hour=int(current_app.config.get("AUTO_BACKUP_HOUR", 2)),
+        auto_backup_minute=int(current_app.config.get("AUTO_BACKUP_MINUTE", 30)),
+        backup_keep=int(current_app.config.get("AUTO_BACKUP_KEEP", 30)),
+        backup_dir=current_app.config.get("BACKUP_DIR", ""),
+    )
+
+
+@admin_bp.route("/backup/create", methods=["POST"])
+@login_required
+@admin_required
+def admin_backup_create():
+    try:
+        created = create_backup(reason=f"manual_{session.get('user', 'admin')}")
+        log_audit_event(
+            "admin",
+            "backup_create",
+            username=session.get("user", ""),
+            status="success",
+            details=f"Created backup: {created['name']}",
+        )
+        flash(f"Backup e kreiran: {created['name']}", "success")
+    except Exception as exc:
+        log_audit_event(
+            "admin",
+            "backup_create",
+            username=session.get("user", ""),
+            status="error",
+            details=f"Create backup failed: {exc}",
+        )
+        flash(f"Greska pri kreiranje backup: {exc}", "danger")
+    return redirect(url_for("admin.admin_backup"))
+
+
+@admin_bp.route("/backup/restore", methods=["POST"])
+@login_required
+@admin_required
+def admin_backup_restore():
+    backup_name = (request.form.get("backup_name") or "").strip()
+    if not backup_name:
+        flash("Izberi backup za restore.", "warning")
+        return redirect(url_for("admin.admin_backup"))
+
+    try:
+        restored = restore_backup(backup_name)
+        log_audit_event(
+            "admin",
+            "backup_restore",
+            username=session.get("user", ""),
+            status="warning",
+            details=(
+                f"Restored from {restored['restored_from']} "
+                f"(safety backup: {restored['safety_backup']})"
+            ),
+        )
+        flash(
+            f"Restore uspesno. Vrateno od {restored['restored_from']} "
+            f"(bezbednosen backup: {restored['safety_backup']}).",
+            "success",
+        )
+    except Exception as exc:
+        log_audit_event(
+            "admin",
+            "backup_restore",
+            username=session.get("user", ""),
+            status="error",
+            details=f"Restore failed for {backup_name}: {exc}",
+        )
+        flash(f"Greska pri restore: {exc}", "danger")
+    return redirect(url_for("admin.admin_backup"))
+
+
+@admin_bp.route("/backup/download/<path:backup_name>")
+@login_required
+@admin_required
+def admin_backup_download(backup_name):
+    try:
+        path = backup_path(backup_name)
+        return send_file(path, as_attachment=True, download_name=path.name, max_age=0)
+    except Exception:
+        flash("Backup datotekata ne e pronajdena.", "warning")
+        return redirect(url_for("admin.admin_backup"))
 
 
 @admin_bp.route("/system_logs")

@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container" style="max-width: 1300px; margin: 3rem auto 5rem; padding: 0 1rem;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 style="margin: 0; font-size: clamp(1.7rem, 5vw, 2.4rem); font-weight: 800; color: var(--text);">
+                Pregled na greski i sliki
+            </h1>
+            <p style="margin: 0.35rem 0 0; color: var(--text-secondary); font-size: 1rem;">
+                Kamin: <strong style="color: var(--primary);">{{ kamin }}</strong>
+            </p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('main.add_polugotov', kamin=kamin) }}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i> Nov zapis
+            </a>
+            <a href="{{ url_for('main.select_kamin_type', kamin=kamin) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Nazad
+            </a>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4" style="background: var(--surface); border-radius: 16px;">
+        <div class="card-body p-3 p-md-4">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-lg-3 col-md-4">
+                    <label class="form-label fw-semibold">Od datum</label>
+                    <input type="date" name="datum_od" value="{{ datum_od }}" class="form-control">
+                </div>
+                <div class="col-lg-3 col-md-4">
+                    <label class="form-label fw-semibold">Do datum</label>
+                    <input type="date" name="datum_do" value="{{ datum_do }}" class="form-control">
+                </div>
+                <div class="col-lg-3 col-md-4">
+                    <label class="form-label fw-semibold">Oddel</label>
+                    <select name="oddel" class="form-select">
+                        <option value="">Site oddeli</option>
+                        {% for oddel in oddeli %}
+                        <option value="{{ oddel }}" {% if selected_oddel == oddel %}selected{% endif %}>{{ oddel }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-2"></i> Primeni filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if records %}
+    <div class="d-flex flex-column gap-3">
+        {% for rec in records %}
+        {% set rec_images = images_by_record.get(rec['id'], []) %}
+        <div class="card border-0 shadow-sm overflow-hidden" style="background: var(--surface); border-radius: 16px;">
+            <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2"
+                 style="background: linear-gradient(135deg, #182848, #2a5298); color: #fff; border: none;">
+                <div class="fw-semibold">
+                    Zapis #{{ rec['id'] }} | {{ rec['datum'] }} {{ rec['timestamp'][-8:] if rec['timestamp'] else '' }}
+                </div>
+                <div class="small opacity-75">
+                    Korisnik: {{ rec['username'] or '-' }}
+                </div>
+            </div>
+            <div class="card-body p-3 p-md-4">
+                <div class="row g-3 mb-3">
+                    <div class="col-md-2">
+                        <div class="meta-label">Oddel</div>
+                        <div class="meta-value">{{ rec['oddel'] or '-' }}</div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="meta-label">Proizvedeni</div>
+                        <div class="meta-value">{{ rec['proizvedeni'] or 0 }}</div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="meta-label">Greski</div>
+                        <div class="meta-value text-danger fw-bold">{{ rec['greski'] or 0 }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="meta-label">Vid greska</div>
+                        <div class="meta-value">{{ rec['vid_greska'] or '-' }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="meta-label">Part number</div>
+                        <div class="meta-value">{{ rec['part_number'] or '-' }}</div>
+                    </div>
+                </div>
+
+                {% if rec['zabeleska'] %}
+                <div class="alert mb-3" style="background: #f8fbff; border: 1px solid #dbe8ff; color: #1e3a5f;">
+                    <strong>Zabeleska:</strong> {{ rec['zabeleska'] }}
+                </div>
+                {% endif %}
+
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                    <h6 class="m-0 fw-bold">Sliki za greski</h6>
+                    <span class="badge text-bg-primary">{{ rec_images|length }}</span>
+                </div>
+
+                {% if rec_images %}
+                <div class="image-grid">
+                    {% for img in rec_images %}
+                    <a href="{{ url_for('static', filename=img['image_path']) }}" target="_blank" class="image-item" title="Greska #{{ img['error_index'] }}">
+                        <img src="{{ url_for('static', filename=img['image_path']) }}" alt="Greska {{ img['error_index'] }}" loading="lazy">
+                        <span class="image-badge">#{{ img['error_index'] }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-muted small">Nema dodadeni sliki za ovoj zapis.</div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm" style="background: var(--surface); border-radius: 16px;">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-image text-muted mb-3" style="font-size: 2.2rem;"></i>
+            <h5 style="margin-bottom: 0.5rem;">Nema zapisi vo izbraniot period</h5>
+            <p class="text-muted mb-0">Smmeni filter i probaj povtorno.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .meta-label {
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: var(--text-secondary);
+        margin-bottom: 0.2rem;
+        font-weight: 600;
+    }
+    .meta-value {
+        font-size: 1rem;
+        color: var(--text);
+        font-weight: 600;
+        word-break: break-word;
+    }
+    .image-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 0.8rem;
+    }
+    .image-item {
+        position: relative;
+        display: block;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: #eef2ff;
+        min-height: 130px;
+    }
+    .image-item img {
+        width: 100%;
+        height: 140px;
+        object-fit: cover;
+        display: block;
+        transition: transform .25s ease;
+    }
+    .image-item:hover img {
+        transform: scale(1.04);
+    }
+    .image-badge {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        background: rgba(17, 24, 39, 0.85);
+        color: #fff;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: .75rem;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
