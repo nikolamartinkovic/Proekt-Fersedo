@@ -37,6 +37,32 @@
         </div>
         {% endif %}
     {% endfor %}
+    {% set odrz_items = modules.get('odrzuvanje', []) %}
+    {% if odrz_items %}
+    <div class="admin-mod-group">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
+            <h6 class="admin-mod-title mb-0">Одржување</h6>
+            <span class="badge rounded-pill admin-mod-count">{{ odrz_items|length }}</span>
+        </div>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-3">
+            {% for mod in odrz_items %}
+            <div class="col">
+                <label class="admin-module-switch h-100 w-100" for="{{ prefix }}_{{ mod.value }}">
+                    <div class="form-check form-switch m-0 d-flex align-items-start gap-3 p-0">
+                        <input class="form-check-input mt-1"
+                               type="checkbox"
+                               name="allowed_modules"
+                               value="{{ mod.value }}"
+                               id="{{ prefix }}_{{ mod.value }}"
+                               {% if mod.value in selected_modules %}checked{% endif %}>
+                        <span class="fw-semibold text-dark">{{ mod.label }}</span>
+                    </div>
+                </label>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 {% endmacro %}
 
 {% block content %}
@@ -51,6 +77,13 @@
             radial-gradient(circle at top right, rgba(56, 189, 248, 0.16), transparent 28%),
             linear-gradient(135deg, #0f172a 0%, #172554 50%, #1e3a8a 100%);
         box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
+    }
+    .admin-users-hero h1 {
+        color: #f8fbff !important;
+        text-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
+    }
+    .admin-users-hero p {
+        color: rgba(255,255,255,.92) !important;
     }
     .admin-users-panel,
     .admin-users-table-card,

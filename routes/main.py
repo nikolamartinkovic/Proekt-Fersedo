@@ -24,9 +24,7 @@ WELCOME_MODULES = [
     {"value": "select_kamin", "label": "Нов запис", "description": "Брз влез за нов производствен запис.", "endpoint": "main.select_kamin", "icon": "fas fa-plus-circle", "group": "Производство"},
     {"value": "add_part", "label": "Отвори нов артикл", "description": "Креирање на нов артикл и негови параметри.", "endpoint": "artikli.add", "icon": "fas fa-box-open", "group": "Производство"},
     {"value": "moj_zapisi", "label": "Мои записи", "description": "Лична листа на внесени записи.", "endpoint": "main.moj_zapisi", "icon": "fas fa-list", "group": "Производство"},
-    {"value": "kalkulacija", "label": "Калкулација", "description": "Пресметки и работни цени по операции.", "endpoint": "main.kalkulacija", "icon": "fas fa-calculator", "group": "Производство"},
     {"value": "artikli", "label": "Артикли", "description": "Преглед и уредување на артикли.", "endpoint": "artikli.artikli", "icon": "fas fa-boxes-stacked", "group": "Производство"},
-    {"value": "plan_proizvodstvo", "label": "План за производство", "description": "Планирање и следење на производни активности.", "endpoint": "main.plan_proizvodstvo", "icon": "fas fa-calendar-check", "group": "Производство"},
     {"value": "izvestaj", "label": "Извештај", "description": "Извештаи и пресек на работата.", "endpoint": "main.izvestaj", "icon": "fas fa-file-alt", "group": "Производство"},
     {"value": "zalihi", "label": "Залихи", "description": "Состојба и движења на залихите.", "endpoint": "zalihi.zalihi", "icon": "fas fa-warehouse", "group": "Залихи"},
     {"value": "kvalitet", "label": "Квалитет", "description": "Преглед на активни контроли за квалитет.", "endpoint": "kvalitet.kvalitet", "icon": "fas fa-check-circle", "group": "Квалитет"},
@@ -37,7 +35,6 @@ WELCOME_MODULES = [
     {"value": "nabavki_arhiva", "label": "Архива на набавки", "description": "Архивирани барања и историја на набавки.", "endpoint": "nabavki.arhiva", "icon": "fas fa-archive", "group": "Набавки"},
     {"value": "ponudi", "label": "Понуди", "description": "Активни понуди и нивно следење.", "endpoint": "ponudi.ponudi", "icon": "fas fa-file-invoice-dollar", "group": "Набавки"},
     {"value": "ponudi_arhiva", "label": "Архива на понуди", "description": "Историја на стари понуди.", "endpoint": "ponudi.arhiva", "icon": "fas fa-box-archive", "group": "Набавки"},
-    {"value": "sostanoci", "label": "Состаноци", "description": "Записи и преглед на состаноци.", "endpoint": "sostanoci.lista", "icon": "fas fa-microphone", "group": "Комуникација"},
     {"value": "chat", "label": "Чат", "description": "Внатрешна комуникација со тимот.", "endpoint": "chat.chat_page", "icon": "fas fa-comments", "group": "Комуникација"},
     {"value": "odmori", "label": "Одмори", "description": "Главен екран за управување со одмори.", "endpoint": "main.odmori", "icon": "fas fa-umbrella-beach", "group": "Одмори"},
     {"value": "baranje_odmor", "label": "Барање за одмор", "description": "Поднесување ново барање за одмор.", "endpoint": "main.baranje_odmor", "icon": "fas fa-file-signature", "group": "Одмори"},
@@ -47,6 +44,52 @@ WELCOME_MODULES = [
     {"value": "odmori_sekojdnevni_otsustva", "label": "Секојдневни отсуства", "description": "Дневен приказ на присуства и отсуства.", "endpoint": "odmori.odmori_sekojdnevni_otsustva", "icon": "fas fa-user-clock", "group": "Одмори"},
     {"value": "odmori_manager_emails", "label": "Email за менаџери", "description": "Поставки и тестирање на известувања за менаџери.", "endpoint": "odmori.odmori_manager_emails", "icon": "fas fa-envelope-open-text", "group": "Одмори"},
 ]
+
+
+WELCOME_MODULES.extend(
+    [
+        {
+            "value": "odrzuvanje",
+            "label": "Одржување",
+            "description": "Централен влез за машини, сервисни налози и планирано одржување.",
+            "endpoint": "odrzuvanje.dashboard",
+            "icon": "fas fa-screwdriver-wrench",
+            "group": "Одржување",
+        },
+        {
+            "value": "odrzuvanje_masini",
+            "label": "Машини",
+            "description": "Картон за секоја машина, QR пристап, чеклисти и сервисни интервали.",
+            "endpoint": "odrzuvanje.machines",
+            "icon": "fas fa-industry",
+            "group": "Одржување",
+        },
+        {
+            "value": "odrzuvanje_nalozi",
+            "label": "Налози",
+            "description": "Отворање, доделување и следење на дефекти и интервенции.",
+            "endpoint": "odrzuvanje.orders",
+            "icon": "fas fa-clipboard-list",
+            "group": "Одржување",
+        },
+        {
+            "value": "odrzuvanje_plan",
+            "label": "План на одржување",
+            "description": "Превентивно одржување, потсетници и задачи по машина.",
+            "endpoint": "odrzuvanje.plan",
+            "icon": "fas fa-calendar-days",
+            "group": "Одржување",
+        },
+        {
+            "value": "odrzuvanje_istorija",
+            "label": "Историја на одржување",
+            "description": "Завршени налози, застои, трошоци и анализа по машина.",
+            "endpoint": "odrzuvanje.history",
+            "icon": "fas fa-clock-rotate-left",
+            "group": "Одржување",
+        },
+    ]
+)
 
 
 def _get_welcome_module_cards():
@@ -67,9 +110,9 @@ def _get_welcome_module_cards():
         if item["value"] in allowed
     ]
 
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 # EMAIL КОНФИГУРАЦИЈА
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 _EMAIL_HOST     = "smtp.gmail.com"
 _EMAIL_PORT     = 587
 _EMAIL_USER     = "fersedoo@gmail.com"
@@ -167,7 +210,7 @@ def _isprati_baranje_notification_email(
             </p>
             <table style="width:100%;border-collapse:collapse;margin-top:18px;">
                 <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Вработен:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{ime_prezime}</td></tr>
-                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Од:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{fmt(datum_od)}</td></tr>
+                <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>РћРґ:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{fmt(datum_od)}</td></tr>
                 <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>До:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{fmt(datum_do)}</td></tr>
                 <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Работни денови:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{working_days}</td></tr>
                 <tr><td style="padding:10px;border-bottom:1px solid #e6ebf5;"><strong>Поднесено од:</strong></td><td style="padding:10px;border-bottom:1px solid #e6ebf5;">{podneseno_od}</td></tr>
@@ -197,9 +240,9 @@ def _isprati_baranje_notification_email(
         print(f"[EMAIL ODMOR NOTIFY] Грешка: {exc}")
 
 
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 # STATIC FILE ROUTES
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 
 KAMINI_FOLDER = r"C:\Users\Server\Desktop\Proekt Fersedo\static\kamini"
 
@@ -229,9 +272,9 @@ def welcome():
     )
 
 
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 # SELECT KAMIN
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 @main_bp.route("/select_kamin")
 @login_required
 def select_kamin():
@@ -287,9 +330,9 @@ def delete_kamin():
     return render_template("delete_kamin.html", kamini=kamini)
 
 
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 # PRODUCTION INPUT
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 @main_bp.route("/add_gotov/<kamin>", methods=["GET", "POST"])
 @login_required
 def add_gotov(kamin):
@@ -397,9 +440,9 @@ def moj_zapisi():
     return render_template("moj_zapisi.html", gotivi=gotivi, polugotovi=polugotovi)
 
 
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 # ОДМОРИ — главна страница
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 
 @main_bp.route("/odmori")
 @login_required
@@ -425,109 +468,6 @@ def odmori():
             flash("Немате дозвола за пристап до модулот Одмори.", "warning")
             return redirect(url_for("auth.index"))
     return render_template("odmori.html")
-
-# ─────────────────────────────────────────────────────────────
-# КАЛКУЛАЦИЈА
-# ─────────────────────────────────────────────────────────────
-@main_bp.route("/kalkulacija", methods=["GET", "POST"])
-@login_required
-@admin_required
-def kalkulacija():
-    conn = get_db()
-    cursor = conn.cursor()
-    if request.method == "POST":
-        if "update_cene" in request.form:
-            price_fields = ["laser", "apkant", "rolovanje", "zavaruvanje", "brusenje", "drvara", "sachmara", "farbara"]
-            for field in price_fields:
-                cursor.execute(f"UPDATE parts SET cena_po_cas_{field} = ?", (float(request.form.get(f"cena_{field}", 0)),))
-            conn.commit()
-            flash("Цените по час се успешно зачувани!", "success")
-            conn.close()
-            return redirect(url_for("main.kalkulacija"))
-        for artikal_id in request.form.getlist("artikal_id"):
-            laser = 1 if request.form.get(f"laser_{artikal_id}") else 0
-            apkant = 1 if request.form.get(f"apkant_{artikal_id}") else 0
-            cursor.execute("""
-                UPDATE parts SET laser=?, laser_vreme=?, apkant=?, apkant_vreme=? WHERE id=?
-            """, (laser, int(request.form.get(f"laser_vreme_{artikal_id}", 0)) if laser else 0,
-                  apkant, int(request.form.get(f"apkant_vreme_{artikal_id}", 0)) if apkant else 0,
-                  artikal_id))
-        conn.commit()
-        flash("Калкулацијата е успешно зачувана!", "success")
-        conn.close()
-        return redirect(url_for("main.kalkulacija"))
-    artikli_list = cursor.execute("""
-        SELECT id, part_number, kamin, vid_artikal,
-               laser, laser_vreme, apkant, apkant_vreme,
-               mashina_rolovanje, mashina_rolovanje_vreme,
-               zavaruvanje, zavaruvanje_vreme, brusenje, brusenje_vreme,
-               drvara, drvara_vreme, sachmara, sachmara_vreme, farbara, farbara_vreme,
-               cena_po_cas_laser, cena_po_cas_apkant, cena_po_cas_rolovanje,
-               cena_po_cas_zavaruvanje, cena_po_cas_brusenje, cena_po_cas_drvara,
-               cena_po_cas_sachmara, cena_po_cas_farbara
-        FROM parts ORDER BY part_number
-    """).fetchall()
-    ceni = artikli_list[0] if artikli_list else {}
-    conn.close()
-    return render_template("kalkulacija.html", artikli=artikli_list, ceni=ceni)
-
-
-# ─────────────────────────────────────────────────────────────
-# ПЛАН ЗА ПРОИЗВОДСТВО
-# ─────────────────────────────────────────────────────────────
-@main_bp.route("/plan_proizvodstvo", methods=["GET", "POST"])
-@login_required
-@admin_required
-def plan_proizvodstvo():
-    conn = get_db()
-    cursor = conn.cursor()
-    if request.method == "POST":
-        action = request.form.get("action")
-        if action == "add":
-            kamin = request.form.get("kamin")
-            plan_kolicina = int(request.form.get("plan_kolicina", 0))
-            datum_od = request.form.get("datum_od")
-            datum_do = request.form.get("datum_do")
-            if kamin and plan_kolicina > 0 and datum_od and datum_do:
-                cursor.execute(
-                    "UPDATE planovi SET plan_kolicina=?, datum_od=?, datum_do=? WHERE kamin=?",
-                    (plan_kolicina, datum_od, datum_do, kamin),
-                )
-                if cursor.rowcount == 0:
-                    cursor.execute(
-                        "INSERT INTO planovi (kamin, plan_kolicina, datum_od, datum_do) VALUES (?, ?, ?, ?)",
-                        (kamin, plan_kolicina, datum_od, datum_do),
-                    )
-                conn.commit()
-                flash(f"Планот за {kamin} е зачуван!", "success")
-            else:
-                flash("Пополни ги сите полиња!", "error")
-        elif action == "delete":
-            selected_ids = request.form.getlist("selected_ids")
-            if selected_ids:
-                placeholders = ",".join("?" for _ in selected_ids)
-                cursor.execute(f"DELETE FROM planovi WHERE id IN ({placeholders})", selected_ids)
-                conn.commit()
-                flash(f"Избришани {len(selected_ids)} планови!", "success")
-    kamini = [r["ime"] for r in cursor.execute("SELECT ime FROM kamini").fetchall()]
-    planovi = cursor.execute("""
-        SELECT p.id, p.kamin, p.plan_kolicina, p.datum_od, p.datum_do,
-               COALESCE(SUM(pe.proizvedeni), 0) AS proizvedeni,
-               p.plan_kolicina - COALESCE(SUM(pe.proizvedeni), 0) AS razlika
-        FROM planovi p
-        LEFT JOIN performance pe
-            ON p.kamin = pe.kamin AND pe.tip_proizvod = 'gotov'
-            AND pe.datum >= p.datum_od AND pe.datum <= p.datum_do
-        GROUP BY p.id, p.kamin, p.plan_kolicina, p.datum_od, p.datum_do
-        ORDER BY p.kamin, p.datum_od
-    """).fetchall()
-    conn.close()
-    return render_template("plan_proizvodstvo.html", kamini=kamini, planovi=planovi)
-
-
-# ─────────────────────────────────────────────────────────────
-# ИЗВЕШТАЈ
-# ─────────────────────────────────────────────────────────────
 @main_bp.route("/izvestaj")
 @login_required
 @admin_required
@@ -579,9 +519,9 @@ def izvestaj():
                            datum_do=datum_do_str, summary=summary, po_oddel=po_oddel)
 
 
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 # БАРАЊЕ ЗА ОДМОР
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 
 @main_bp.route("/baranje_odmor", methods=["GET", "POST"])
 @login_required
@@ -709,7 +649,7 @@ def baranje_odmor():
                 podneseno_na=_email_data["podneseno_na"],
             )
             if notify_result.get("success"):
-                print(f"[ODMOR BARAЊE] {notify_result['message']}")
+                print(f"[ODMOR BARANJE] {notify_result['message']}")
 
         return redirect(url_for("main.baranje_odmor"))
 
@@ -721,9 +661,9 @@ def baranje_odmor():
     )
 
 
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 # TEST RUTA
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 @main_bp.route("/test_odmor_email")
 @login_required
 def test_odmor_email():
@@ -753,7 +693,7 @@ def test_odmor_email():
                     "html", "utf-8"
                 ))
                 server.sendmail(_EMAIL_USER, [v["email"]], msg.as_string())
-            results.append(f"<li>✅ <strong>{v['ime']} {v['prezime']}</strong> → {v['email']}</li>")
+            results.append(f"<li>вњ… <strong>{v['ime']} {v['prezime']}</strong> в†' {v['email']}</li>")
         except Exception as e:
             results.append(f"<li>❌ <strong>{v['ime']} {v['prezime']}</strong> ({v['email']}) — Грешка: <code>{e}</code></li>")
 
@@ -765,9 +705,9 @@ def test_odmor_email():
     return html
 
 
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 # EMAIL HELPER — одмор барање
-# ─────────────────────────────────────────────────────────────
+# в"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђв"Ђ
 def _isprati_odmor_email(vraboten_email, ime_prezime, datum_od, datum_do,
                          working_days, zabeleska, podneseno_od, podneseno_na,
                          vkupno_dena=20, iskoristeni=0, preostanati=20, godina=None):
@@ -839,7 +779,7 @@ def _isprati_odmor_email(vraboten_email, ime_prezime, datum_od, datum_do,
     <div class="saldo-box">
       <div class="saldo-title">Салдо на годишен одмор за {godina}</div>
       <div class="saldo-grid">
-        <div><div class="s-num">{vkupno_dena}</div><div class="s-lbl">Вкупно</div></div>
+        <div><div class="s-num">{vkupno_dena}</div><div class="s-lbl">Р'РєСѓРїРЅРѕ</div></div>
         <div><div class="s-num">{iskoristeni + working_days}</div><div class="s-lbl">Искористено</div></div>
         <div><div class="s-num" style="color:{preos_color}">{preostanati}</div><div class="s-lbl">Преостанати</div></div>
       </div>
@@ -868,7 +808,7 @@ def _isprati_odmor_email(vraboten_email, ime_prezime, datum_od, datum_do,
         flash("❌ Email: Грешка при автентикација — провери App Password.", "danger")
     except Exception as e:
         flash(f"❌ Email грешка: {e}", "danger")
-        print(f"[EMAIL ODMOR] ❌ {e}")
+        print(f"[EMAIL ODMOR] РІСњРЉ {e}")
 
 
 def _isprati_odobruvanje_email(vraboten_email, ime_prezime, datum_od, datum_do,
@@ -964,4 +904,4 @@ def _isprati_odobruvanje_email(vraboten_email, ime_prezime, datum_od, datum_do,
             server.sendmail(_EMAIL_USER, [vraboten_email], msg.as_string())
         print(f"[EMAIL ODOBR] ✅ До: {vraboten_email}")
     except Exception as e:
-        print(f"[EMAIL ODOBR] ❌ {e}")
+        print(f"[EMAIL ODOBR] РІСњРЉ {e}")

@@ -9,11 +9,12 @@ Flask web application for managing production, procurement, employees, and vacat
 import json
 import os
 import re
+import sqlite3
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from flask import Flask, jsonify, request, send_file, send_from_directory, session, url_for
+from flask import Flask, current_app, jsonify, request, send_file, send_from_directory, session, url_for
 from pywebpush import webpush
 
 from extensions import db, migrate
@@ -174,14 +175,12 @@ def inject_modules():
             {"value": "select_kamin",        "label": "Нов запис"},
             {"value": "add_part",            "label": "Отвори нов артикл"},
             {"value": "moj_zapisi",          "label": "Мои записи"},
-            {"value": "kalkulacija",         "label": "Калкулација"},
             {"value": "artikli",             "label": "Артикли"},
             {"value": "dashboard",           "label": "Dashboard"},
             {"value": "system_logs",         "label": "Системски логови"},
             {"value": "pregled_greski",      "label": "Грешки"},
             {"value": "admin_users",         "label": "Корисници"},
             {"value": "email_recipients",    "label": "Email примачи"},
-            {"value": "plan_proizvodstvo",   "label": "План за производство"},
             {"value": "izvestaj",            "label": "Извештај"},
             {"value": "procesni_cekori",     "label": "Процесни чекори"},
         ],
@@ -190,7 +189,6 @@ def inject_modules():
             {"value": "nabavki_arhiva",      "label": "Архива на набавки"},
             {"value": "ponudi",              "label": "Понуди"},
             {"value": "ponudi_arhiva",       "label": "Архива на понуди"},
-            {"value": "sostanoci",           "label": "Состаноци"},
             {"value": "chat",                "label": "Чат"},
         ],
         "odmori": [
@@ -204,6 +202,13 @@ def inject_modules():
         ],
         "zalihi": [
             {"value": "zalihi",           "label": "Залихи"},
+        ],
+        "odrzuvanje": [
+            {"value": "odrzuvanje",          "label": "Одржување"},
+            {"value": "odrzuvanje_masini",   "label": "Машини"},
+            {"value": "odrzuvanje_nalozi",   "label": "Налози"},
+            {"value": "odrzuvanje_plan",     "label": "План на одржување"},
+            {"value": "odrzuvanje_istorija", "label": "Историја"},
         ],
         "kvalitet": [
             {"value": "kvalitet",         "label": "Квалитет"},
@@ -274,13 +279,36 @@ def upload_temp_image():
 @app.route("/subscribe", methods=["POST"])
 @login_required
 def subscribe():
-    subscription = request.json
-    conn = get_db(); cursor = conn.cursor()
-    cursor.execute("DELETE FROM push_subscriptions WHERE user=?", (session["user"],))
-    cursor.execute("INSERT INTO push_subscriptions (user, subscription) VALUES (?,?)",
-                   (session["user"], json.dumps(subscription)))
-    conn.commit(); conn.close()
-    return jsonify({"success": True})
+    subscription = request.get_json(silent=True)
+    if not subscription:
+        return jsonify({"success": False, "error": "Невалидна претплата."}), 400
+
+    last_exc = None
+    for attempt in range(3):
+        conn = None
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM push_subscriptions WHERE user=?", (session["user"],))
+            cursor.execute(
+                "INSERT INTO push_subscriptions (user, subscription) VALUES (?,?)",
+                (session["user"], json.dumps(subscription)),
+            )
+            conn.commit()
+            return jsonify({"success": True})
+        except sqlite3.OperationalError as exc:
+            last_exc = exc
+            if conn:
+                conn.rollback()
+            if "locked" not in str(exc).lower() or attempt == 2:
+                current_app.logger.warning("Subscribe failed: %s", exc)
+                break
+            time.sleep(0.4 * (attempt + 1))
+        finally:
+            if conn:
+                conn.close()
+
+    return jsonify({"success": False, "error": "Системот е моментално зафатен. Обиди се повторно."}), 503
 
 
 @app.route("/test_push")

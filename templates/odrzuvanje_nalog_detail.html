@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}{{ order.broj }} - Налог{% endblock %}
+
+{% block content %}
+{% include "_odrzuvanje_styles.html" %}
+
+<div class="container py-4 py-lg-5 odr-shell">
+  <div class="odr-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Работен налог</div>
+          <h1 class="display-6 fw-bold mb-3">{{ order.broj }} · {{ order.naslov or 'Одржување' }}</h1>
+          <p class="mb-0 fs-5">{{ order.masina_naziv }} · {{ order.masina_kod }} · {{ order.tip or '—' }}</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{{ url_for('odrzuvanje.order_pdf', order_id=order.id) }}" class="btn btn-light rounded-pill px-4 fw-semibold">
+            <i class="fas fa-file-pdf me-2"></i>PDF налог
+          </a>
+          <span class="odr-chip {% if order.status in ['завршен','потврден'] %}success{% elif order.status == 'откажан' %}danger{% elif order.status == 'чека дел' %}warning{% endif %}">{{ order.status }}</span>
+          <span class="odr-chip muted">{{ order.prioritet or '—' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-xl-4">
+      <div class="odr-card h-100">
+        <div class="odr-card-header"><i class="fas fa-circle-info me-2"></i>Преглед на налог</div>
+        <div class="p-3 p-lg-4">
+          <div class="odr-meta mb-3">
+            <div class="odr-meta-item"><span class="odr-meta-label">Пријавил</span><span class="odr-meta-value">{{ order.prijavil or '—' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Доделено</span><span class="odr-meta-value">{{ order.dodeleno_na or 'Нераспределен' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Креирано</span><span class="odr-meta-value">{{ order.created_at or '—' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Почеток</span><span class="odr-meta-value">{{ order.pocetok_at or '—' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Крај</span><span class="odr-meta-value">{{ order.kraj_at or '—' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Застој</span><span class="odr-meta-value">{{ order.zastoj_minuti or 0 }} минути</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Трошок</span><span class="odr-meta-value">{{ order.trosok or 0 }} ден.</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Потврдил</span><span class="odr-meta-value">{{ order.potvrdil or '—' }}</span></div>
+          </div>
+          {% if order.opis_defekt %}
+          <div class="odr-form-panel mb-3">
+            <div class="form-label mb-2">Опис на дефект</div>
+            <div class="small text-muted">{{ order.opis_defekt }}</div>
+          </div>
+          {% endif %}
+          {% if order.simptom %}
+          <div class="odr-form-panel">
+            <div class="form-label mb-2">Симптом</div>
+            <div class="small text-muted">{{ order.simptom }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-8">
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="odr-card h-100">
+            <div class="odr-card-header alt"><i class="fas fa-user-check me-2"></i>Додели и смени статус</div>
+            <div class="p-3 p-lg-4">
+              <form method="POST" action="{{ url_for('odrzuvanje.order_assign', order_id=order.id) }}" class="odr-form-panel mb-3">
+                <label class="form-label">Одговорно лице</label>
+                <select class="form-select" name="dodeleno_na">
+                  <option value="">Без доделување</option>
+                  {% for user in assignable_users %}
+                  <option value="{{ user }}" {% if order.dodeleno_na == user %}selected{% endif %}>{{ user }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-dark rounded-pill px-4 mt-3">Зачувај доделување</button>
+              </form>
+
+              <form method="POST" action="{{ url_for('odrzuvanje.order_status', order_id=order.id) }}" class="odr-form-panel">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Статус</label>
+                    <select class="form-select" name="status">
+                      {% for status in statuses %}
+                      <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ status }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Потврдил</label>
+                    <input class="form-control" name="potvrdil" value="{{ order.potvrdil or '' }}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Трошок</label>
+                    <input type="number" step="0.01" class="form-control" name="trosok" value="{{ order.trosok or 0 }}">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Застој (минути)</label>
+                    <input type="number" class="form-control" name="zastoj_minuti" value="{{ order.zastoj_minuti or 0 }}">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Решение</label>
+                    <textarea class="form-control" name="resenie">{{ order.resenie or '' }}</textarea>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary rounded-pill px-4 mt-3">Ажурирај статус</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="odr-card h-100">
+            <div class="odr-card-header green"><i class="fas fa-bolt me-2"></i>Активности на налог</div>
+            <div class="p-3 p-lg-4">
+              <form method="POST" action="{{ url_for('odrzuvanje.order_activity', order_id=order.id) }}" class="odr-form-panel mb-3">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label">Тип</label>
+                    <select class="form-select" name="tip">
+                      <option value="note">Белешка</option>
+                      <option value="diagnostic">Дијагностика</option>
+                      <option value="work">Работа</option>
+                      <option value="handover">Предавање</option>
+                    </select>
+                  </div>
+                  <div class="col-md-8">
+                    <label class="form-label">Порака</label>
+                    <input type="text" class="form-control" name="poraka" required>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-success rounded-pill px-4 mt-3">Додај активност</button>
+              </form>
+
+              {% if activities %}
+              <div class="odr-timeline">
+                {% for item in activities %}
+                <div class="odr-timeline-item">
+                  <div class="odr-timeline-meta">{{ item.tip }} · {{ item.created_by or 'Систем' }} · {{ item.created_at or '' }}</div>
+                  <div>{{ item.poraka }}</div>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <div class="odr-empty">Нема внесени активности за овој налог.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="odr-card h-100">
+        <div class="odr-card-header warning"><i class="fas fa-box-open me-2"></i>Делови и материјали</div>
+        <div class="p-3 p-lg-4">
+          <form method="POST" action="{{ url_for('odrzuvanje.order_parts', order_id=order.id) }}" class="odr-form-panel mb-3">
+            <div class="row g-3">
+              <div class="col-md-4"><label class="form-label">Part number</label><input class="form-control" name="part_number"></div>
+              <div class="col-md-4"><label class="form-label">Количина</label><input type="number" step="0.01" class="form-control" name="kolicina" value="1"></div>
+              <div class="col-md-4"><label class="form-label">Извор</label><input class="form-control" name="source_type" placeholder="магацин / рачна ставка"></div>
+              <div class="col-12"><label class="form-label">Опис *</label><input class="form-control" name="opis" required></div>
+            </div>
+            <button type="submit" class="btn btn-warning rounded-pill px-4 mt-3">Додај дел</button>
+          </form>
+
+          {% if parts %}
+          <div class="odr-table-wrap">
+            <table class="table odr-table mb-0">
+              <thead>
+                <tr><th>Part number</th><th>Опис</th><th>Количина</th><th>Извор</th></tr>
+              </thead>
+              <tbody>
+                {% for part in parts %}
+                <tr>
+                  <td>{{ part.part_number or '—' }}</td>
+                  <td>{{ part.opis }}</td>
+                  <td>{{ part.kolicina }}</td>
+                  <td>{{ part.source_type or '—' }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="odr-empty">Нема евидентирани делови за налогот.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="odr-card h-100">
+        <div class="odr-card-header"><i class="fas fa-cart-shopping me-2"></i>Поврзани набавки</div>
+        <div class="p-3 p-lg-4">
+          <form method="POST" action="{{ url_for('odrzuvanje.order_nabavka', order_id=order.id) }}" class="odr-form-panel mb-3">
+            <div class="row g-3">
+              <div class="col-md-4"><label class="form-label">Количина</label><input type="number" step="0.01" class="form-control" name="kolicina" value="1"></div>
+              <div class="col-12"><label class="form-label">Што треба да се набави *</label><input class="form-control" name="opis" required></div>
+            </div>
+            <button type="submit" class="btn btn-danger rounded-pill px-4 mt-3">Креирај набавка</button>
+          </form>
+
+          {% if linked_procurements %}
+          <div class="odr-timeline">
+            {% for req in linked_procurements %}
+            <div class="odr-timeline-item">
+              <div class="d-flex justify-content-between gap-3 align-items-start">
+                <div>
+                  <div class="fw-bold">Набавка #{{ req.nabavka_request_id }}</div>
+                  <div class="small text-muted">{{ req.naslov or '—' }}</div>
+                </div>
+                <span class="odr-chip">{{ req.status or '—' }}</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="odr-empty">Сѐ уште нема поврзани барања кон Набавки.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="odr-card">
+    <div class="odr-card-header alt"><i class="fas fa-list-check me-2"></i>Поврзани чеклисти за оваа машина</div>
+    <div class="p-3 p-lg-4">
+      {% if checklists %}
+      <div class="odr-table-wrap">
+        <table class="table odr-table mb-0">
+          <thead>
+            <tr>
+              <th style="width:28%;">Чеклиста</th>
+              <th style="width:26%;">Ставка</th>
+              <th style="width:34%;">Опис</th>
+              <th style="width:12%;">Ред</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in checklists %}
+            <tr>
+              <td>{{ row.naziv }}</td>
+              <td>{{ row.item_naslov or '—' }}</td>
+              <td>{{ row.item_opis or '—' }}</td>
+              <td>{{ row.redosled or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="odr-empty">Нема креирани чеклисти за оваа машина.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

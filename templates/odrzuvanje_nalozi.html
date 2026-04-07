@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Налози за одржување{% endblock %}
+
+{% block content %}
+{% include "_odrzuvanje_styles.html" %}
+
+<div class="container py-4 py-lg-5 odr-shell">
+  <div class="odr-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Работни налози</div>
+          <h1 class="display-6 fw-bold mb-3">Дефекти, интервенции и превентивни задачи</h1>
+          <p class="mb-0 fs-5">Сите отворени налози на едно место: кој пријавил, која машина е засегната, кој е одговорен и во која фаза е интервенцијата.</p>
+        </div>
+        <div class="odr-mini-stat">
+          <div class="small text-uppercase opacity-75 mb-2">Активни</div>
+          <div class="fs-2 fw-bold">{{ orders|length }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-xl-4">
+      <div class="odr-card">
+        <div class="odr-card-header"><i class="fas fa-plus me-2"></i>Нов налог</div>
+        <div class="p-3 p-lg-4">
+          <form method="POST" class="odr-form-panel">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Машина *</label>
+                <select class="form-select" name="masina_id" required>
+                  <option value="">Избери машина</option>
+                  {% for machine in machines %}
+                  <option value="{{ machine.id }}">{{ machine.kod }} · {{ machine.naziv }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Тип</label>
+                <select class="form-select" name="tip">
+                  {% for tip in order_types %}
+                  <option value="{{ tip }}">{{ tip }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Приоритет</label>
+                <select class="form-select" name="prioritet">
+                  {% for priority in priorities %}
+                  <option value="{{ priority }}">{{ priority }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Наслов</label>
+                <input type="text" class="form-control" name="naslov" placeholder="Пример: Протекување на хидраулика">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Опис на дефект</label>
+                <textarea class="form-control" name="opis_defekt"></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Симптом</label>
+                <input type="text" class="form-control" name="simptom" placeholder="Пример: чуден звук, вибрации, не стартува">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Пријавил</label>
+                <input type="text" class="form-control" name="prijavil" value="{{ session.user or '' }}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Доделено на</label>
+                <select class="form-select" name="dodeleno_na">
+                  <option value="">Без одговорно лице</option>
+                  {% for user in assignable_users %}
+                  <option value="{{ user }}">{{ user }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4 mt-4 w-100">
+              <i class="fas fa-save me-2"></i>Креирај налог
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-8">
+      <div class="odr-card mb-4">
+        <div class="odr-card-header alt"><i class="fas fa-filter me-2"></i>Филтрирање</div>
+        <div class="p-3 p-lg-4">
+          <form method="GET" class="row g-3">
+            <div class="col-lg-5">
+              <input type="text" class="form-control form-control-lg rounded-pill" name="q" value="{{ query }}" placeholder="Број, наслов, машина, одговорен...">
+            </div>
+            <div class="col-lg-3">
+              <select class="form-select form-select-lg rounded-pill" name="status">
+                <option value="">Сите статуси</option>
+                {% for status in statuses %}
+                <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-lg-3">
+              <select class="form-select form-select-lg rounded-pill" name="machine_id">
+                <option value="">Сите машини</option>
+                {% for machine in machines %}
+                <option value="{{ machine.id }}" {% if selected_machine == (machine.id|string) %}selected{% endif %}>{{ machine.kod }} · {{ machine.naziv }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-lg-1 d-grid">
+              <button class="btn btn-dark btn-lg rounded-pill" type="submit"><i class="fas fa-search"></i></button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="odr-card">
+        <div class="odr-card-header d-flex justify-content-between align-items-center">
+          <span><i class="fas fa-clipboard-list me-2"></i>Отворени налози</span>
+          <span class="odr-chip">{{ orders|length }} активни</span>
+        </div>
+        <div class="p-3 p-lg-4">
+          {% if orders %}
+          <div class="odr-table-wrap">
+            <table class="table odr-table mb-0">
+              <thead>
+                <tr>
+                  <th style="width:14%;">Број</th>
+                  <th style="width:24%;">Машина / Наслов</th>
+                  <th style="width:16%;">Тип / Приоритет</th>
+                  <th style="width:16%;">Пријавил</th>
+                  <th style="width:16%;">Доделено</th>
+                  <th style="width:14%;">Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in orders %}
+                <tr>
+                  <td><a href="{{ url_for('odrzuvanje.order_detail', order_id=row.id) }}" class="fw-bold text-decoration-none">{{ row.broj }}</a></td>
+                  <td>
+                    <div class="fw-bold">{{ row.masina_naziv }}</div>
+                    <div class="small text-muted">{{ row.masina_kod }}</div>
+                    {% if row.naslov %}<div class="small mt-2">{{ row.naslov }}</div>{% endif %}
+                  </td>
+                  <td>
+                    <div>{{ row.tip or '—' }}</div>
+                    <div class="small text-muted">{{ row.prioritet or '—' }}</div>
+                  </td>
+                  <td>{{ row.prijavil or '—' }}</td>
+                  <td>{{ row.dodeleno_na or 'Нераспределен' }}</td>
+                  <td><span class="odr-chip">{{ row.status }}</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="odr-empty">
+            <i class="fas fa-circle-check fs-1 mb-3 d-block"></i>
+            Нема налози според избраниот филтер.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

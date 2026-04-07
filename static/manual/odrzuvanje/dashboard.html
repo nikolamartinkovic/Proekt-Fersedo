@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="mk" data-theme="light">
-<head>
+<head><meta charset="utf-8">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="theme-color" content="#667eea">
@@ -10,10 +10,10 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="description" content="Fersedo - Систем за производство, набавки, грешки и одмори">
 
-    <title>{% block title %}Fersedo - Перформанси{% endblock %}</title>
+    <title>Одржување</title>
 
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="manifest" href="https://192.168.0.20/manifest.json">
+    <link rel="apple-touch-icon" href="https://192.168.0.20/static/icons/icon-192.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1111,7 +1111,7 @@
         }
         .notif-perm-banner .nb-x { background: transparent; color: rgba(255,255,255,0.6); font-size: 18px; padding: 0; margin-left: auto; }
     </style>
-</head>
+<style>#appInstallModal,.chat-fab,.scroll-top-btn,#scrollTopBtn,.toast-container,.position-fixed.bottom-0.end-0.p-3{display:none !important;visibility:hidden !important;} body{overflow:auto !important;}</style></head>
 
 <body>
 
@@ -1134,7 +1134,7 @@
         <div class="app-install-hero">
             <div class="app-install-brand">
                 <div class="app-install-brand-mark">
-                    <img src="{{ url_for('static', filename='logo.webp') }}" alt="Fersedo">
+                    <img src="https://192.168.0.20/static/logo.webp" alt="Fersedo">
                 </div>
                 <div>
                     <div class="app-install-status" id="appInstallStatusChip">
@@ -1181,7 +1181,7 @@
                 <a
                     id="appInstallAndroidBtn"
                     class="app-install-btn app-install-btn--primary"
-                    href="{{ app_install_meta.android.download_url }}"
+                    href="https://192.168.0.20/android/latest-apk"
                     download
                 >
                     <i class="fas fa-download"></i>
@@ -1221,17 +1221,17 @@
 <!-- HEADER -->
 <header>
     <nav>
-        <a href="{{ url_for('auth.index') }}" class="nav-brand">
-            <img src="{{ url_for('static', filename='logo.webp') }}" alt="Fersedo Лого">
+        <a href="https://192.168.0.20/" class="nav-brand">
+            <img src="https://192.168.0.20/static/logo.webp" alt="Fersedo Лого">
         </a>
         <div style="display:flex; align-items:center; gap:0.75rem;">
-            {% if session.user %}
+            
             <span class="d-none d-md-flex align-items-center gap-2"
                   style="color:var(--text-secondary); font-weight:500; font-size:0.875rem;">
                 <i class="fas fa-circle-user" style="color:var(--primary);"></i>
-                {{ session.user }}
+                Nikola
             </span>
-            {% endif %}
+            
             <button class="menu-toggle d-flex d-lg-none" onclick="toggleMobileSidebar()" aria-label="Мени">
                 <i class="fas fa-bars"></i>
             </button>
@@ -1243,159 +1243,160 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-inner" id="sidebar-inner">
 
-        {% if session.user %}
-        {% set allowed = (session.allowed_modules or '').split(',') | map('trim') | list %}
+        
+        
 
         <div class="sb-group"><i class="fas fa-house" style="font-size:0.7rem;"></i> Почетна</div>
-        <a class="sb-link" href="{{ url_for('main.welcome') }}" data-tooltip="Почетен екран">
+        <a class="sb-link" href="https://192.168.0.20/welcome" data-tooltip="Почетен екран">
             <span class="sb-icon"><i class="fas fa-house"></i></span>
             <span class="sb-label">Почетен екран</span>
         </a>
 
-        {% if session.is_admin %}
+        
 
             <div class="sb-group"><i class="fas fa-shield-halved" style="font-size:0.7rem;"></i> Админ</div>
-            <a class="sb-link" href="{{ url_for('admin.dashboard') }}" data-tooltip="Dashboard">
+            <a class="sb-link" href="https://192.168.0.20/admin/dashboard" data-tooltip="Dashboard">
                 <span class="sb-icon"><i class="fas fa-chart-line"></i></span>
                 <span class="sb-label">Dashboard</span>
             </a>
-            <a class="sb-link" href="{{ url_for('admin.admin_users') }}" data-tooltip="Корисници">
+            <a class="sb-link" href="https://192.168.0.20/admin/users" data-tooltip="Корисници">
                 <span class="sb-icon"><i class="fas fa-users-cog"></i></span>
                 <span class="sb-label">Корисници</span>
             </a>
-            <a class="sb-link" href="{{ url_for('admin.pregled_greski') }}" data-tooltip="Грешки">
+            <a class="sb-link" href="https://192.168.0.20/admin/greski" data-tooltip="Грешки">
                 <span class="sb-icon"><i class="fas fa-triangle-exclamation"></i></span>
                 <span class="sb-label">Грешки</span>
             </a>
-            <a class="sb-link" href="{{ url_for('admin.system_logs') }}" data-tooltip="Системски логови">
+            <a class="sb-link" href="https://192.168.0.20/admin/system_logs" data-tooltip="Системски логови">
                 <span class="sb-icon"><i class="fas fa-wave-square"></i></span>
                 <span class="sb-label">Системски логови</span>
             </a>
 
             <div class="sb-group"><i class="fas fa-industry" style="font-size:0.7rem;"></i> Производство</div>
-            <a class="sb-link" href="{{ url_for('main.select_kamin') }}" data-tooltip="Нов запис">
+            <a class="sb-link" href="https://192.168.0.20/select_kamin" data-tooltip="Нов запис">
                 <span class="sb-icon"><i class="fas fa-plus-circle"></i></span>
                 <span class="sb-label">Нов запис</span>
             </a>
-            <a class="sb-link" href="{{ url_for('artikli.add') }}" data-tooltip="Отвори нов артикл">
+            <a class="sb-link" href="https://192.168.0.20/artikli/add" data-tooltip="Отвори нов артикл">
                 <span class="sb-icon"><i class="fas fa-box-open"></i></span>
                 <span class="sb-label">Отвори нов артикл</span>
             </a>
-            <a class="sb-link" href="{{ url_for('main.moj_zapisi') }}" data-tooltip="Мои записи">
+            <a class="sb-link" href="https://192.168.0.20/moj_zapisi" data-tooltip="Мои записи">
                 <span class="sb-icon"><i class="fas fa-list"></i></span>
                 <span class="sb-label">Мои записи</span>
             </a>
-            <a class="sb-link" href="{{ url_for('artikli.artikli') }}" data-tooltip="Артикли">
+            <a class="sb-link" href="https://192.168.0.20/artikli/" data-tooltip="Артикли">
                 <span class="sb-icon"><i class="fas fa-boxes-stacked"></i></span>
                 <span class="sb-label">Артикли</span>
             </a>
-            <a class="sb-link" href="{{ url_for('main.izvestaj') }}" data-tooltip="Извештај">
+            <a class="sb-link" href="https://192.168.0.20/izvestaj" data-tooltip="Извештај">
                 <span class="sb-icon"><i class="fas fa-file-alt"></i></span>
                 <span class="sb-label">Извештај</span>
             </a>
-            <a class="sb-link" href="{{ url_for('admin.procesni_cekori') }}" data-tooltip="Процесни чекори">
+            <a class="sb-link" href="https://192.168.0.20/admin/procesni_cekori" data-tooltip="Процесни чекори">
                 <span class="sb-icon"><i class="fas fa-cogs"></i></span>
                 <span class="sb-label">Процесни чекори</span>
             </a>
 
             <div class="sb-group"><i class="fas fa-warehouse" style="font-size:0.7rem;"></i> Залихи</div>
-            <a class="sb-link" href="{{ url_for('zalihi.zalihi') }}" data-tooltip="Залихи">
+            <a class="sb-link" href="https://192.168.0.20/zalihi/" data-tooltip="Залихи">
                 <span class="sb-icon"><i class="fas fa-warehouse"></i></span>
                 <span class="sb-label">Залихи</span>
             </a>
-            <a class="sb-link" href="{{ url_for('admin.email_recipients') }}" data-tooltip="Email примачи">
-                <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
-                <span class="sb-label">Email примачи</span>
-            </a>
             <div class="sb-group"><i class="fas fa-screwdriver-wrench" style="font-size:0.7rem;"></i> Одржување</div>
-            <a class="sb-link" href="{{ url_for('odrzuvanje.dashboard') }}" data-tooltip="Одржување">
+            <a class="sb-link" href="https://192.168.0.20/odrzuvanje/" data-tooltip="Одржување">
                 <span class="sb-icon"><i class="fas fa-screwdriver-wrench"></i></span>
                 <span class="sb-label">Одржување</span>
             </a>
-            <a class="sb-link" href="{{ url_for('odrzuvanje.machines') }}" data-tooltip="Машини">
+            <a class="sb-link" href="https://192.168.0.20/odrzuvanje/masini" data-tooltip="Машини">
                 <span class="sb-icon"><i class="fas fa-industry"></i></span>
                 <span class="sb-label">Машини</span>
             </a>
-            <a class="sb-link" href="{{ url_for('odrzuvanje.orders') }}" data-tooltip="Налози">
+            <a class="sb-link" href="https://192.168.0.20/odrzuvanje/nalozi" data-tooltip="Налози">
                 <span class="sb-icon"><i class="fas fa-clipboard-list"></i></span>
                 <span class="sb-label">Налози</span>
             </a>
-            <a class="sb-link" href="{{ url_for('odrzuvanje.plan') }}" data-tooltip="План">
+            <a class="sb-link" href="https://192.168.0.20/odrzuvanje/plan" data-tooltip="План">
                 <span class="sb-icon"><i class="fas fa-calendar-days"></i></span>
                 <span class="sb-label">План</span>
             </a>
-            <a class="sb-link" href="{{ url_for('odrzuvanje.history') }}" data-tooltip="Историја">
+            <a class="sb-link" href="https://192.168.0.20/odrzuvanje/istorija" data-tooltip="Историја">
                 <span class="sb-icon"><i class="fas fa-clock-rotate-left"></i></span>
                 <span class="sb-label">Историја</span>
             </a>
+            <a class="sb-link" href="https://192.168.0.20/admin/email_recipients" data-tooltip="Email примачи">
+                <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
+                <span class="sb-label">Email примачи</span>
+            </a>
+
             <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
-            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet') }}" data-tooltip="Квалитет">
+            <a class="sb-link" href="https://192.168.0.20/kvalitet/" data-tooltip="Квалитет">
                 <span class="sb-icon"><i class="fas fa-check-circle"></i></span>
                 <span class="sb-label">Квалитет</span>
             </a>
-            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_select_kamin') }}" data-tooltip="Нова контрола">
+            <a class="sb-link" href="https://192.168.0.20/kvalitet/select_kamin" data-tooltip="Нова контрола">
                 <span class="sb-icon"><i class="fas fa-clipboard-check"></i></span>
                 <span class="sb-label">Нова контрола</span>
             </a>
-            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_arhiva') }}" data-tooltip="Архива на контроли">
+            <a class="sb-link" href="https://192.168.0.20/kvalitet/arhiva" data-tooltip="Архива на контроли">
                 <span class="sb-icon"><i class="fas fa-folder-open"></i></span>
                 <span class="sb-label">Архива на контроли</span>
             </a>
-            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_template_manager') }}" data-tooltip="QC шаблони">
+            <a class="sb-link" href="https://192.168.0.20/kvalitet/template" data-tooltip="QC шаблони">
                 <span class="sb-icon"><i class="fas fa-sliders"></i></span>
                 <span class="sb-label">QC шаблони</span>
             </a>
 
             <div class="sb-group"><i class="fas fa-cart-shopping" style="font-size:0.7rem;"></i> Набавки</div>
-            <a class="sb-link" href="{{ url_for('nabavki.nabavki') }}" data-tooltip="Набавки">
+            <a class="sb-link" href="https://192.168.0.20/nabavki/" data-tooltip="Набавки">
                 <span class="sb-icon"><i class="fas fa-shopping-cart"></i></span>
                 <span class="sb-label">Набавки</span>
             </a>
-            <a class="sb-link" href="{{ url_for('nabavki.arhiva') }}" data-tooltip="Архива на набавки">
+            <a class="sb-link" href="https://192.168.0.20/nabavki/arhiva" data-tooltip="Архива на набавки">
                 <span class="sb-icon"><i class="fas fa-archive"></i></span>
                 <span class="sb-label">Архива на набавки</span>
             </a>
-            <a class="sb-link" href="{{ url_for('ponudi.ponudi') }}" data-tooltip="Понуди">
+            <a class="sb-link" href="https://192.168.0.20/ponudi/" data-tooltip="Понуди">
                 <span class="sb-icon"><i class="fas fa-file-invoice-dollar"></i></span>
                 <span class="sb-label">Понуди</span>
             </a>
-            <a class="sb-link" href="{{ url_for('ponudi.arhiva') }}" data-tooltip="Архива на понуди">
+            <a class="sb-link" href="https://192.168.0.20/ponudi/arhiva" data-tooltip="Архива на понуди">
                 <span class="sb-icon"><i class="fas fa-box-archive"></i></span>
                 <span class="sb-label">Архива на понуди</span>
             </a>
 
             <div class="sb-group"><i class="fas fa-sun" style="font-size:0.7rem;"></i> Одмори</div>
-            <a class="sb-link" href="{{ url_for('main.odmori') }}" data-tooltip="Одмори">
+            <a class="sb-link" href="https://192.168.0.20/odmori" data-tooltip="Одмори">
                 <span class="sb-icon"><i class="fas fa-umbrella-beach"></i></span>
                 <span class="sb-label">Одмори</span>
             </a>
-            <a class="sb-link" href="{{ url_for('main.baranje_odmor') }}" data-tooltip="Барање за одмор">
+            <a class="sb-link" href="https://192.168.0.20/baranje_odmor" data-tooltip="Барање за одмор">
                 <span class="sb-icon"><i class="fas fa-file-signature"></i></span>
                 <span class="sb-label">Барање за одмор</span>
             </a>
-            <a class="sb-link" href="{{ url_for('odmori.odmori_vraboteni') }}" data-tooltip="Вработени">
+            <a class="sb-link" href="https://192.168.0.20/odmori/vraboteni" data-tooltip="Вработени">
                 <span class="sb-icon"><i class="fas fa-users"></i></span>
                 <span class="sb-label">Вработени</span>
             </a>
-            <a class="sb-link" href="{{ url_for('odmori.odmori_kalendar') }}" data-tooltip="Календар">
+            <a class="sb-link" href="https://192.168.0.20/odmori/kalendar" data-tooltip="Календар">
                 <span class="sb-icon"><i class="fas fa-calendar-alt"></i></span>
                 <span class="sb-label">Календар</span>
             </a>
-            <a class="sb-link" href="{{ url_for('odmori.odmori_pregled_odmori') }}" data-tooltip="Преглед на одмори">
+            <a class="sb-link" href="https://192.168.0.20/odmori/pregled_odmori" data-tooltip="Преглед на одмори">
                 <span class="sb-icon"><i class="fas fa-list-check"></i></span>
                 <span class="sb-label">Преглед на одмори</span>
             </a>
-            <a class="sb-link" href="{{ url_for('odmori.odmori_sekojdnevni_otsustva') }}" data-tooltip="Секојдневни отсуства">
+            <a class="sb-link" href="https://192.168.0.20/odmori/sekojdnevni_otsustva" data-tooltip="Секојдневни отсуства">
                 <span class="sb-icon"><i class="fas fa-user-clock"></i></span>
                 <span class="sb-label">Секојдневни отсуства</span>
             </a>
-            <a class="sb-link" href="{{ url_for('odmori.odmori_manager_emails') }}" data-tooltip="Email за менаџери">
+            <a class="sb-link" href="https://192.168.0.20/odmori/manager_emails" data-tooltip="Email за менаџери">
                 <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
                 <span class="sb-label">Email за менаџери</span>
             </a>
 
             <div style="height:1px; background:var(--sb-border); margin:0.75rem 0.75rem;"></div>
-            <a class="sb-link" href="{{ url_for('chat.chat_page') }}" data-tooltip="Чат">
+            <a class="sb-link" href="https://192.168.0.20/chat/page" data-tooltip="Чат">
                 <span class="sb-icon" id="sbChatIcon">
                     <i class="bi bi-chat-dots-fill"></i>
                     <span class="sb-badge" id="sbChatBadge"></span>
@@ -1403,252 +1404,15 @@
                 <span class="sb-label">Чат</span>
             </a>
 
-        {% else %}
-
-            {% if 'dashboard' in allowed or 'system_logs' in allowed or 'pregled_greski' in allowed or 'admin_users' in allowed or 'procesni_cekori' in allowed %}
-            <div class="sb-group"><i class="fas fa-shield-halved" style="font-size:0.7rem;"></i> Админ</div>
-            {% endif %}
-            {% if 'dashboard' in allowed %}
-            <a class="sb-link" href="{{ url_for('admin.dashboard') }}" data-tooltip="Dashboard">
-                <span class="sb-icon"><i class="fas fa-chart-line"></i></span>
-                <span class="sb-label">Dashboard</span>
-            </a>
-            {% endif %}
-            {% if 'system_logs' in allowed %}
-            <a class="sb-link" href="{{ url_for('admin.system_logs') }}" data-tooltip="Системски логови">
-                <span class="sb-icon"><i class="fas fa-wave-square"></i></span>
-                <span class="sb-label">Системски логови</span>
-            </a>
-            {% endif %}
-            {% if 'pregled_greski' in allowed %}
-            <a class="sb-link" href="{{ url_for('admin.pregled_greski') }}" data-tooltip="Грешки">
-                <span class="sb-icon"><i class="fas fa-triangle-exclamation"></i></span>
-                <span class="sb-label">Грешки</span>
-            </a>
-            {% endif %}
-            {% if 'admin_users' in allowed %}
-            <a class="sb-link" href="{{ url_for('admin.admin_users') }}" data-tooltip="Корисници">
-                <span class="sb-icon"><i class="fas fa-users-cog"></i></span>
-                <span class="sb-label">Корисници</span>
-            </a>
-            {% endif %}
-            {% if 'procesni_cekori' in allowed %}
-            <a class="sb-link" href="{{ url_for('admin.procesni_cekori') }}" data-tooltip="Процесни чекори">
-                <span class="sb-icon"><i class="fas fa-cogs"></i></span>
-                <span class="sb-label">Процесни чекори</span>
-                </a>
-            {% endif %}
-
-            {% if 'select_kamin' in allowed or 'add_part' in allowed or 'moj_zapisi' in allowed or 'artikli' in allowed or 'izvestaj' in allowed %}
-            <div class="sb-group"><i class="fas fa-industry" style="font-size:0.7rem;"></i> Производство</div>
-            {% endif %}
-            {% if 'select_kamin' in allowed %}
-            <a class="sb-link" href="{{ url_for('main.select_kamin') }}" data-tooltip="Нов запис">
-                <span class="sb-icon"><i class="fas fa-plus-circle"></i></span>
-                <span class="sb-label">Нов запис</span>
-            </a>
-            {% endif %}
-            {% if 'add_part' in allowed %}
-            <a class="sb-link" href="{{ url_for('artikli.add') }}" data-tooltip="Отвори нов артикл">
-                <span class="sb-icon"><i class="fas fa-box-open"></i></span>
-                <span class="sb-label">Отвори нов артикл</span>
-            </a>
-            {% endif %}
-            {% if 'moj_zapisi' in allowed %}
-            <a class="sb-link" href="{{ url_for('main.moj_zapisi') }}" data-tooltip="Мои записи">
-                <span class="sb-icon"><i class="fas fa-list"></i></span>
-                <span class="sb-label">Мои записи</span>
-            </a>
-            {% endif %}
-            {% if 'artikli' in allowed %}
-            <a class="sb-link" href="{{ url_for('artikli.artikli') }}" data-tooltip="Артикли">
-                <span class="sb-icon"><i class="fas fa-boxes-stacked"></i></span>
-                <span class="sb-label">Артикли</span>
-            </a>
-            {% endif %}
-            {% if 'izvestaj' in allowed %}
-            <a class="sb-link" href="{{ url_for('main.izvestaj') }}" data-tooltip="Извештај">
-                <span class="sb-icon"><i class="fas fa-file-alt"></i></span>
-                <span class="sb-label">Извештај</span>
-            </a>
-            {% endif %}
-
-            {% if 'zalihi' in allowed or 'email_recipients' in allowed %}
-            <div class="sb-group"><i class="fas fa-warehouse" style="font-size:0.7rem;"></i> Залихи</div>
-            {% endif %}
-            {% if 'zalihi' in allowed %}
-            <a class="sb-link" href="{{ url_for('zalihi.zalihi') }}" data-tooltip="Залихи">
-                <span class="sb-icon"><i class="fas fa-warehouse"></i></span>
-                <span class="sb-label">Залихи</span>
-            </a>
-            {% endif %}
-            {% if 'email_recipients' in allowed %}
-            <a class="sb-link" href="{{ url_for('admin.email_recipients') }}" data-tooltip="Email примачи">
-                <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
-                <span class="sb-label">Email примачи</span>
-            </a>
-            {% endif %}
-
-            {% if 'odrzuvanje' in allowed or 'odrzuvanje_masini' in allowed or 'odrzuvanje_nalozi' in allowed or 'odrzuvanje_plan' in allowed or 'odrzuvanje_istorija' in allowed %}
-            <div class="sb-group"><i class="fas fa-screwdriver-wrench" style="font-size:0.7rem;"></i> Одржување</div>
-            {% endif %}
-            {% if 'odrzuvanje' in allowed %}
-            <a class="sb-link" href="{{ url_for('odrzuvanje.dashboard') }}" data-tooltip="Одржување">
-                <span class="sb-icon"><i class="fas fa-screwdriver-wrench"></i></span>
-                <span class="sb-label">Одржување</span>
-            </a>
-            {% endif %}
-            {% if 'odrzuvanje_masini' in allowed %}
-            <a class="sb-link" href="{{ url_for('odrzuvanje.machines') }}" data-tooltip="Машини">
-                <span class="sb-icon"><i class="fas fa-industry"></i></span>
-                <span class="sb-label">Машини</span>
-            </a>
-            {% endif %}
-            {% if 'odrzuvanje_nalozi' in allowed %}
-            <a class="sb-link" href="{{ url_for('odrzuvanje.orders') }}" data-tooltip="Налози">
-                <span class="sb-icon"><i class="fas fa-clipboard-list"></i></span>
-                <span class="sb-label">Налози</span>
-            </a>
-            {% endif %}
-            {% if 'odrzuvanje_plan' in allowed %}
-            <a class="sb-link" href="{{ url_for('odrzuvanje.plan') }}" data-tooltip="План">
-                <span class="sb-icon"><i class="fas fa-calendar-days"></i></span>
-                <span class="sb-label">План</span>
-            </a>
-            {% endif %}
-            {% if 'odrzuvanje_istorija' in allowed %}
-            <a class="sb-link" href="{{ url_for('odrzuvanje.history') }}" data-tooltip="Историја">
-                <span class="sb-icon"><i class="fas fa-clock-rotate-left"></i></span>
-                <span class="sb-label">Историја</span>
-            </a>
-            {% endif %}
-
-            {% if 'kvalitet' in allowed or 'kvalitet_nova' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_template' in allowed %}
-            <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
-            {% endif %}
-            {% if 'kvalitet' in allowed %}
-            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet') }}" data-tooltip="Квалитет">
-                <span class="sb-icon"><i class="fas fa-check-circle"></i></span>
-                <span class="sb-label">Квалитет</span>
-            </a>
-            {% endif %}
-            {% if 'kvalitet_nova' in allowed %}
-            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_select_kamin') }}" data-tooltip="Нова контрола">
-                <span class="sb-icon"><i class="fas fa-clipboard-check"></i></span>
-                <span class="sb-label">Нова контрола</span>
-            </a>
-            {% endif %}
-            {% if 'kvalitet_arhiva' in allowed %}
-            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_arhiva') }}" data-tooltip="Архива на контроли">
-                <span class="sb-icon"><i class="fas fa-folder-open"></i></span>
-                <span class="sb-label">Архива на контроли</span>
-            </a>
-            {% endif %}
-            {% if 'kvalitet_template' in allowed %}
-            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_template_manager') }}" data-tooltip="QC шаблони">
-                <span class="sb-icon"><i class="fas fa-sliders"></i></span>
-                <span class="sb-label">QC шаблони</span>
-            </a>
-            {% endif %}
-
-            {% if 'nabavki' in allowed or 'nabavki_arhiva' in allowed or 'ponudi' in allowed or 'ponudi_arhiva' in allowed %}
-            <div class="sb-group"><i class="fas fa-cart-shopping" style="font-size:0.7rem;"></i> Набавки</div>
-            {% endif %}
-            {% if 'nabavki' in allowed %}
-            <a class="sb-link" href="{{ url_for('nabavki.nabavki') }}" data-tooltip="Набавки">
-                <span class="sb-icon"><i class="fas fa-shopping-cart"></i></span>
-                <span class="sb-label">Набавки</span>
-            </a>
-            {% endif %}
-            {% if 'nabavki_arhiva' in allowed %}
-            <a class="sb-link" href="{{ url_for('nabavki.arhiva') }}" data-tooltip="Архива на набавки">
-                <span class="sb-icon"><i class="fas fa-archive"></i></span>
-                <span class="sb-label">Архива на набавки</span>
-            </a>
-            {% endif %}
-            {% if 'ponudi' in allowed %}
-            <a class="sb-link" href="{{ url_for('ponudi.ponudi') }}" data-tooltip="Понуди">
-                <span class="sb-icon"><i class="fas fa-file-invoice-dollar"></i></span>
-                <span class="sb-label">Понуди</span>
-            </a>
-            {% endif %}
-            {% if 'ponudi_arhiva' in allowed %}
-            <a class="sb-link" href="{{ url_for('ponudi.arhiva') }}" data-tooltip="Архива на понуди">
-                <span class="sb-icon"><i class="fas fa-box-archive"></i></span>
-                <span class="sb-label">Архива на понуди</span>
-            </a>
-            {% endif %}
-            {% if 'odmori' in allowed or 'baranje_odmor' in allowed or 'odmori_vraboteni' in allowed or 'odmori_kalendar' in allowed or 'odmori_pregled_odmori' in allowed or 'odmori_sekojdnevni_otsustva' in allowed or 'odmori_manager_emails' in allowed %}
-            <div class="sb-group"><i class="fas fa-sun" style="font-size:0.7rem;"></i> Одмори</div>
-            {% endif %}
-            {% if 'odmori' in allowed %}
-            <a class="sb-link" href="{{ url_for('main.odmori') }}" data-tooltip="Одмори">
-                <span class="sb-icon"><i class="fas fa-umbrella-beach"></i></span>
-                <span class="sb-label">Одмори</span>
-            </a>
-            {% endif %}
-            {% if 'baranje_odmor' in allowed %}
-            <a class="sb-link" href="{{ url_for('main.baranje_odmor') }}" data-tooltip="Барање за одмор">
-                <span class="sb-icon"><i class="fas fa-file-signature"></i></span>
-                <span class="sb-label">Барање за одмор</span>
-            </a>
-            {% endif %}
-            {% if 'odmori_vraboteni' in allowed %}
-            <a class="sb-link" href="{{ url_for('odmori.odmori_vraboteni') }}" data-tooltip="Вработени">
-                <span class="sb-icon"><i class="fas fa-users"></i></span>
-                <span class="sb-label">Вработени</span>
-            </a>
-            {% endif %}
-            {% if 'odmori_kalendar' in allowed %}
-            <a class="sb-link" href="{{ url_for('odmori.odmori_kalendar') }}" data-tooltip="Календар">
-                <span class="sb-icon"><i class="fas fa-calendar-alt"></i></span>
-                <span class="sb-label">Календар</span>
-            </a>
-            {% endif %}
-            {% if 'odmori_pregled_odmori' in allowed %}
-            <a class="sb-link" href="{{ url_for('odmori.odmori_pregled_odmori') }}" data-tooltip="Преглед на одмори">
-                <span class="sb-icon"><i class="fas fa-list-check"></i></span>
-                <span class="sb-label">Преглед на одмори</span>
-            </a>
-            {% endif %}
-            {% if 'odmori_sekojdnevni_otsustva' in allowed %}
-            <a class="sb-link" href="{{ url_for('odmori.odmori_sekojdnevni_otsustva') }}" data-tooltip="Секојдневни отсуства">
-                <span class="sb-icon"><i class="fas fa-user-clock"></i></span>
-                <span class="sb-label">Секојдневни отсуства</span>
-            </a>
-            {% endif %}
-            {% if 'odmori_manager_emails' in allowed %}
-            <a class="sb-link" href="{{ url_for('odmori.odmori_manager_emails') }}" data-tooltip="Email за менаџери">
-                <span class="sb-icon"><i class="fas fa-envelope-open-text"></i></span>
-                <span class="sb-label">Email за менаџери</span>
-            </a>
-            {% endif %}
-
-            {% if 'chat' in allowed %}
-            <div style="height:1px; background:var(--sb-border); margin:0.75rem 0.75rem;"></div>
-            <a class="sb-link" href="{{ url_for('chat.chat_page') }}" data-tooltip="Чат">
-                <span class="sb-icon" id="sbChatIcon">
-                    <i class="bi bi-chat-dots-fill"></i>
-                    <span class="sb-badge" id="sbChatBadge"></span>
-                </span>
-                <span class="sb-label">Чат</span>
-            </a>
-            {% endif %}
-
-        {% endif %}
+        
 
         <div style="height:1px; background:var(--sb-border); margin:0.75rem 0.75rem;"></div>
-        <a class="sb-link" href="{{ url_for('auth.logout') }}" data-tooltip="Одјави се" style="color:#ef4444;">
+        <a class="sb-link" href="https://192.168.0.20/logout" data-tooltip="Одјави се" style="color:#ef4444;">
             <span class="sb-icon" style="color:#ef4444;"><i class="fas fa-right-from-bracket"></i></span>
             <span class="sb-label">Одјави се</span>
         </a>
 
-        {% else %}
-        <a class="sb-link" href="{{ url_for('auth.login') }}" data-tooltip="Најава">
-            <span class="sb-icon"><i class="fas fa-right-to-bracket"></i></span>
-            <span class="sb-label">Најава</span>
-        </a>
-        {% endif %}
+        
 
     </div>
 </aside>
@@ -1657,27 +1421,463 @@
 
 <!-- MAIN -->
 <main class="container-fluid p-0" id="main-content">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages and request.endpoint != 'auth.login' %}
-        <div class="alert-container">
-            {% for category, message in messages %}
-            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message|safe }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-    {% endwith %}
+    
+        
+    
     <div class="app-page-shell">
         <div class="app-page-inner">
-            {% block content %}{% endblock %}
+            
+<style>
+  .odr-shell {
+    max-width: 1380px;
+  }
+  .odr-hero {
+    border-radius: 30px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top right, rgba(96, 165, 250, 0.22), transparent 28%),
+      radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.12), transparent 24%),
+      linear-gradient(135deg, #0f172a 0%, #172554 48%, #1d4ed8 100%);
+    box-shadow: 0 28px 60px rgba(15, 23, 42, 0.18);
+  }
+  .odr-hero.hero-green {
+    background:
+      radial-gradient(circle at top right, rgba(52, 211, 153, 0.18), transparent 28%),
+      radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.12), transparent 24%),
+      linear-gradient(135deg, #0f172a 0%, #134e4a 45%, #0f766e 100%);
+  }
+  .odr-hero h1 {
+    color: #f8fbff !important;
+    text-shadow: 0 12px 32px rgba(15, 23, 42, 0.24);
+  }
+  .odr-hero p {
+    color: rgba(255,255,255,.88) !important;
+    max-width: 780px;
+  }
+  .odr-mini-stat {
+    min-width: 170px;
+    border-radius: 22px;
+    padding: 1.15rem 1.25rem;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.08);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .odr-kpi {
+    border-radius: 24px;
+    background: #ffffff;
+    border: 1px solid rgba(148,163,184,.18);
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+    padding: 1.35rem 1.45rem;
+    height: 100%;
+  }
+  .odr-kpi-value {
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .odr-kpi-label {
+    color: #64748b;
+    font-size: .92rem;
+    margin-top: .45rem;
+  }
+  .odr-card {
+    border: 0;
+    border-radius: 28px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.09);
+  }
+  .odr-card-header {
+    background: linear-gradient(135deg, #172554 0%, #31477f 100%);
+    color: #fff;
+    padding: 1rem 1.35rem;
+    font-weight: 800;
+  }
+  .odr-card-header.alt {
+    background: linear-gradient(135deg, #0f172a 0%, #1f2937 100%);
+  }
+  .odr-card-header.green {
+    background: linear-gradient(135deg, #14532d 0%, #047857 100%);
+  }
+  .odr-card-header.warning {
+    background: linear-gradient(135deg, #7c2d12 0%, #d97706 100%);
+  }
+  .odr-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .45rem .8rem;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 700;
+    font-size: .82rem;
+    line-height: 1;
+    border: 1px solid rgba(59,130,246,.14);
+  }
+  .odr-chip.success { background: #ecfdf5; color: #047857; border-color: rgba(16,185,129,.16); }
+  .odr-chip.warning { background: #fff7ed; color: #c2410c; border-color: rgba(249,115,22,.18); }
+  .odr-chip.danger { background: #fef2f2; color: #b91c1c; border-color: rgba(239,68,68,.18); }
+  .odr-chip.muted { background: #f8fafc; color: #475569; border-color: rgba(148,163,184,.2); }
+  .odr-grid-card {
+    display: block;
+    height: 100%;
+    text-decoration: none;
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    border: 1px solid rgba(191,219,254,.7);
+    border-radius: 24px;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+    transition: transform .24s ease, box-shadow .24s ease, border-color .24s ease;
+  }
+  .odr-grid-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 22px 44px rgba(15, 23, 42, 0.12);
+    border-color: rgba(96,165,250,.6);
+  }
+  .odr-grid-media {
+    height: 210px;
+    background: linear-gradient(180deg, #eef4ff 0%, #f8fbff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  .odr-grid-media img {
+    max-width: 100%;
+    max-height: 180px;
+    object-fit: contain;
+    border-radius: 18px;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+  }
+  .odr-grid-body {
+    padding: 1.2rem 1.25rem 1.3rem;
+  }
+  .odr-grid-title {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: .35rem;
+  }
+  .odr-grid-subtitle {
+    color: #64748b;
+    margin-bottom: 0;
+    line-height: 1.55;
+  }
+  .odr-table {
+    width: 100%;
+    table-layout: fixed;
+  }
+  .odr-table thead th {
+    background: #223462;
+    color: #fff;
+    font-size: .95rem;
+    padding: .9rem .95rem;
+    vertical-align: middle;
+    white-space: normal;
+  }
+  .odr-table td {
+    padding: .95rem;
+    vertical-align: top;
+    color: #1e293b;
+    word-break: break-word;
+  }
+  .odr-table tbody tr:nth-child(even) {
+    background: rgba(248,250,252,.72);
+  }
+  .odr-table tbody tr:hover {
+    background: rgba(239,246,255,.85);
+  }
+  .odr-table-wrap {
+    overflow-x: auto;
+  }
+  .odr-meta {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  }
+  .odr-meta-item {
+    background: #f8fbff;
+    border: 1px solid rgba(191,219,254,.55);
+    border-radius: 20px;
+    padding: 1rem 1.05rem;
+  }
+  .odr-meta-label {
+    display: block;
+    font-size: .77rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #64748b;
+    margin-bottom: .35rem;
+    font-weight: 700;
+  }
+  .odr-meta-value {
+    color: #0f172a;
+    font-weight: 700;
+  }
+  .odr-form-panel {
+    background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%);
+    border: 1px solid rgba(191,219,254,.6);
+    border-radius: 24px;
+    padding: 1.2rem;
+    height: 100%;
+  }
+  .odr-form-panel .form-label {
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .odr-form-panel .form-control,
+  .odr-form-panel .form-select,
+  .odr-form-panel textarea {
+    border-radius: 16px;
+    border-color: rgba(148,163,184,.45);
+    min-height: 48px;
+  }
+  .odr-form-panel textarea {
+    min-height: 112px;
+  }
+  .odr-form-panel .form-control:focus,
+  .odr-form-panel .form-select:focus,
+  .odr-form-panel textarea:focus {
+    border-color: rgba(59,130,246,.56);
+    box-shadow: 0 0 0 .22rem rgba(59,130,246,.12);
+  }
+  .odr-empty {
+    border: 1px dashed rgba(148,163,184,.45);
+    border-radius: 22px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    color: #64748b;
+    background: linear-gradient(180deg, #fcfdff 0%, #f8fbff 100%);
+  }
+  .odr-timeline {
+    display: grid;
+    gap: 1rem;
+  }
+  .odr-timeline-item {
+    border-radius: 20px;
+    background: #f8fbff;
+    border: 1px solid rgba(191,219,254,.5);
+    padding: 1rem 1.1rem;
+  }
+  .odr-timeline-meta {
+    font-size: .84rem;
+    color: #64748b;
+    margin-bottom: .35rem;
+  }
+  .odr-photo {
+    width: 88px;
+    height: 88px;
+    border-radius: 20px;
+    object-fit: cover;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.1);
+  }
+  .odr-photo-lg {
+    width: 100%;
+    max-height: 260px;
+    object-fit: cover;
+    border-radius: 24px;
+    box-shadow: 0 18px 34px rgba(15, 23, 42, 0.12);
+  }
+  @media (max-width: 991.98px) {
+    .odr-hero {
+      border-radius: 24px;
+    }
+    .odr-mini-stat {
+      min-width: 145px;
+    }
+  }
+</style>
+
+<div class="container py-4 py-lg-5 odr-shell">
+  <div class="odr-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Одржување</div>
+          <h1 class="display-6 fw-bold mb-3">Сервисен центар за машините во производство</h1>
+          <p class="mb-0 fs-5">Еден влез за картон на машини, дефекти, превентивни сервиси, резервни делови и историја на интервенции.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="https://192.168.0.20/odrzuvanje/priracnik/pdf" class="btn btn-light rounded-pill px-4 py-3 fw-semibold shadow-sm align-self-start">
+            <i class="fas fa-file-pdf text-danger me-2"></i>Прирачник PDF
+          </a>
+          <div class="odr-mini-stat">
+            <div class="small text-uppercase opacity-75 mb-2">Машини</div>
+            <div class="fs-2 fw-bold">1</div>
+          </div>
+          <div class="odr-mini-stat">
+            <div class="small text-uppercase opacity-75 mb-2">Активни налози</div>
+            <div class="fs-2 fw-bold">0</div>
+          </div>
+          <div class="odr-mini-stat">
+            <div class="small text-uppercase opacity-75 mb-2">Доспеани планови</div>
+            <div class="fs-2 fw-bold">0</div>
+          </div>
+          <div class="odr-mini-stat">
+            <div class="small text-uppercase opacity-75 mb-2">Стопирани</div>
+            <div class="fs-2 fw-bold">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div class="odr-kpi">
+        <div class="odr-kpi-value">0</div>
+        <div class="odr-kpi-label">Критични и итни отворени налози</div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="odr-kpi">
+        <div class="odr-kpi-value">0</div>
+        <div class="odr-kpi-label">Планови со задоцнување</div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="odr-kpi">
+        <div class="odr-kpi-value">1</div>
+        <div class="odr-kpi-label">Завршени налози овој месец</div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="odr-kpi">
+        <div class="odr-kpi-value">30</div>
+        <div class="odr-kpi-label">Застој овој месец (минути)</div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="odr-kpi">
+        <div class="odr-kpi-value">100.0</div>
+        <div class="odr-kpi-label">Трошок овој месец (ден.)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+      <a href="https://192.168.0.20/odrzuvanje/masini" class="odr-grid-card">
+        <div class="odr-grid-media" style="height:110px;">
+          <i class="fas fa-industry text-primary" style="font-size:3rem;"></i>
+        </div>
+        <div class="odr-grid-body">
+          <div class="odr-grid-title">Машини</div>
+          <p class="odr-grid-subtitle">Кодови, локации, сервисни интервали, QR пристап и сервисни листи.</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <a href="https://192.168.0.20/odrzuvanje/nalozi" class="odr-grid-card">
+        <div class="odr-grid-media" style="height:110px;">
+          <i class="fas fa-clipboard-list text-success" style="font-size:3rem;"></i>
+        </div>
+        <div class="odr-grid-body">
+          <div class="odr-grid-title">Налози</div>
+          <p class="odr-grid-subtitle">Пријава на дефект, доделување, статуси, застој и поврзана набавка.</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <a href="https://192.168.0.20/odrzuvanje/plan" class="odr-grid-card">
+        <div class="odr-grid-media" style="height:110px;">
+          <i class="fas fa-calendar-days text-warning" style="font-size:3rem;"></i>
+        </div>
+        <div class="odr-grid-body">
+          <div class="odr-grid-title">План</div>
+          <p class="odr-grid-subtitle">Превентивно одржување по денови, часови и контролни листи.</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <a href="https://192.168.0.20/odrzuvanje/istorija" class="odr-grid-card">
+        <div class="odr-grid-media" style="height:110px;">
+          <i class="fas fa-clock-rotate-left text-info" style="font-size:3rem;"></i>
+        </div>
+        <div class="odr-grid-body">
+          <div class="odr-grid-title">Историја</div>
+          <p class="odr-grid-subtitle">Завршени интервенции, трошок, застој и машина со најмногу дефекти.</p>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-xl-7">
+      <div class="odr-card h-100">
+        <div class="odr-card-header d-flex justify-content-between align-items-center">
+          <span><i class="fas fa-screwdriver-wrench me-2"></i>Активни налози</span>
+          <a href="https://192.168.0.20/odrzuvanje/nalozi" class="btn btn-light btn-sm rounded-pill px-3">Сите налози</a>
+        </div>
+        <div class="p-3 p-lg-4">
+          
+          <div class="odr-empty">
+            <i class="fas fa-circle-check fs-2 mb-3 d-block"></i>
+            Нема активни налози во моментов.
+          </div>
+          
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-5">
+      <div class="odr-card h-100">
+        <div class="odr-card-header green d-flex justify-content-between align-items-center">
+          <span><i class="fas fa-bell me-2"></i>Планови за денес</span>
+          <a href="https://192.168.0.20/odrzuvanje/plan" class="btn btn-light btn-sm rounded-pill px-3">Планер</a>
+        </div>
+        <div class="p-3 p-lg-4">
+          
+          <div class="odr-empty">
+            <i class="fas fa-calendar-check fs-2 mb-3 d-block"></i>
+            Нема планови што доспеваат денес.
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="odr-card mt-4">
+    <div class="odr-card-header alt d-flex justify-content-between align-items-center">
+      <span><i class="fas fa-barcode me-2"></i>Машини и моментален статус</span>
+      <a href="https://192.168.0.20/odrzuvanje/masini" class="btn btn-light btn-sm rounded-pill px-3">Отвори картотека</a>
+    </div>
+    <div class="p-3 p-lg-4">
+      
+      <div class="row g-3">
+        
+        <div class="col-lg-3 col-md-4 col-sm-6">
+          <a href="https://192.168.0.20/odrzuvanje/masini/3" class="odr-grid-card">
+            <div class="odr-grid-media" style="height:140px;">
+              
+              <i class="fas fa-cogs text-secondary" style="font-size:2.4rem;"></i>
+              
+            </div>
+            <div class="odr-grid-body">
+              <div class="odr-grid-title">Mashina za rolovanje</div>
+              <div class="small text-muted mb-2">1234567 · 1</div>
+              <span class="odr-chip success">
+                работи
+              </span>
+            </div>
+          </a>
+        </div>
+        
+      </div>
+      
+    </div>
+  </div>
+</div>
+
         </div>
     </div>
 </main>
 
 <!-- ══ CHAT WIDGET (вграден директно) ══════════════════════════ -->
-{% if session.user %}
+
 
 <!-- Notification permission banner -->
 <div class="notif-perm-banner" id="notifPermBanner">
@@ -1707,7 +1907,7 @@
             </div>
         </div>
         <div class="cwp-header-actions">
-            <a href="{{ url_for('chat.chat_page') }}" title="Отвори цел чат" target="_self">
+            <a href="https://192.168.0.20/chat/page" title="Отвори цел чат" target="_self">
                 <i class="fas fa-expand"></i>
             </a>
             <button onclick="toggleChatWidget()" title="Затвори">
@@ -1735,7 +1935,7 @@
 <script>
 (function() {
     // Конфигурација
-    const ME = {{ session.user | tojson }};
+    const ME = "Nikola";
     let globalRoomId = null;
     let lastId = 0;
     let pollTimer = null;
@@ -1982,7 +2182,7 @@
     initWidget();
 })();
 </script>
-{% endif %}
+
 
 <!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -2047,7 +2247,7 @@ if ('serviceWorker' in navigator) {
 </script>
 
 <script>
-const APP_INSTALL_META = {{ app_install_meta|tojson }};
+const APP_INSTALL_META = {"android": {"available": true, "download_url": "/android/latest-apk", "last_updated": "02-04-2026 18:49", "size_bytes": 5123171, "version_code": 3, "version_key": "1.0.2-3-1775148566", "version_name": "1.0.2"}, "web": {"name": "Fersedo Web App"}};
 const APP_INSTALL_SEEN_APK_KEY = 'fersedoSeenAndroidVersion';
 const APP_INSTALL_DISMISS_PREFIX = 'fersedoInstallDismissed:';
 let deferredPrompt = null;
@@ -2227,7 +2427,7 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 
 <script>
-const VAPID_PUBLIC_KEY = "{{ VAPID_PUBLIC_KEY }}";
+const VAPID_PUBLIC_KEY = "BA-HmELjdH9VZGbSoEPSYlaW6YWta2s4V2xZvSWXDW_QNl4DRBKtUdV7bpkQycqmTvVbssBbYDl3EtyvbUei7n8";
 async function subscribeToPush() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
     try {
@@ -2254,4 +2454,3 @@ window.addEventListener('load', subscribeToPush);
 
 </body>
 </html>
-

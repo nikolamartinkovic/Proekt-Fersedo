@@ -16,7 +16,7 @@ from werkzeug.utils import secure_filename
 
 from utils.db import get_db
 from utils.config import STATIC_FOLDER, FONT_DIR
-from utils.decorators import login_required, module_required
+from utils.decorators import admin_required, login_required, module_required
 
 kvalitet_bp = Blueprint("kvalitet", __name__, url_prefix="/kvalitet")
 
@@ -394,6 +394,78 @@ def uredi_kontrola(kontrola_id):
 # ─────────────────────────────────────────────────────────────
 # TEMPLATE MANAGER
 # ─────────────────────────────────────────────────────────────
+@kvalitet_bp.route("/arhiva/delete/<int:kontrola_id>", methods=["POST"])
+@login_required
+@admin_required
+def delete_kontrola_arhiva(kontrola_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    return_q = request.form.get("q", "").strip()
+    try:
+        kontrola = cursor.execute(
+            "SELECT id, pdf_file, original_pdf_file FROM kvalitet_kontrola WHERE id = ?",
+            (kontrola_id,),
+        ).fetchone()
+        if not kontrola:
+            flash("Контролата не постои!", "warning")
+            return redirect(url_for("kvalitet.kvalitet_arhiva", q=return_q))
+
+        pdf_files = set()
+        if kontrola["pdf_file"]:
+            pdf_files.add(kontrola["pdf_file"])
+        if kontrola["original_pdf_file"]:
+            pdf_files.add(kontrola["original_pdf_file"])
+
+        version_rows = cursor.execute(
+            "SELECT pdf_file FROM kvalitet_pdf_verzii WHERE kontrola_id = ?",
+            (kontrola_id,),
+        ).fetchall()
+        for row in version_rows:
+            if row["pdf_file"]:
+                pdf_files.add(row["pdf_file"])
+
+        image_files = set()
+        image_rows = cursor.execute(
+            "SELECT slika FROM kvalitet_odgovori WHERE kontrola_id = ?",
+            (kontrola_id,),
+        ).fetchall()
+        for row in image_rows:
+            if row["slika"]:
+                image_files.add(row["slika"])
+
+        cursor.execute("DELETE FROM kvalitet_pdf_verzii WHERE kontrola_id = ?", (kontrola_id,))
+        cursor.execute("DELETE FROM kvalitet_odgovori WHERE kontrola_id = ?", (kontrola_id,))
+        cursor.execute("DELETE FROM kvalitet_kontrola WHERE id = ?", (kontrola_id,))
+        conn.commit()
+
+        pdf_dir = os.path.join(STATIC_FOLDER, "kvalitet_pdf")
+        for filename in pdf_files:
+            try:
+                fpath = os.path.join(pdf_dir, filename)
+                if os.path.exists(fpath):
+                    os.remove(fpath)
+            except Exception:
+                pass
+
+        images_dir = os.path.join(STATIC_FOLDER, "kvalitet_sliki")
+        for filename in image_files:
+            try:
+                fpath = os.path.join(images_dir, filename)
+                if os.path.exists(fpath):
+                    os.remove(fpath)
+            except Exception:
+                pass
+
+        flash("Контролата е успешно избришана.", "success")
+    except Exception as e:
+        conn.rollback()
+        flash(f"Грешка при бришење: {str(e)}", "danger")
+    finally:
+        conn.close()
+
+    return redirect(url_for("kvalitet.kvalitet_arhiva", q=return_q))
+
+
 @kvalitet_bp.route("/template", methods=["GET"])
 @login_required
 @module_required("kvalitet_template")

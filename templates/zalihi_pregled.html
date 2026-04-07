@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<div class="container-fluid py-5" style="max-width:1700px;">
+<div class="container-fluid py-5 zalihi-pregled-page" style="max-width:1700px;">
     <h1 class="text-center mb-2 fw-bold" style="color: var(--primary);">Преглед по PN</h1>
     <p class="text-center text-muted mb-5">Платена · Неплатена · Залиха за профактура</p>
 
@@ -46,12 +46,12 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="input-group input-group-sm">
-                                            <input type="number" class="form-control text-center"
+                                        <div class="input-group input-group-sm zalihi-transfer-group">
+                                            <input type="number" class="form-control text-center zalihi-transfer-input"
                                                    id="premesti_platena_{{ art.part_number }}"
                                                    min="1" max="{{ art.kolicina_platena }}"
                                                    placeholder="кол.">
-                                            <button class="btn btn-outline-warning btn-sm fw-bold"
+                                            <button class="btn btn-outline-warning btn-sm fw-bold zalihi-transfer-btn"
                                                     onclick="premestiZaliha('{{ art.part_number }}', {{ art.id }}, 1, 0)">
                                                 → Неплат.
                                             </button>
@@ -110,12 +110,12 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="input-group input-group-sm">
-                                            <input type="number" class="form-control text-center"
+                                        <div class="input-group input-group-sm zalihi-transfer-group">
+                                            <input type="number" class="form-control text-center zalihi-transfer-input"
                                                    id="premesti_neplatena_{{ art.part_number }}"
                                                    min="1" max="{{ art.kolicina_neplatena }}"
                                                    placeholder="кол.">
-                                            <button class="btn btn-outline-success btn-sm fw-bold"
+                                            <button class="btn btn-outline-success btn-sm fw-bold zalihi-transfer-btn"
                                                     onclick="premestiZaliha('{{ art.part_number }}', {{ art.id }}, 0, 1)">
                                                 → Платена
                                             </button>
@@ -288,6 +288,57 @@ function showToast(msg, type = 'success') {
 
 <style>
 @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+
+.zalihi-pregled-page .zalihi-transfer-group {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    width: 100%;
+}
+
+.zalihi-pregled-page .zalihi-transfer-input {
+    flex: 0 0 78px;
+    min-width: 78px;
+    max-width: 78px;
+    min-height: 42px;
+    padding: 0.35rem 0.45rem;
+    font-size: 0.95rem;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.zalihi-pregled-page .zalihi-transfer-btn {
+    flex: 1 1 auto;
+    min-height: 42px;
+    padding: 0.35rem 0.75rem;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+.zalihi-pregled-page .table td,
+.zalihi-pregled-page .table th {
+    vertical-align: middle;
+}
+
+.zalihi-pregled-page .table td .small {
+    display: block;
+    white-space: normal;
+}
+
+@media (max-width: 1500px) {
+    .zalihi-pregled-page .zalihi-transfer-input {
+        flex-basis: 68px;
+        min-width: 68px;
+        max-width: 68px;
+    }
+
+    .zalihi-pregled-page .zalihi-transfer-btn {
+        font-size: 0.84rem;
+        padding-inline: 0.55rem;
+    }
+}
 </style>
 
 {% endblock %}

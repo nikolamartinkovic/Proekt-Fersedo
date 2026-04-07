@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Одржување{% endblock %}
+
+{% block content %}
+{% include "_odrzuvanje_styles.html" %}
+
+<div class="container py-4 py-lg-5 odr-shell">
+  <div class="odr-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Одржување</div>
+          <h1 class="display-6 fw-bold mb-3">Сервисен центар за машините во производство</h1>
+          <p class="mb-0 fs-5">Еден влез за картон на машини, дефекти, превентивни сервиси, резервни делови и историја на интервенции.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="{{ url_for('odrzuvanje.manual_pdf') }}" class="btn btn-light rounded-pill px-4 py-3 fw-semibold shadow-sm align-self-start">
+            <i class="fas fa-file-pdf text-danger me-2"></i>Прирачник PDF
+          </a>
+          <div class="odr-mini-stat">
+            <div class="small text-uppercase opacity-75 mb-2">Машини</div>
+            <div class="fs-2 fw-bold">{{ stats.machines }}</div>
+          </div>
+          <div class="odr-mini-stat">
+            <div class="small text-uppercase opacity-75 mb-2">Активни налози</div>
+            <div class="fs-2 fw-bold">{{ stats.active_orders }}</div>
+          </div>
+          <div class="odr-mini-stat">
+            <div class="small text-uppercase opacity-75 mb-2">Доспеани планови</div>
+            <div class="fs-2 fw-bold">{{ stats.due_plans }}</div>
+          </div>
+          <div class="odr-mini-stat">
+            <div class="small text-uppercase opacity-75 mb-2">Стопирани</div>
+            <div class="fs-2 fw-bold">{{ stats.stopped }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div class="odr-kpi">
+        <div class="odr-kpi-value">{{ stats.critical_open }}</div>
+        <div class="odr-kpi-label">Критични и итни отворени налози</div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="odr-kpi">
+        <div class="odr-kpi-value">{{ stats.overdue_plans }}</div>
+        <div class="odr-kpi-label">Планови со задоцнување</div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="odr-kpi">
+        <div class="odr-kpi-value">{{ stats.completed_month }}</div>
+        <div class="odr-kpi-label">Завршени налози овој месец</div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="odr-kpi">
+        <div class="odr-kpi-value">{{ stats.monthly_downtime }}</div>
+        <div class="odr-kpi-label">Застој овој месец (минути)</div>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="odr-kpi">
+        <div class="odr-kpi-value">{{ stats.monthly_cost }}</div>
+        <div class="odr-kpi-label">Трошок овој месец (ден.)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-3 col-md-6">
+      <a href="{{ url_for('odrzuvanje.machines') }}" class="odr-grid-card">
+        <div class="odr-grid-media" style="height:110px;">
+          <i class="fas fa-industry text-primary" style="font-size:3rem;"></i>
+        </div>
+        <div class="odr-grid-body">
+          <div class="odr-grid-title">Машини</div>
+          <p class="odr-grid-subtitle">Кодови, локации, сервисни интервали, QR пристап и сервисни листи.</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <a href="{{ url_for('odrzuvanje.orders') }}" class="odr-grid-card">
+        <div class="odr-grid-media" style="height:110px;">
+          <i class="fas fa-clipboard-list text-success" style="font-size:3rem;"></i>
+        </div>
+        <div class="odr-grid-body">
+          <div class="odr-grid-title">Налози</div>
+          <p class="odr-grid-subtitle">Пријава на дефект, доделување, статуси, застој и поврзана набавка.</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <a href="{{ url_for('odrzuvanje.plan') }}" class="odr-grid-card">
+        <div class="odr-grid-media" style="height:110px;">
+          <i class="fas fa-calendar-days text-warning" style="font-size:3rem;"></i>
+        </div>
+        <div class="odr-grid-body">
+          <div class="odr-grid-title">План</div>
+          <p class="odr-grid-subtitle">Превентивно одржување по денови, часови и контролни листи.</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <a href="{{ url_for('odrzuvanje.history') }}" class="odr-grid-card">
+        <div class="odr-grid-media" style="height:110px;">
+          <i class="fas fa-clock-rotate-left text-info" style="font-size:3rem;"></i>
+        </div>
+        <div class="odr-grid-body">
+          <div class="odr-grid-title">Историја</div>
+          <p class="odr-grid-subtitle">Завршени интервенции, трошок, застој и машина со најмногу дефекти.</p>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-xl-7">
+      <div class="odr-card h-100">
+        <div class="odr-card-header d-flex justify-content-between align-items-center">
+          <span><i class="fas fa-screwdriver-wrench me-2"></i>Активни налози</span>
+          <a href="{{ url_for('odrzuvanje.orders') }}" class="btn btn-light btn-sm rounded-pill px-3">Сите налози</a>
+        </div>
+        <div class="p-3 p-lg-4">
+          {% if active_orders %}
+          <div class="odr-table-wrap">
+            <table class="table odr-table mb-0">
+              <thead>
+                <tr>
+                  <th style="width:16%;">Број</th>
+                  <th style="width:25%;">Машина</th>
+                  <th style="width:19%;">Тип / Приоритет</th>
+                  <th style="width:20%;">Доделено</th>
+                  <th style="width:20%;">Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in active_orders %}
+                <tr>
+                  <td><a href="{{ url_for('odrzuvanje.order_detail', order_id=row.id) }}" class="fw-bold text-decoration-none">{{ row.broj }}</a></td>
+                  <td>
+                    <div class="fw-semibold">{{ row.masina_naziv }}</div>
+                    <div class="small text-muted">{{ row.masina_kod }}</div>
+                  </td>
+                  <td>
+                    <div>{{ row.tip or '—' }}</div>
+                    <div class="small text-muted">{{ row.prioritet or '—' }}</div>
+                  </td>
+                  <td>{{ row.dodeleno_na or 'Нераспределен' }}</td>
+                  <td><span class="odr-chip">{{ row.status }}</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="odr-empty">
+            <i class="fas fa-circle-check fs-2 mb-3 d-block"></i>
+            Нема активни налози во моментов.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-5">
+      <div class="odr-card h-100">
+        <div class="odr-card-header green d-flex justify-content-between align-items-center">
+          <span><i class="fas fa-bell me-2"></i>Планови за денес</span>
+          <a href="{{ url_for('odrzuvanje.plan') }}" class="btn btn-light btn-sm rounded-pill px-3">Планер</a>
+        </div>
+        <div class="p-3 p-lg-4">
+          {% if due_plans %}
+          <div class="odr-timeline">
+            {% for row in due_plans %}
+            <div class="odr-timeline-item">
+              <div class="d-flex justify-content-between gap-3">
+                <div>
+                  <div class="fw-bold">{{ row.naziv }}</div>
+                  <div class="small text-muted">{{ row.masina_naziv }} · {{ row.masina_kod }}</div>
+                </div>
+                <span class="odr-chip warning">{{ row.tip or 'План' }}</span>
+              </div>
+              <div class="small text-muted mt-2">Следно извршување: {{ row.sledno_izvrsuvanje or '—' }}</div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="odr-empty">
+            <i class="fas fa-calendar-check fs-2 mb-3 d-block"></i>
+            Нема планови што доспеваат денес.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="odr-card mt-4">
+    <div class="odr-card-header alt d-flex justify-content-between align-items-center">
+      <span><i class="fas fa-barcode me-2"></i>Машини и моментален статус</span>
+      <a href="{{ url_for('odrzuvanje.machines') }}" class="btn btn-light btn-sm rounded-pill px-3">Отвори картотека</a>
+    </div>
+    <div class="p-3 p-lg-4">
+      {% if machines %}
+      <div class="row g-3">
+        {% for machine in machines[:8] %}
+        <div class="col-lg-3 col-md-4 col-sm-6">
+          <a href="{{ url_for('odrzuvanje.machine_detail', machine_id=machine.id) }}" class="odr-grid-card">
+            <div class="odr-grid-media" style="height:140px;">
+              {% if machine.slika %}
+              <img src="{{ url_for('static', filename='uploads/odrzuvanje/masini/' ~ machine.slika) }}" alt="{{ machine.naziv }}">
+              {% else %}
+              <i class="fas fa-cogs text-secondary" style="font-size:2.4rem;"></i>
+              {% endif %}
+            </div>
+            <div class="odr-grid-body">
+              <div class="odr-grid-title">{{ machine.naziv }}</div>
+              <div class="small text-muted mb-2">{{ machine.kod }} · {{ machine.linija or 'Без линија' }}</div>
+              <span class="odr-chip {% if machine.status == 'работи' %}success{% elif machine.status == 'стопирана' %}danger{% else %}warning{% endif %}">
+                {{ machine.status or '—' }}
+              </span>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="odr-empty">
+        <i class="fas fa-industry fs-2 mb-3 d-block"></i>
+        Сѐ уште нема внесени машини.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

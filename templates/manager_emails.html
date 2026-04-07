@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container" style="max-width: 960px; margin: 4rem auto 5rem; padding: 0 1rem;">
+<div class="container manager-emails-page" style="max-width: 960px; margin: 4rem auto 5rem; padding: 0 1rem;">
 
-    <div class="text-center mb-5">
-        <h1 style="font-weight:800;color:var(--primary);font-size:clamp(1.8rem,6vw,2.6rem);margin-bottom:.5rem;">
+    <div class="page-hero text-center mb-5">
+        <h1 style="font-weight:800;font-size:clamp(1.8rem,6vw,2.6rem);margin-bottom:.5rem;">
             <i class="fas fa-envelope-open-text me-2"></i> Email примачи за отсуства
         </h1>
-        <p style="font-size:1.1rem;color:var(--text-secondary);">
+        <p style="font-size:1.1rem;">
             Менаџери кои ги добиваат дневните и неделните извештаи, а по избор и известување за ново поднесено барање.
         </p>
     </div>
@@ -28,14 +28,14 @@
 
     <div class="row g-3 mb-4">
         <div class="col-sm-6">
-            <div class="card border-0 shadow-sm text-center py-4" style="background:linear-gradient(135deg,#1e40af,#1d4ed8);color:#fff;border-radius:14px;">
+            <div class="card border-0 shadow-sm text-center py-4 manager-stat-card manager-stat-card--daily">
                 <div class="fs-2 mb-1"><i class="fas fa-sun"></i></div>
                 <div class="fw-bold fs-6">Дневен извештај</div>
                 <div class="opacity-75 mt-1" style="font-size:.9rem;">Секој ден во <strong>08:00</strong></div>
             </div>
         </div>
         <div class="col-sm-6">
-            <div class="card border-0 shadow-sm text-center py-4" style="background:linear-gradient(135deg,#065f46,#059669);color:#fff;border-radius:14px;">
+            <div class="card border-0 shadow-sm text-center py-4 manager-stat-card manager-stat-card--weekly">
                 <div class="fs-2 mb-1"><i class="fas fa-calendar-week"></i></div>
                 <div class="fw-bold fs-6">Неделен извештај</div>
                 <div class="opacity-75 mt-1" style="font-size:.9rem;">Секој <strong>петок</strong> во <strong>15:00</strong></div>
@@ -256,5 +256,26 @@
 .card { transition: box-shadow .2s ease; }
 .card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.1) !important; }
 .table-hover tbody tr:hover { background: rgba(220,38,38,.04); }
+
+.manager-emails-page .manager-stat-card {
+    color: #fff !important;
+    border: none !important;
+    border-radius: 18px !important;
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.14) !important;
+}
+
+.manager-emails-page .manager-stat-card .fs-2,
+.manager-emails-page .manager-stat-card .fw-bold,
+.manager-emails-page .manager-stat-card .opacity-75 {
+    color: #fff !important;
+}
+
+.manager-emails-page .manager-stat-card--daily {
+    background: linear-gradient(135deg, #1e40af, #1d4ed8) !important;
+}
+
+.manager-emails-page .manager-stat-card--weekly {
+    background: linear-gradient(135deg, #065f46, #059669) !important;
+}
 </style>
 {% endblock %}

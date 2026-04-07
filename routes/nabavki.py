@@ -185,11 +185,54 @@ def delete_selected():
         conn = get_db()
         cursor = conn.cursor()
         placeholders = ",".join("?" for _ in selected_ids)
+        linked_orders = cursor.execute(
+            f"""
+            SELECT l.nalog_id, l.nabavka_request_id,
+                   COALESCE(NULLIF(r.nalog_broj, ''), '#' || r.id) AS request_broj
+            FROM odrzuvanje_nalog_nabavki l
+            JOIN nabavki_requests r ON r.id = l.nabavka_request_id
+            WHERE l.nabavka_request_id IN ({placeholders})
+            """,
+            selected_ids,
+        ).fetchall()
+        if linked_orders:
+            cursor.execute(
+                f"DELETE FROM odrzuvanje_nalog_nabavki WHERE nabavka_request_id IN ({placeholders})",
+                selected_ids,
+            )
+            cursor.execute(
+                f"""
+                UPDATE odrzuvanje_nalog_delovi
+                SET nabavka_request_id = NULL,
+                    source_type = 'избришана набавка'
+                WHERE nabavka_request_id IN ({placeholders})
+                """,
+                selected_ids,
+            )
+            for link in linked_orders:
+                cursor.execute(
+                    """
+                    INSERT INTO odrzuvanje_nalog_aktivnosti (nalog_id, tip, poraka, created_by)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (
+                        link["nalog_id"],
+                        "procurement",
+                        f"Поврзаното барање за набавка {link['request_broj']} е избришано од модулот Набавки.",
+                        session.get("user", ""),
+                    ),
+                )
+                cursor.execute(
+                    "UPDATE odrzuvanje_nalozi SET updated_at = ? WHERE id = ?",
+                    (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), link["nalog_id"]),
+                )
         cursor.execute(f"DELETE FROM nabavki_requests WHERE id IN ({placeholders})", selected_ids)
         count = cursor.rowcount
         conn.commit()
         flash(f"Успешно избришани {count} барања!", "success")
     except Exception as e:
+        if conn:
+            conn.rollback()
         flash(f"Грешка при бришење: {str(e)}", "danger")
     finally:
         if conn:

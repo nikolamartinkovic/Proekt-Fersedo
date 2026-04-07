@@ -2,7 +2,99 @@
 
 {% block content %}
 
-<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+<style>
+    .vraboteni-page {
+        max-width: 1360px !important;
+    }
+    .vraboteni-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .vraboteni-table {
+        width: 100%;
+        min-width: 0 !important;
+        table-layout: fixed;
+    }
+    .vraboteni-table thead th {
+        white-space: normal;
+        word-break: break-word;
+        font-size: 0.88rem;
+        line-height: 1.2;
+        padding: 0.8rem 0.65rem;
+    }
+    .vraboteni-table tbody td {
+        padding: 0.8rem 0.65rem;
+        font-size: 0.92rem;
+        vertical-align: middle;
+        word-break: break-word;
+    }
+    .vraboteni-table td:nth-child(1),
+    .vraboteni-table th:nth-child(1) {
+        width: 12%;
+    }
+    .vraboteni-table td:nth-child(2),
+    .vraboteni-table th:nth-child(2) {
+        width: 11%;
+    }
+    .vraboteni-table td:nth-child(3),
+    .vraboteni-table th:nth-child(3) {
+        width: 15%;
+        white-space: normal;
+        word-break: break-word;
+    }
+    .vraboteni-table td:nth-child(4),
+    .vraboteni-table th:nth-child(4),
+    .vraboteni-table td:nth-child(5),
+    .vraboteni-table th:nth-child(5),
+    .vraboteni-table td:nth-child(6),
+    .vraboteni-table th:nth-child(6) {
+        width: 10%;
+    }
+    .vraboteni-table td:nth-child(7),
+    .vraboteni-table th:nth-child(7) {
+        width: 8%;
+        text-align: center;
+    }
+    .vraboteni-table td:nth-child(8),
+    .vraboteni-table th:nth-child(8) {
+        width: 16% !important;
+    }
+    .vraboteni-table td:nth-child(9),
+    .vraboteni-table th:nth-child(9) {
+        width: 8%;
+    }
+    .vraboteni-table td:last-child {
+        white-space: normal;
+    }
+    .vraboteni-table td:last-child .btn-sm {
+        display: block;
+        width: 100%;
+        margin-right: 0 !important;
+        margin-bottom: 0.4rem;
+        padding: 0.42rem 0.5rem;
+        font-size: 0.78rem;
+        white-space: normal;
+        line-height: 1.2;
+    }
+    .vraboteni-table td:last-child form {
+        display: block !important;
+    }
+    .vraboteni-table td:last-child form .btn-sm {
+        margin-bottom: 0;
+    }
+    .vraboteni-table .progress {
+        margin-bottom: 0.15rem;
+    }
+    @media (max-width: 1200px) {
+        .vraboteni-table thead th,
+        .vraboteni-table tbody td {
+            padding: 0.72rem 0.55rem;
+            font-size: 0.86rem;
+        }
+    }
+</style>
+
+<div class="container vraboteni-page" style="margin: 4rem auto 5rem; padding: 0 1rem;">
     <div class="text-center mb-5 pb-4">
         <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.5rem;">
             Управување со вработени
@@ -207,8 +299,8 @@
         </div>
 
         <div class="card-body p-0">
-            <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-                <table class="table table-hover table-striped mb-0 align-middle" style="width: 100%; min-width: 1100px;">
+            <div class="table-responsive vraboteni-table-wrap">
+                <table class="table table-hover table-striped mb-0 align-middle vraboteni-table">
                     <thead class="table-dark">
                         <tr>
                             <th>Име и Презиме</th>
@@ -489,6 +581,13 @@
 </style>
 
 <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.modal').forEach(function (modalEl) {
+            if (modalEl.parentElement !== document.body) {
+                document.body.appendChild(modalEl);
+            }
+        });
+    });
     // +/- копчиња за денови
     function adjustDays(inputId, delta) {
         const inp = document.getElementById(inputId);

@@ -14,6 +14,13 @@
       linear-gradient(135deg, #0f172a 0%, #134e4a 55%, #0f766e 100%);
     box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
   }
+  .kvalitet-archive-hero h1 {
+    color: #f8fbff !important;
+    text-shadow: 0 18px 48px rgba(15, 23, 42, 0.24);
+  }
+  .kvalitet-archive-hero p {
+    color: rgba(255,255,255,.92) !important;
+  }
   .kvalitet-panel,
   .kvalitet-table-card {
     border-radius: 24px;
@@ -137,10 +144,22 @@
               {% endif %}
             </td>
             <td>
-              <a href="{{ url_for('kvalitet.uredi_kontrola', kontrola_id=k.id) }}"
-                 class="btn btn-sm btn-outline-dark rounded-pill px-3">
-                <i class="fas fa-edit me-1"></i>Уреди
-              </a>
+              <div class="d-flex flex-wrap gap-2">
+                <a href="{{ url_for('kvalitet.uredi_kontrola', kontrola_id=k.id) }}"
+                   class="btn btn-sm btn-outline-dark rounded-pill px-3">
+                  <i class="fas fa-edit me-1"></i>Уреди
+                </a>
+                {% if session.get("is_admin") %}
+                <form method="POST" action="{{ url_for('kvalitet.delete_kontrola_arhiva', kontrola_id=k.id) }}" class="d-inline">
+                  <input type="hidden" name="q" value="{{ query or '' }}">
+                  <button type="submit"
+                          class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                          onclick="return confirm('Дали сигурно сакате да ја избришете оваа контрола?')">
+                    <i class="fas fa-trash-alt me-1"></i>Избриши
+                  </button>
+                </form>
+                {% endif %}
+              </div>
             </td>
           </tr>
           {% endfor %}

@@ -592,6 +592,7 @@ def odmori_pregled_odmori():
 @module_required("odmori_sekojdnevni_otsustva")
 def odmori_sekojdnevni_otsustva():
     conn = get_db(); cursor = conn.cursor()
+    selected_day = (request.args.get("day") or "").strip()
     vraboteni = cursor.execute("SELECT id, ime, prezime FROM vraboteni ORDER BY prezime, ime").fetchall()
     if request.method == "POST":
         action = request.form.get("action")
@@ -610,12 +611,12 @@ def odmori_sekojdnevni_otsustva():
         elif action == "delete":
             oid = request.form.get("otsustvo_id")
             if not session.get("is_admin"):
-                flash("???? ????????????? ???? ?? ????? ??????.", "danger")
+                flash("Само администратор може да брише отсуства.", "danger")
             elif oid:
                 try:
                     cursor.execute("DELETE FROM sekojdnevni_otsustva WHERE id=?", (oid,))
-                    conn.commit(); flash("?????????? ? ??????? ?????????!", "success")
-                except Exception as e: flash(f"??????: {e}", "danger")
+                    conn.commit(); flash("Отсуството е успешно избришано!", "success")
+                except Exception as e: flash(f"Грешка: {e}", "danger")
         elif action == "edit":
             oid = request.form.get("otsustvo_id")
             if oid:
@@ -667,7 +668,7 @@ def odmori_sekojdnevni_otsustva():
         tip_summary=dict(tip_summary), week_days_list=week_days_list,
         week_start=week_start.strftime("%d-%m-%Y"), week_end=week_end.strftime("%d-%m-%Y"),
         today=today.strftime("%d-%m-%Y"), today_str=today_str,
-        odmori_denes=odmori_denes, odmori_nedela=odmori_nedela)
+        odmori_denes=odmori_denes, odmori_nedela=odmori_nedela, selected_day=selected_day)
     
 @odmori_bp.route("/nedeli")
 @login_required

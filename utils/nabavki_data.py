@@ -17,8 +17,21 @@ STATUS_CLASS_MAP = {
     "Dostaveno": "bg-primary",
     "Zavrseno": "bg-success",
     "Prevzemeno": "bg-success",
+    "Otkazano": "bg-danger",
     "креирано": "bg-secondary",
 }
+
+KNOWN_STATUS_VALUES = set(STATUS_CLASS_MAP)
+
+
+def normalize_request_status(status):
+    value = (status or "").strip()
+    if not value:
+        return "креирано"
+    if value in KNOWN_STATUS_VALUES:
+        return value
+    # Legacy/garbled values should still render as the initial request state.
+    return "креирано"
 
 
 def fetch_requests_with_comments(cursor, filter_type, current_user, is_nabavki_user):
@@ -52,6 +65,9 @@ def fetch_requests_with_comments(cursor, filter_type, current_user, is_nabavki_u
     requests_list = []
     for row in rows:
         item = dict(row)
+        item["status_norm"] = normalize_request_status(item.get("status"))
+        item["status_display"] = item["status_norm"].capitalize()
+        item["status_class"] = STATUS_CLASS_MAP.get(item["status_norm"], "bg-secondary")
         item["datum_kreiranje_formatted"] = (
             _format_cet(item["datum_kreiranje"]) if item.get("datum_kreiranje") else "-"
         )
@@ -223,7 +239,9 @@ def build_api_tbody_html(requests_list, can_manage):
             if req.get("slika")
             else '<span class="text-muted">Нема</span>'
         )
-        status_cls = STATUS_CLASS_MAP.get(req.get("status", "креирано"), "bg-secondary")
+        status_norm = req.get("status_norm") or normalize_request_status(req.get("status"))
+        status_cls = STATUS_CLASS_MAP.get(status_norm, "bg-secondary")
+        status_display = req.get("status_display") or status_norm.capitalize()
         prevzemeno = (
             f'<strong class="text-success">{req["prevzemeno_od"]}</strong>'
             + (
@@ -258,7 +276,7 @@ def build_api_tbody_html(requests_list, can_manage):
                 <td>{req.get("datum_itnost", "—")}</td>
                 <td><span class="fw-bold text-success">{req["days_remaining"]}</span></td>
                 <td>{slika_cell}</td>
-                <td><span class="badge fs-6 py-2 px-4 rounded-pill {status_cls}">{req.get("status", "креирано").title()}</span></td>
+                <td><span class="badge fs-6 py-2 px-4 rounded-pill {status_cls}">{status_display}</span></td>
                 <td>{prevzemeno}</td>
                 <td>
                     <button type="button" class="btn btn-outline-primary btn-lg px-4 py-2"

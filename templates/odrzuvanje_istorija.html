@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Одржување · Историја{% endblock %}
+
+{% block content %}
+{% include "_odrzuvanje_styles.html" %}
+
+<div class="container py-4 py-lg-5 odr-shell">
+  <div class="odr-hero hero-green mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Историја и анализа</div>
+          <h1 class="display-6 fw-bold mb-3">Историја на одржување</h1>
+          <p class="mb-0 fs-5">Прегледај ги сите завршени интервенции, трошоци, застои и сервисниот ритам по машина.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-3">
+          <div class="odr-mini-stat">
+            <div class="text-uppercase small text-white-50 mb-2">Завршени налози</div>
+            <div class="display-6 fw-bold mb-0">{{ orders|length }}</div>
+          </div>
+          <div class="odr-mini-stat">
+            <div class="text-uppercase small text-white-50 mb-2">Вкупен трошок</div>
+            <div class="display-6 fw-bold mb-0">{{ total_cost }} ден.</div>
+          </div>
+          <div class="odr-mini-stat">
+            <div class="text-uppercase small text-white-50 mb-2">Застој</div>
+            <div class="display-6 fw-bold mb-0">{{ total_downtime }} мин.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-xl-8">
+      <div class="odr-card h-100">
+        <div class="odr-card-header"><i class="fas fa-filter me-2"></i>Филтрирај ја историјата</div>
+        <div class="p-3 p-lg-4">
+          <form method="GET" class="odr-form-panel">
+            <div class="row g-3 align-items-end">
+              <div class="col-lg-5">
+                <label class="form-label">Пребарување</label>
+                <input type="text" class="form-control" name="q" value="{{ query or '' }}" placeholder="Број на налог, машина, наслов, одговорен...">
+              </div>
+              <div class="col-lg-3">
+                <label class="form-label">Статус</label>
+                <select class="form-select" name="status">
+                  <option value="">Сите статуси</option>
+                  {% for status in statuses %}
+                  <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-lg-4">
+                <label class="form-label">Тип</label>
+                <select class="form-select" name="tip">
+                  <option value="">Сите типови</option>
+                  {% for tip in order_types %}
+                  <option value="{{ tip }}" {% if selected_type == tip %}selected{% endif %}>{{ tip|capitalize }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12 d-flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-dark rounded-pill px-4">Примени филтер</button>
+                <a href="{{ url_for('odrzuvanje.history') }}" class="btn btn-outline-secondary rounded-pill px-4">Исчисти</a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="row g-3">
+        <div class="col-md-4 col-xl-12">
+          <div class="odr-kpi">
+            <div class="odr-kpi-value">{{ orders|length }}</div>
+            <div class="odr-kpi-label">Налози во преглед</div>
+          </div>
+        </div>
+        <div class="col-md-4 col-xl-12">
+          <div class="odr-kpi">
+            <div class="odr-kpi-value">{{ total_cost }}</div>
+            <div class="odr-kpi-label">Акумулиран трошок</div>
+          </div>
+        </div>
+        <div class="col-md-4 col-xl-12">
+          <div class="odr-kpi">
+            <div class="odr-kpi-value">{{ total_downtime }}</div>
+            <div class="odr-kpi-label">Минути застој</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="odr-card mb-4">
+    <div class="odr-card-header green"><i class="fas fa-clock-rotate-left me-2"></i>Завршени налози</div>
+    <div class="p-3 p-lg-4">
+      {% if orders %}
+      <div class="odr-table-wrap">
+        <table class="table odr-table mb-0">
+          <thead>
+            <tr>
+              <th style="width:11%;">Број</th>
+              <th style="width:15%;">Машина</th>
+              <th style="width:15%;">Тип</th>
+              <th style="width:24%;">Наслов</th>
+              <th style="width:10%;">Статус</th>
+              <th style="width:10%;">Трошок</th>
+              <th style="width:10%;">Застој</th>
+              <th style="width:15%;">Завршено</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in orders %}
+            <tr>
+              <td>
+                <a href="{{ url_for('odrzuvanje.order_detail', order_id=order.id) }}" class="fw-bold text-decoration-none">{{ order.broj }}</a>
+              </td>
+              <td>
+                <div class="fw-bold">{{ order.masina_kod }}</div>
+                <div class="small text-muted">{{ order.masina_naziv }}</div>
+              </td>
+              <td>{{ order.tip or '—' }}</td>
+              <td>
+                <div class="fw-bold">{{ order.naslov or 'Без наслов' }}</div>
+                {% if order.resenie %}
+                <div class="small text-muted mt-1">{{ order.resenie }}</div>
+                {% endif %}
+              </td>
+              <td>
+                <span class="odr-chip {% if order.status == 'потврден' or order.status == 'завршен' %}success{% elif order.status == 'откажан' %}danger{% endif %}">
+                  {{ order.status }}
+                </span>
+              </td>
+              <td>{{ order.trosok or 0 }} ден.</td>
+              <td>{{ order.zastoj_minuti or 0 }} мин.</td>
+              <td>{{ order.kraj_at or order.updated_at or order.created_at or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="odr-empty">Нема завршени налози за прикажување со избраните филтри.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="odr-card">
+    <div class="odr-card-header alt"><i class="fas fa-industry me-2"></i>Сервисна слика по машина</div>
+    <div class="p-3 p-lg-4">
+      {% if machines %}
+      <div class="row g-4">
+        {% for machine in machines %}
+        <div class="col-md-6 col-xl-4">
+          <div class="odr-form-panel h-100">
+            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <div class="fw-bold fs-5 text-dark">{{ machine.naziv }}</div>
+                <div class="small text-muted">{{ machine.kod }}</div>
+              </div>
+              <span class="odr-chip {% if machine.status == 'работи' %}success{% elif machine.status == 'стопирана' %}danger{% else %}warning{% endif %}">
+                {{ machine.status or '—' }}
+              </span>
+            </div>
+            <div class="odr-meta">
+              <div class="odr-meta-item">
+                <span class="odr-meta-label">Последен сервис</span>
+                <span class="odr-meta-value">{{ machine.posleden_servis_na or 'Нема запис' }}</span>
+              </div>
+              <div class="odr-meta-item">
+                <span class="odr-meta-label">Следна проверка</span>
+                <span class="odr-meta-value">{{ machine.sledna_proverka_na or 'Не е зададена' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="odr-empty">Нема внесени машини во системот.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -390,11 +390,15 @@
                     {% set odmor_count  = day_odmori | length %}
                     {% set vtora_count  = day_records | selectattr('tip','equalto','втора смена') | list | length %}
                     <div class="col">
-                        <div class="text-center p-2 rounded-3 day-cell
-                            {% if wd.is_today %}day-today
-                            {% elif wd.is_weekend %}day-weekend
-                            {% elif day_count > 0 or odmor_count > 0 %}day-active
-                            {% else %}day-empty{% endif %}">
+                        <a href="#dayPreview{{ loop.index }}"
+                            class="text-center p-2 rounded-3 day-cell day-summary-trigger w-100 border-0 text-decoration-none d-block
+                                {% if wd.is_today %}day-today
+                                {% elif wd.is_weekend %}day-weekend
+                                {% elif day_count > 0 or odmor_count > 0 %}day-active
+                                {% else %}day-empty{% endif %}"
+                            aria-expanded="{{ 'true' if selected_day == wd.datum else 'false' }}"
+                            data-day-target="dayPreview{{ loop.index }}"
+                            data-day-date="{{ wd.datum }}">
                             <div class="small fw-bold">{{ wd.label }}</div>
                             {% if day_count > 0 %}
                                 <div class="fs-5 fw-bold mt-1">{{ day_count }}</div>
@@ -420,16 +424,21 @@
                                     </span>
                                 </div>
                             {% endif %}
-                        </div>
+                        </a>
                     </div>
                     {% endfor %}
                 </div>
             </div>
 
             {# ── Детален преглед по ден ── #}
-            <h6 class="fw-bold text-muted mb-4">
+            <h6 id="dayDetailSection" class="fw-bold text-muted mb-4">
                 <i class="fas fa-calendar-alt me-2"></i>Детален преглед по ден
             </h6>
+
+            <div id="dayPreviewEmptyState" class="text-center py-4 px-4 mb-4 rounded-4 border bg-white {% if selected_day %}d-none{% endif %}">
+                <i class="fas fa-hand-pointer fa-2x mb-3 text-muted opacity-50"></i>
+                <p class="mb-0 text-muted fw-semibold">Кликни на ден од „Активност по ден“ за да се прикажат записите.</p>
+            </div>
 
             {% set mk_day_names = ['Понеделник','Вторник','Среда','Четврток','Петок'] %}
             {% for wd in week_days_list %}
@@ -440,15 +449,17 @@
             {% set day_ostanati = day_records | rejectattr('tip','equalto','втора смена') | list %}
             {% set has_anything = day_records | length > 0 or day_odmori | length > 0 %}
 
-            <div class="mb-4 rounded-3 overflow-hidden" style="border:1px solid #e5e7eb;">
-                <div class="d-flex align-items-center justify-content-between px-4 py-2 fw-bold"
-                     style="background:{% if wd.is_today %}#4c1d95{% else %}#374151{% endif %}; color:#fff;">
-                    <span>
+            <div id="dayPreview{{ loop.index }}"
+                 class="mb-4 rounded-3 overflow-hidden day-preview-card {% if selected_day != wd.datum %}d-none{% endif %}"
+                 data-day-panel="{{ wd.datum }}"
+                 style="border:1px solid #e5e7eb;">
+                <div class="day-preview-toggle d-flex align-items-center justify-content-between w-100 px-4 py-3 fw-bold text-start border-0">
+                    <span class="day-preview-title">
                         <i class="fas fa-calendar-day me-2"></i>
                         {{ mk_day_names[loop.index0] }} — {{ wd.datum | replace('-','.') }}
                         {% if wd.is_today %}<span class="badge bg-white text-dark ms-2 fs-7">Денес</span>{% endif %}
                     </span>
-                    <span class="d-flex gap-2">
+                    <span class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
                         {% if day_ostanati | length > 0 %}
                         <span class="badge bg-danger">{{ day_ostanati | length }} отсуства</span>
                         {% endif %}
@@ -460,7 +471,7 @@
                         {% endif %}
                     </span>
                 </div>
-
+                <div>
                 {% if has_anything %}
                 <table class="table table-sm mb-0 align-middle">
                     <thead style="background:#f9fafb;">
@@ -585,6 +596,7 @@
                     <small><i class="fas fa-check me-1"></i>Нема отсуства или одмори</small>
                 </div>
                 {% endif %}
+                </div>
             </div>
             {% endif %}
             {% endfor %}
@@ -874,11 +886,20 @@
     body.modal-open .card,
     body.modal-open .card:hover { box-shadow: none !important; transition: none !important; }
 
-    .day-cell     { transition: transform 0.15s; border: 1px solid #e5e7eb; min-width: 60px; }
+    .day-cell     { transition: transform 0.15s, box-shadow 0.18s ease, border-color 0.18s ease; border: 1px solid #e5e7eb; min-width: 60px; position: relative; z-index: 15; }
     .day-today    { background: #ede9fe; border-color: #7c3aed !important; color: #4c1d95; }
     .day-weekend  { background: #f1f5f9; border-color: #cbd5e1 !important; color: #94a3b8; }
     .day-active   { background: #fef9c3; border-color: #fde047 !important; color: #713f12; }
     .day-empty    { background: #f9fafb; border-color: #e5e7eb !important; color: #9ca3af; }
+    .day-summary-trigger { cursor: pointer; pointer-events: auto !important; position: relative; z-index: 20; }
+    .day-summary-trigger:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08); }
+    .day-summary-trigger[aria-expanded="true"] { transform: translateY(-2px); box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.18), 0 18px 28px rgba(79, 70, 229, 0.14); }
+    .day-summary-trigger:focus-visible { outline: 3px solid rgba(99, 102, 241, 0.35); outline-offset: 2px; }
+    .row.g-2:has(.day-summary-trigger),
+    .row.g-2 .col:has(.day-summary-trigger) {
+        position: relative;
+        z-index: 12;
+    }
 
     .avatar-circle {
         width: 42px; height: 42px; border-radius: 50%;
@@ -892,6 +913,25 @@
     .bg-vtora-custom  { background: #7c3aed !important; color: #fff; }
     .stat-card { transition: box-shadow 0.2s; }
     .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .day-preview-card {
+        background: #fff;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+    }
+    .day-preview-toggle {
+        background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+        color: #fff;
+        transition: background .2s ease, box-shadow .2s ease;
+    }
+    .day-preview-toggle:hover {
+        background: linear-gradient(135deg, #4338ca 0%, #312e81 100%);
+    }
+    .day-preview-toggle[aria-expanded="true"] {
+        background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
+    }
+    .day-preview-title {
+        font-size: 1.05rem;
+        line-height: 1.35;
+    }
     .table-hover tbody tr:hover { background-color: rgba(220,38,38,0.06); }
     .btn-lg { font-size: clamp(1.1rem, 4vw, 1.3rem); padding: clamp(0.9rem,4vw,1.2rem) clamp(2rem,6vw,3rem); min-height: 60px; }
     .fs-7 { font-size: 0.75rem !important; }
@@ -903,6 +943,12 @@
         th, td { white-space: nowrap !important; padding: 0.7rem 0.6rem; font-size: 0.9rem; }
         .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
         .day-cell { min-width: 50px; font-size: 0.78rem; }
+        .day-preview-toggle {
+            padding: 0.9rem 1rem !important;
+        }
+        .day-preview-title {
+            font-size: 0.95rem;
+        }
     }
     @media (max-width: 576px) {
         .container { padding: 0 1rem; margin-top: 3rem; }
@@ -911,5 +957,71 @@
         .day-cell { min-width: 40px; font-size: 0.72rem; padding: 0.4rem !important; }
     }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const detailSection = document.getElementById('dayDetailSection');
+    const emptyState = document.getElementById('dayPreviewEmptyState');
+    const triggers = Array.from(document.querySelectorAll('.day-summary-trigger[data-day-target]'));
+    const panels = Array.from(document.querySelectorAll('.day-preview-card[data-day-panel]'));
+    const initialSelectedDay = {{ selected_day|tojson }};
+
+    function hideAllPanels() {
+        panels.forEach((panel) => panel.classList.add('d-none'));
+        triggers.forEach((trigger) => trigger.setAttribute('aria-expanded', 'false'));
+        if (emptyState) {
+            emptyState.classList.remove('d-none');
+        }
+    }
+
+    function showPanelByTrigger(trigger, smoothScroll) {
+        const targetId = trigger.getAttribute('data-day-target');
+        const panel = targetId ? document.getElementById(targetId) : null;
+        if (!panel) {
+            return;
+        }
+
+        const alreadyOpen = !panel.classList.contains('d-none');
+        if (alreadyOpen) {
+            hideAllPanels();
+            return;
+        }
+
+        hideAllPanels();
+        panel.classList.remove('d-none');
+        trigger.setAttribute('aria-expanded', 'true');
+        if (emptyState) {
+            emptyState.classList.add('d-none');
+        }
+
+        if (detailSection) {
+            window.requestAnimationFrame(function () {
+                detailSection.scrollIntoView({
+                    behavior: smoothScroll ? 'smooth' : 'auto',
+                    block: 'start'
+                });
+            });
+        }
+    }
+
+    triggers.forEach((trigger) => {
+        trigger.addEventListener('click', function (event) {
+            event.preventDefault();
+            showPanelByTrigger(trigger, true);
+        });
+    });
+
+    hideAllPanels();
+
+    if (initialSelectedDay) {
+        const initialTrigger = triggers.find(
+            (trigger) => trigger.getAttribute('data-day-date') === initialSelectedDay
+        );
+        if (initialTrigger) {
+            showPanelByTrigger(initialTrigger, false);
+        }
+    }
+});
+</script>
 
 {% endblock %}

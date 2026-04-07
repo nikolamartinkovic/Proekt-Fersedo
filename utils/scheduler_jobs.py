@@ -6,6 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from utils.db import get_db
+from utils.odrzuvanje_notifications import notify_due_maintenance_plans
 from utils.odmori_notifications import (
     isprati_dnevni_izvestaj_otsustva,
     isprati_nedelen_izvestaj_otsustva,
@@ -25,31 +26,33 @@ def auto_assign_nabavki():
                 conn.close()
                 return
 
-            pending = [
-                r["id"]
-                for r in cursor.execute(
-                    """
-                    SELECT id FROM nabavki_requests
-                    WHERE prevzemeno_od IS NULL AND status='РєСЂРµРёСЂР°РЅРѕ'
-                    ORDER BY datum_kreiranje ASC LIMIT 5
-                    """
-                ).fetchall()
-            ]
+            pending_rows = cursor.execute(
+                """
+                SELECT id, status
+                FROM nabavki_requests
+                WHERE prevzemeno_od IS NULL
+                ORDER BY datum_kreiranje ASC
+                LIMIT 5
+                """
+            ).fetchall()
             assigned_count = 0
-            for req_id in pending:
+            for pending_row in pending_rows:
+                req_id = pending_row["id"]
+                current_status = pending_row["status"] or ""
                 chosen_user = min(
                     nabavki_users,
                     key=lambda u: (cursor.execute("SELECT COUNT(*) AS c FROM nabavki_requests WHERE prevzemeno_od=?", (u,)).fetchone() or {}).get("c", 0),
                     default=None,
                 ) or random.choice(nabavki_users)
                 now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                next_status = "Videno" if current_status == "креирано" else current_status
                 cursor.execute(
                     """
                     UPDATE nabavki_requests
-                    SET prevzemeno_od=?, datum_prevzemanje=?, status='Videno'
+                    SET prevzemeno_od=?, datum_prevzemanje=?, status=?
                     WHERE id=? AND prevzemeno_od IS NULL
                     """,
-                    (chosen_user, now_str, req_id),
+                    (chosen_user, now_str, next_status, req_id),
                 )
                 if cursor.rowcount > 0:
                     cursor.execute(
@@ -111,9 +114,19 @@ def init_scheduler(app, auto_assign_interval_seconds):
         id="otsustva_nedelen",
         replace_existing=True,
     )
+    scheduler.add_job(
+        _with_app_context(app, notify_due_maintenance_plans),
+        trigger="cron",
+        day_of_week="mon-sun",
+        hour=7,
+        minute=0,
+        id="odrzuvanje_due_plans",
+        replace_existing=True,
+    )
     scheduler.start()
     print("[SCHEDULER] Auto-assign started - interval 4 hours")
     print("[SCHEDULER] Zaliha email started - every Wednesday at 08:00")
     print("[SCHEDULER] Otsustva dnevni started - every day at 08:00")
     print("[SCHEDULER] Otsustva nedelen started - every Friday at 15:00")
+    print("[SCHEDULER] Odrzuvanje due plans started - every day at 07:00")
     return scheduler

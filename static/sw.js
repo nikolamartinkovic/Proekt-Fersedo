@@ -1,4 +1,4 @@
-const CACHE_NAME = "fersedo-v13";
+const CACHE_NAME = "fersedo-v16";
 
 const STATIC_ASSETS = [
   "/static/manifest.json",
@@ -49,11 +49,17 @@ self.addEventListener("fetch", (event) => {
           return cached;
         }
         return fetch(event.request).then((networkResponse) => {
-          if (networkResponse.ok) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, networkResponse.clone());
-            });
+          if (!networkResponse || !networkResponse.ok) {
+            return networkResponse;
           }
+
+          const cacheResponse = networkResponse.clone();
+          event.waitUntil(
+            caches.open(CACHE_NAME).then((cache) => {
+              return cache.put(event.request, cacheResponse);
+            })
+          );
+
           return networkResponse;
         });
       })

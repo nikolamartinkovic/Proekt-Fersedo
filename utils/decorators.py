@@ -1,4 +1,4 @@
-from functools import wraps
+﻿from functools import wraps
 
 from flask import flash, redirect, session, url_for
 
@@ -20,7 +20,7 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if "user" not in session:
-            flash("РњРѕСЂР°С‚Рµ РїСЂРІРѕ РґР° СЃРµ РЅР°СР°РІРёС‚Рµ!", "error")
+            flash("Морате прво да се најавите!", "error")
             return redirect(url_for("auth.login"))
         return f(*args, **kwargs)
 
@@ -31,7 +31,7 @@ def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not session.get("is_admin"):
-            flash("РћРІР°Р° СЃС‚СЂР°РЅРёС†Р° Рµ СЃР°РјРѕ Р·Р° Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂРё!", "error")
+            flash("Оваа страница е само за администратори!", "error")
             return redirect(url_for("main.select_kamin"))
         return f(*args, **kwargs)
 
@@ -42,7 +42,7 @@ def worker_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if session.get("is_admin"):
-            flash("РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂРѕС‚ РЅРµ РјРѕР¶Рµ РґР° РІРЅРµСЃСѓРІР° РЅРѕРІРё Р·Р°РїРёСЃРё!", "error")
+            flash("Администраторот не може да внесува нови записи!", "error")
             return redirect(url_for("main.dashboard"))
         return f(*args, **kwargs)
 
@@ -54,7 +54,7 @@ def module_required(module_name):
         @wraps(f)
         def decorated(*args, **kwargs):
             if not user_has_module(module_name):
-                flash("РќРµРјР°С‚Рµ РґРѕР·РІРѕР»Р° Р·Р° РїСЂРёСЃС‚Р°Рї РґРѕ РѕРІРѕС РјРѕРґСѓР»!", "danger")
+                flash("Немате дозвола за пристап до овој модул!", "danger")
                 return redirect(url_for("auth.index"))
             return f(*args, **kwargs)
 
@@ -68,7 +68,7 @@ def admin_or_module_required(module_name, redirect_endpoint="auth.index"):
         @wraps(f)
         def decorated(*args, **kwargs):
             if not user_has_module(module_name):
-                flash("РќРµРјР°С‚Рµ РґРѕР·РІРѕР»Р° Р·Р° РїСЂРёСЃС‚Р°Рї РґРѕ РѕРІРѕС РјРѕРґСѓР»!", "danger")
+                flash("Немате дозвола за пристап до овој модул!", "danger")
                 return redirect(url_for(redirect_endpoint))
             return f(*args, **kwargs)
 

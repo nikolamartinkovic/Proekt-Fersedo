@@ -27,9 +27,9 @@ def register_blueprints(app):
     from routes.kvalitet import kvalitet_bp
     from routes.main import main_bp
     from routes.nabavki import nabavki_bp
+    from routes.odrzuvanje import odrzuvanje_bp
     from routes.odmori import odmori_bp
     from routes.ponudi import ponudi_bp
-    from routes.sostanoci import sostanoci_bp
     from routes.zalihi import zalihi_bp
 
     app.register_blueprint(auth_bp)
@@ -38,8 +38,8 @@ def register_blueprints(app):
     app.register_blueprint(zalihi_bp)
     app.register_blueprint(nabavki_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(odrzuvanje_bp)
     app.register_blueprint(odmori_bp)
     app.register_blueprint(kvalitet_bp)
-    app.register_blueprint(sostanoci_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(ponudi_bp)

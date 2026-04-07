@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Одржување · План{% endblock %}
+
+{% block content %}
+{% include "_odrzuvanje_styles.html" %}
+
+<div class="container py-4 py-lg-5 odr-shell">
+  <div class="odr-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">План и превентива</div>
+          <h1 class="display-6 fw-bold mb-3">План за одржување</h1>
+          <p class="mb-0 fs-5">Подеси сервисни интервали, одговорни лица и чеклисти, а завршените превентиви автоматски претвори ги во историја.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-3">
+          <div class="odr-mini-stat">
+            <div class="text-uppercase small text-white-50 mb-2">Доспева денес</div>
+            <div class="display-6 fw-bold mb-0">{{ due_today }}</div>
+          </div>
+          <div class="odr-mini-stat">
+            <div class="text-uppercase small text-white-50 mb-2">Активни</div>
+            <div class="display-6 fw-bold mb-0">{{ active_count }}</div>
+          </div>
+          <div class="odr-mini-stat">
+            <div class="text-uppercase small text-white-50 mb-2">Неактивни</div>
+            <div class="display-6 fw-bold mb-0">{{ inactive_count }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-xl-5">
+      <div class="odr-card h-100">
+        <div class="odr-card-header"><i class="fas fa-calendar-plus me-2"></i>Креирај план</div>
+        <div class="p-3 p-lg-4">
+          <form method="POST" class="odr-form-panel">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Машина *</label>
+                <select class="form-select" name="masina_id" required>
+                  <option value="">Избери машина</option>
+                  {% for machine in machines %}
+                  <option value="{{ machine.id }}">{{ machine.kod }} · {{ machine.naziv }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Назив на план *</label>
+                <input type="text" class="form-control" name="naziv" placeholder="Пример: Неделен сервис на линија 1" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Тип</label>
+                <select class="form-select" name="tip">
+                  {% for tip in plan_types %}
+                  <option value="{{ tip }}">{{ tip|capitalize }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Одговорен</label>
+                <select class="form-select" name="odgovoren">
+                  <option value="">Без доделување</option>
+                  {% for user in assignable_users %}
+                  <option value="{{ user }}">{{ user }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Интервал денови</label>
+                <input type="number" min="0" class="form-control" name="interval_dena" value="30">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Интервал часови</label>
+                <input type="number" min="0" class="form-control" name="interval_casovi" value="0">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Следно извршување</label>
+                <input type="date" class="form-control" name="sledno_izvrsuvanje">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Поврзана чеклиста</label>
+                <select class="form-select" name="checklist_id">
+                  <option value="">Без чеклиста</option>
+                  {% for checklist in checklists %}
+                  <option value="{{ checklist.id }}">{{ checklist.masina_naziv }} · {{ checklist.naziv }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12">
+                <div class="form-check form-switch pt-2">
+                  <input class="form-check-input" type="checkbox" role="switch" id="plan-active" name="aktivno" checked>
+                  <label class="form-check-label" for="plan-active">Планот е активен</label>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4 mt-4">
+              <i class="fas fa-save me-2"></i>Зачувај план
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-7">
+      <div class="odr-card h-100">
+        <div class="odr-card-header alt"><i class="fas fa-sliders me-2"></i>Филтри и преглед</div>
+        <div class="p-3 p-lg-4">
+          <form method="GET" class="odr-form-panel mb-4">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-7">
+                <label class="form-label">Пребарување</label>
+                <input type="text" class="form-control" name="q" value="{{ query or '' }}" placeholder="Назив, тип, машина, одговорен...">
+              </div>
+              <div class="col-md-5">
+                <label class="form-label">Машина</label>
+                <select class="form-select" name="machine_id">
+                  <option value="">Сите машини</option>
+                  {% for machine in machines %}
+                  <option value="{{ machine.id }}" {% if selected_machine|string == machine.id|string %}selected{% endif %}>{{ machine.kod }} · {{ machine.naziv }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-12 d-flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-dark rounded-pill px-4">Примени филтер</button>
+                <a href="{{ url_for('odrzuvanje.plan') }}" class="btn btn-outline-secondary rounded-pill px-4">Исчисти</a>
+              </div>
+            </div>
+          </form>
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="odr-kpi">
+                <div class="odr-kpi-value">{{ plans|length }}</div>
+                <div class="odr-kpi-label">Планови во преглед</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="odr-kpi">
+                <div class="odr-kpi-value">{{ due_today }}</div>
+                <div class="odr-kpi-label">Доспевања денес</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="odr-kpi">
+                <div class="odr-kpi-value">{{ active_count }}</div>
+                <div class="odr-kpi-label">Активни планови</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="odr-card">
+    <div class="odr-card-header green"><i class="fas fa-calendar-check me-2"></i>Активни и архивни планови</div>
+    <div class="p-3 p-lg-4">
+      {% if plans %}
+      <div class="row g-4">
+        {% for plan in plans %}
+        <div class="col-12">
+          <div class="odr-form-panel">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+              <div>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                  <span class="odr-chip {% if plan.aktivno %}success{% else %}muted{% endif %}">
+                    {% if plan.aktivno %}Активен{% else %}Неактивен{% endif %}
+                  </span>
+                  {% if plan.sledno_izvrsuvanje and plan.sledno_izvrsuvanje <= today %}
+                  <span class="odr-chip warning">Доспеан</span>
+                  {% endif %}
+                  <span class="odr-chip">{{ plan.tip }}</span>
+                </div>
+                <h3 class="h4 fw-bold mb-2 text-dark">{{ plan.naziv }}</h3>
+                <div class="text-muted">{{ plan.masina_kod }} · {{ plan.masina_naziv }}</div>
+              </div>
+              <div class="text-md-end">
+                <div class="small text-uppercase text-muted mb-1">Следно извршување</div>
+                <div class="fw-bold">{{ plan.sledno_izvrsuvanje or 'Без датум' }}</div>
+              </div>
+            </div>
+
+            <div class="odr-meta mb-3">
+              <div class="odr-meta-item">
+                <span class="odr-meta-label">Интервал</span>
+                <span class="odr-meta-value">{{ plan.interval_dena or 0 }} дена · {{ plan.interval_casovi or 0 }} часа</span>
+              </div>
+              <div class="odr-meta-item">
+                <span class="odr-meta-label">Одговорен</span>
+                <span class="odr-meta-value">{{ plan.odgovoren or 'Не е зададен' }}</span>
+              </div>
+              <div class="odr-meta-item">
+                <span class="odr-meta-label">Чеклиста</span>
+                <span class="odr-meta-value">{{ plan.checklist_naziv or 'Нема врзана листа' }}</span>
+              </div>
+              <div class="odr-meta-item">
+                <span class="odr-meta-label">Креирал</span>
+                <span class="odr-meta-value">{{ plan.created_by or 'Систем' }}</span>
+              </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('odrzuvanje.plan_complete', plan_id=plan.id) }}">
+              <div class="row g-3 align-items-end">
+                <div class="col-lg-4">
+                  <label class="form-label">Наслов на сервисниот налог</label>
+                  <input type="text" class="form-control" name="naslov" placeholder="Ќе се пополни автоматски ако остане празно">
+                </div>
+                <div class="col-lg-3">
+                  <label class="form-label">Додели на</label>
+                  <select class="form-select" name="dodeleno_na">
+                    <option value="">Автоматски од план</option>
+                    {% for user in assignable_users %}
+                    <option value="{{ user }}">{{ user }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="col-lg-5">
+                  <label class="form-label">Резиме / решение</label>
+                  <input type="text" class="form-control" name="resenie" placeholder="Што е завршено во сервисот">
+                </div>
+                <div class="col-12 d-flex flex-wrap gap-2">
+                  <button type="submit" class="btn btn-success rounded-pill px-4">
+                    <i class="fas fa-check me-2"></i>Заврши план и отвори налог во историја
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="odr-empty">Нема планови за прикажување со моменталните филтри.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

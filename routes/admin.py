@@ -43,12 +43,13 @@ admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 # ─────────────────────────────────────────────────────────────
 
 ALL_MODULES = (
-    "select_kamin,add_part,moj_zapisi,kalkulacija,artikli,nabavki,nabavki_arhiva,"
-    "dashboard,system_logs,pregled_greski,admin_users,email_recipients,plan_proizvodstvo,izvestaj,procesni_cekori,"
+    "select_kamin,add_part,moj_zapisi,artikli,nabavki,nabavki_arhiva,"
+    "dashboard,system_logs,pregled_greski,admin_users,email_recipients,izvestaj,procesni_cekori,"
     "odmori,baranje_odmor,odmori_vraboteni,odmori_kalendar,odmori_pregled_odmori,"
     "odmori_sekojdnevni_otsustva,odmori_manager_emails,zalihi,"
+    "odrzuvanje,odrzuvanje_masini,odrzuvanje_nalozi,odrzuvanje_plan,odrzuvanje_istorija,"
     "kvalitet,kvalitet_nova,kvalitet_arhiva,kvalitet_template,"
-    "ponudi,ponudi_arhiva,sostanoci,chat"
+    "ponudi,ponudi_arhiva,chat"
 )
 
 # Читливи имиња за секој модул (за приказ во admin_users.html)
@@ -56,7 +57,6 @@ MODULE_LABELS = {
     "select_kamin":               "Нов запис (производство)",
     "add_part":                   "Отвори нов артикл",
     "moj_zapisi":                 "Мои записи",
-    "kalkulација":                "Калкулација",
     "artikli":                    "Артикли",
     "nabavki":                    "Набавки",
     "nabavki_arhiva":             "Архива на набавки",
@@ -65,7 +65,6 @@ MODULE_LABELS = {
     "pregled_greski":             "Преглед на грешки",
     "admin_users":                "Управување со корисници",
     "email_recipients":           "Email примачи",
-    "plan_proizvodstvo":          "План за производство",
     "izvestaj":                   "Извештај",
     "procesni_cekori":            "Процесни чекори",
     "odmori":                     "Одмори (главна)",
@@ -82,9 +81,19 @@ MODULE_LABELS = {
     "kvalitet_template":          "Квалитет — QC Шаблони",
     "ponudi":                     "Понуди",
     "ponudi_arhiva":              "Архива на понуди",
-    "sostanoci":                  "Состаноци",
     "chat":                       "Чат",
 }
+
+
+MODULE_LABELS.update(
+    {
+        "odrzuvanje": "Одржување",
+        "odrzuvanje_masini": "Одржување — Машини",
+        "odrzuvanje_nalozi": "Одржување — Налози",
+        "odrzuvanje_plan": "Одржување — План",
+        "odrzuvanje_istorija": "Одржување — Историја",
+    }
+)
 
 
 @admin_bp.route("/users", methods=["GET", "POST"])
@@ -180,14 +189,11 @@ def admin_users():
             {"value": "select_kamin",      "label": "Нов запис"},
             {"value": "add_part",          "label": "Отвори нов артикл"},
             {"value": "moj_zapisi",        "label": "Мои записи"},
-            {"value": "kalkulacija",       "label": "Калкулација"},
             {"value": "artikli",           "label": "Артикли"},
             {"value": "dashboard",         "label": "Dashboard"},
             {"value": "system_logs",       "label": "Системски логови"},
             {"value": "pregled_greski",    "label": "Грешки"},
             {"value": "admin_users",       "label": "Корисници"},
-            {"value": "email_recipients",  "label": "Email примачи"},
-            {"value": "plan_proizvodstvo", "label": "План за производство"},
             {"value": "izvestaj",          "label": "Извештај"},
             {"value": "procesni_cekori",   "label": "Процесни чекори"},
         ],
@@ -196,7 +202,6 @@ def admin_users():
             {"value": "nabavki_arhiva",    "label": "Архива на набавки"},
             {"value": "ponudi",            "label": "Понуди"},
             {"value": "ponudi_arhiva",     "label": "Архива на понуди"},
-            {"value": "sostanoci",         "label": "Состаноци"},
             {"value": "chat",              "label": "Чат"},
         ],
         "odmori": [
@@ -210,6 +215,14 @@ def admin_users():
         ],
         "zalihi": [
             {"value": "zalihi", "label": "Залихи"},
+            {"value": "email_recipients", "label": "Email примачи"},
+        ],
+        "odrzuvanje": [
+            {"value": "odrzuvanje", "label": "Одржување"},
+            {"value": "odrzuvanje_masini", "label": "Машини"},
+            {"value": "odrzuvanje_nalozi", "label": "Налози"},
+            {"value": "odrzuvanje_plan", "label": "План"},
+            {"value": "odrzuvanje_istorija", "label": "Историја"},
         ],
         "kvalitet": [
             {"value": "kvalitet",          "label": "Квалитет"},

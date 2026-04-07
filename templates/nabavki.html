@@ -230,18 +230,13 @@
                 <div class="card-body p-0">
                     {% if requests %}
                     <div class="table-responsive">
-                        <table class="table table-hover table-striped mb-0 align-middle">
+                        <table class="table table-hover table-striped mb-0 align-middle nabavki-overview-table">
                             <thead class="table-dark">
                                 <tr>
                                     <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)"></th>
                                     <th>Број</th>
-                                    <th>Датум</th>
-                                    <th>Корисник</th>
-                                    <th>Наслов</th>
-                                    <th>Кол.</th>
-                                    <th>Итност</th>
-                                    <th>Денови</th>
-                                    <th>Слика</th>
+                                    <th>Барање</th>
+                                    <th>Рок</th>
                                     <th>Статус</th>
                                     <th>Превземено</th>
                                     <th>Детали</th>
@@ -252,62 +247,73 @@
                                 {% for r in requests %}
                                 <tr class="align-middle">
                                     <td><input type="checkbox" name="selected_ids" value="{{ r.id }}" class="select-checkbox"></td>
-                                    <td><strong class="text-primary fs-5">{{ r.nalog_broj or '—' }}</strong></td>
-                                    <td>{{ r.datum_kreiranje_formatted }}</td>
-                                    <td>{{ r.username }}</td>
-                                    <td>{{ r.naslov }}</td>
-                                    <td class="fw-bold">{{ r.kolicina }}</td>
-                                    <td>{{ r.datum_itnost or '-' }}</td>
-                                    <td>
-                                        {% if r.datum_kreiranje and r.datum_itnost %}
-                                            <span class="fw-bold text-success">{{ r.days_remaining }}</span>
-                                        {% else %}
-                                            <span class="text-muted">—</span>
-                                        {% endif %}
+                                    <td class="nabavki-number-cell">
+                                        <strong class="text-primary fs-5 d-block">{{ r.nalog_broj or '—' }}</strong>
+                                        <small class="text-muted d-block mt-1">{{ r.datum_kreiranje_formatted }}</small>
+                                    </td>
+                                    <td class="nabavki-summary-cell">
+                                        <div class="nabavki-summary">
+                                            <div class="nabavki-summary-main">
+                                                <div class="nabavki-summary-title">{{ r.naslov }}</div>
+                                                <div class="nabavki-summary-meta">
+                                                    <span><i class="fas fa-user me-1"></i>{{ r.username }}</span>
+                                                    <span><i class="fas fa-cubes me-1"></i>{{ r.kolicina }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="nabavki-summary-thumb">
+                                                {% if r.slika %}
+                                                <a href="#" onclick="openLightbox('{{ url_for('static', filename='nabavki/' + r.slika) }}'); return false;" class="nabavki-thumb-link">
+                                                    <img src="{{ url_for('static', filename='nabavki/' + r.slika) }}"
+                                                         alt="Слика" class="nabavki-thumb-img">
+                                                </a>
+                                                {% else %}
+                                                <span class="nabavki-thumb-empty">Нема слика</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="nabavki-deadline-cell">
+                                        <div class="nabavki-deadline-stack">
+                                            <div>
+                                                <small class="text-muted d-block">Итност</small>
+                                                <span class="fw-semibold">{{ r.datum_itnost or '—' }}</span>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block">Преостанато</small>
+                                                {% if r.datum_kreiranje and r.datum_itnost %}
+                                                    <span class="fw-bold text-success">{{ r.days_remaining }} денови</span>
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
                                     </td>
                                     <td>
-                                        {% if r.slika %}
-                                        <!-- ── LIGHTBOX: табела слика ── -->
-                                        <a href="#" onclick="openLightbox('{{ url_for('static', filename='nabavki/' + r.slika) }}'); return false;">
-                                            <img src="{{ url_for('static', filename='nabavki/' + r.slika) }}"
-                                                 alt="Слика" class="rounded shadow" style="max-width:90px;height:auto;cursor:zoom-in;">
-                                        </a>
-                                        {% else %}
-                                        <span class="text-muted">Нема</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="badge fs-6 py-2 px-4 rounded-pill
-                                            {% if r.status == 'Videno' %}bg-info
-                                            {% elif r.status == 'Naracano' %}bg-warning text-dark
-                                            {% elif r.status == 'Dostaveno' %}bg-primary
-                                            {% elif r.status == 'Otkazano' %}bg-danger
-                                            {% elif r.status in ['Zavrseno', 'Prevzemeno'] %}bg-success
-                                            {% else %}bg-secondary{% endif %}">
-                                            {{ r.status|default('креирано')|title }}
+                                        <span class="badge fs-6 py-2 px-4 rounded-pill {{ r.status_class|default('bg-secondary') }}">
+                                            {{ r.status_display|default('Креирано') }}
                                         </span>
                                     </td>
                                     <td>
                                         {% if r.prevzemeno_od %}
-                                            <strong class="text-success">{{ r.prevzemeno_od }}</strong>
+                                            <strong class="text-success d-block">{{ r.prevzemeno_od }}</strong>
                                             {% if r.datum_prevzemanje %}
-                                                <br><small class="text-muted">{{ r.datum_prevzemanje }}</small>
+                                                <small class="text-muted d-block mt-1">{{ r.datum_prevzemanje }}</small>
                                             {% endif %}
                                         {% else %}
                                             <span class="text-muted">—</span>
                                         {% endif %}
                                     </td>
                                     <td>
-                                        <button type="button" class="btn btn-outline-primary btn-lg px-4 py-2"
+                                        <button type="button" class="btn btn-outline-primary btn-sm px-3 py-2 nabavki-detail-btn"
                                                 data-bs-toggle="modal" data-bs-target="#detailsModal{{ r.id }}">
-                                            <i class="fas fa-eye me-2"></i> Детали
+                                            <i class="fas fa-eye me-1"></i> Детали
                                         </button>
                                     </td>
                                     <td>
                                         {% if is_admin or session.user_group == 'Nabavki' %}
                                         <div class="dropdown">
-                                            <button class="btn btn-outline-secondary btn-lg dropdown-toggle px-4 py-2"
-                                                    type="button" data-bs-toggle="dropdown">Смени статус</button>
+                                            <button class="btn btn-outline-secondary btn-sm dropdown-toggle px-3 py-2 nabavki-status-btn"
+                                                    type="button" data-bs-toggle="dropdown">Статус</button>
                                             <ul class="dropdown-menu dropdown-menu-end shadow-lg">
                                                 <li><a class="dropdown-item status-change" href="#" data-status="Videno" data-id="{{ r.id }}">Videno</a></li>
                                                 <li><a class="dropdown-item status-change" href="#" data-status="Naracano" data-id="{{ r.id }}">Naracano</a></li>
@@ -358,14 +364,8 @@
                                 <p class="mb-0"><strong>Датум на креирање:</strong> {{ r.datum_kreiranje_formatted }}</p>
                                 <p class="mb-0"><strong>Датум на итност:</strong> {{ r.datum_itnost or '—' }}</p>
                                 <p class="mb-0"><strong>Статус:</strong>
-                                    <span class="badge fs-6 py-2 px-4 rounded-pill
-                                        {% if r.status == 'Videno' %}bg-info
-                                        {% elif r.status == 'Naracano' %}bg-warning text-dark
-                                        {% elif r.status == 'Dostaveno' %}bg-primary
-                                        {% elif r.status == 'Otkazano' %}bg-danger
-                                        {% elif r.status in ['Zavrseno', 'Prevzemeno'] %}bg-success
-                                        {% else %}bg-secondary{% endif %}">
-                                        {{ r.status|default('креирано')|title }}
+                                    <span class="badge fs-6 py-2 px-4 rounded-pill {{ r.status_class|default('bg-secondary') }}">
+                                        {{ r.status_display|default('Креирано') }}
                                     </span>
                                 </p>
                             </div>
@@ -644,6 +644,137 @@
 }
 #lightbox-close:hover {
     opacity: 1;
+}
+
+.nabavki-overview-table {
+    table-layout: fixed;
+}
+.nabavki-overview-table thead th {
+    white-space: normal;
+    font-size: 0.94rem;
+    vertical-align: middle;
+}
+.nabavki-overview-table tbody td {
+    vertical-align: middle;
+}
+.nabavki-overview-table th:nth-child(1),
+.nabavki-overview-table td:nth-child(1) {
+    width: 44px;
+    text-align: center;
+}
+.nabavki-overview-table th:nth-child(2),
+.nabavki-overview-table td:nth-child(2) {
+    width: 96px;
+}
+.nabavki-overview-table th:nth-child(3),
+.nabavki-overview-table td:nth-child(3) {
+    width: 31%;
+}
+.nabavki-overview-table th:nth-child(4),
+.nabavki-overview-table td:nth-child(4) {
+    width: 148px;
+}
+.nabavki-overview-table th:nth-child(5),
+.nabavki-overview-table td:nth-child(5) {
+    width: 160px;
+}
+.nabavki-overview-table th:nth-child(6),
+.nabavki-overview-table td:nth-child(6) {
+    width: 132px;
+}
+.nabavki-overview-table th:nth-child(7),
+.nabavki-overview-table td:nth-child(7) {
+    width: 120px;
+    text-align: center;
+}
+.nabavki-overview-table th:nth-child(8),
+.nabavki-overview-table td:nth-child(8) {
+    width: 116px;
+    text-align: center;
+}
+.nabavki-number-cell strong,
+.nabavki-summary-title {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+.nabavki-summary {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.nabavki-summary-main {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.nabavki-summary-title {
+    font-weight: 700;
+    color: #12233f;
+    line-height: 1.4;
+    margin-bottom: 0.45rem;
+}
+.nabavki-summary-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem 0.8rem;
+    font-size: 0.84rem;
+    color: #64748b;
+}
+.nabavki-summary-thumb {
+    width: 78px;
+    flex: 0 0 78px;
+    display: flex;
+    justify-content: center;
+}
+.nabavki-thumb-link {
+    display: inline-flex;
+}
+.nabavki-thumb-img {
+    width: 72px;
+    height: 72px;
+    border-radius: 14px;
+    object-fit: cover;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+    cursor: zoom-in;
+}
+.nabavki-thumb-empty {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 72px;
+    width: 72px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    text-align: center;
+    line-height: 1.25;
+    padding: 0.4rem;
+}
+.nabavki-deadline-stack {
+    display: grid;
+    gap: 0.55rem;
+    font-size: 0.92rem;
+}
+.nabavki-detail-btn,
+.nabavki-status-btn {
+    min-width: 92px;
+    font-weight: 700;
+}
+
+@media (max-width: 1200px) {
+    .nabavki-overview-table {
+        min-width: 1040px;
+    }
+    .nabavki-summary {
+        gap: 0.75rem;
+    }
+    .nabavki-thumb-img,
+    .nabavki-thumb-empty {
+        width: 60px;
+        height: 60px;
+        min-height: 60px;
+    }
 }
 </style>
 

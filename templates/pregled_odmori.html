@@ -2,13 +2,13 @@
 
 {% block content %}
 
-<div class="container" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
+<div class="container pregled-odmori-page" style="max-width: 1400px; margin: 4rem auto 5rem; padding: 0 1rem;">
 
-    <div class="text-center mb-5 pb-4">
-        <h1 style="font-weight: 800; color: var(--primary); font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.5rem;">
+    <div class="page-hero text-center mb-5 pb-4">
+        <h1 style="font-weight: 800; font-size: clamp(2.2rem, 7vw, 3.2rem); margin-bottom: 0.5rem;">
             Преглед на барања за одмор
         </h1>
-        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
+        <p style="font-size: clamp(1.1rem, 4vw, 1.3rem);">
             Сите барања, статуси, одобрувања и салдо за {{ godina }}
         </p>
     </div>
@@ -36,45 +36,66 @@
     {% set otkazano_count = baranja | selectattr('status','equalto','otkazano') | list | length %}
     <div class="row g-3 mb-5">
         <div class="col-sm-3">
-            <div class="card border-0 shadow text-center py-4" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border-radius:16px;">
+            <button type="button"
+                    class="card border-0 shadow text-center py-4 odmori-stat-card odmori-stat-card--pending odmori-filter-card w-100"
+                    data-status="pending"
+                    data-label="Чекаат одобрување">
                 <div class="fs-1 fw-bold">{{ pending_count }}</div>
                 <div class="mt-1 opacity-90"><i class="fas fa-clock me-1"></i> Чекаат одобрување</div>
-            </div>
+            </button>
         </div>
         <div class="col-sm-3">
-            <div class="card border-0 shadow text-center py-4" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border-radius:16px;">
+            <button type="button"
+                    class="card border-0 shadow text-center py-4 odmori-stat-card odmori-stat-card--approved odmori-filter-card w-100"
+                    data-status="approved"
+                    data-label="Одобрени">
                 <div class="fs-1 fw-bold">{{ approved_count }}</div>
                 <div class="mt-1 opacity-90"><i class="fas fa-check me-1"></i> Одобрени</div>
-            </div>
+            </button>
         </div>
         <div class="col-sm-3">
-            <div class="card border-0 shadow text-center py-4" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border-radius:16px;">
+            <button type="button"
+                    class="card border-0 shadow text-center py-4 odmori-stat-card odmori-stat-card--rejected odmori-filter-card w-100"
+                    data-status="rejected"
+                    data-label="Отфрлени">
                 <div class="fs-1 fw-bold">{{ rejected_count }}</div>
                 <div class="mt-1 opacity-90"><i class="fas fa-times me-1"></i> Отфрлени</div>
-            </div>
+            </button>
         </div>
         <div class="col-sm-3">
-            <div class="card border-0 shadow text-center py-4" style="background:linear-gradient(135deg,#6b7280,#4b5563);color:#fff;border-radius:16px;">
+            <button type="button"
+                    class="card border-0 shadow text-center py-4 odmori-stat-card odmori-stat-card--canceled odmori-filter-card w-100"
+                    data-status="otkazano"
+                    data-label="Откажани">
                 <div class="fs-1 fw-bold">{{ otkazano_count }}</div>
                 <div class="mt-1 opacity-90"><i class="fas fa-ban me-1"></i> Откажани</div>
-            </div>
+            </button>
         </div>
     </div>
     {% endif %}
 
+    <div id="odmoriFilterPlaceholder" class="card border-0 shadow-sm rounded-4 text-center py-5 px-4 mb-4">
+        <div class="mx-auto mb-3 d-inline-flex align-items-center justify-content-center"
+             style="width:68px; height:68px; border-radius:22px; background:rgba(59,130,246,0.12); color:#2563eb;">
+            <i class="fas fa-hand-pointer fs-3"></i>
+        </div>
+        <h5 class="fw-bold mb-2">Избери статус од картичките погоре</h5>
+        <p class="text-muted mb-0">Листата со барања ќе се прикаже само за избраниот статус.</p>
+    </div>
+
     <!-- ── Главна табела ── -->
-    <div class="card shadow-xl border-0 rounded-4 overflow-hidden">
+    <div id="odmoriFilteredTableCard" class="card shadow-xl border-0 rounded-4 overflow-hidden" style="display:none;">
         <div class="card-header text-white py-4 px-5 fw-bold"
              style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
             <h4 class="mb-0 d-flex align-items-center">
                 <i class="fas fa-list-check me-3 fs-4"></i>
-                Сите барања за одмор
+                <span id="pregledSelectedStatusTitle">Сите барања за одмор</span>
             </h4>
         </div>
 
         <div class="card-body p-0">
             <div class="table-responsive" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-                <table class="table table-hover table-striped mb-0 align-middle" style="width: 100%; min-width: 1200px;">
+                <table class="table table-hover table-striped mb-0 align-middle pregled-odmori-table" style="width: 100%;">
                     <thead class="table-dark">
                         <tr>
                             <th>Вработен</th>
@@ -97,7 +118,9 @@
                             {% for b in baranja %}
                             {% set sd = saldo_map.get(b.vraboten_id, {'vkupno': 20, 'iskoristeni': 0, 'preostanati': 20}) %}
                             {% set pct = ((sd.iskoristeni / sd.vkupno) * 100) | int if sd.vkupno > 0 else 0 %}
-                            <tr {% if b.status == 'otkazano' %}style="opacity:0.55;"{% endif %}>
+                            <tr class="pregled-odmori-row"
+                                data-status="{{ b.status }}"
+                                {% if b.status == 'otkazano' %}style="opacity:0.55;"{% endif %}>
                                 <td class="fw-medium">{{ b.prezime }} {{ b.ime }}</td>
                                 <td>{{ b.datum_od_formatted }}</td>
                                 <td>{{ b.datum_do_formatted }}</td>
@@ -206,6 +229,12 @@
                                 </td>
                             </tr>
                             {% endfor %}
+                            <tr id="pregledNoResultsRow" style="display:none;">
+                                <td colspan="11" class="text-center text-muted py-5">
+                                    <i class="fas fa-filter fa-3x mb-3 opacity-50"></i><br>
+                                    Нема барања за избраниот статус.
+                                </td>
+                            </tr>
                         {% else %}
                             <tr>
                                 <td colspan="11" class="text-center text-muted py-5">
@@ -226,6 +255,77 @@
         </a>
     </div>
 </div>
+
+<style>
+    .pregled-odmori-page .odmori-stat-card {
+        color: #fff !important;
+        border: none !important;
+        border-radius: 18px !important;
+        box-shadow: 0 18px 38px rgba(15, 23, 42, 0.14) !important;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+    .pregled-odmori-page .odmori-stat-card .fs-1,
+    .pregled-odmori-page .odmori-stat-card .mt-1 {
+        color: #fff !important;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+    }
+    .pregled-odmori-page .odmori-filter-card:hover,
+    .pregled-odmori-page .odmori-filter-card:focus-visible {
+        transform: translateY(-2px);
+        box-shadow: 0 22px 42px rgba(15, 23, 42, 0.2) !important;
+        filter: saturate(1.05);
+        outline: none;
+    }
+    .pregled-odmori-page .odmori-filter-card.active {
+        transform: translateY(-3px);
+        box-shadow: 0 24px 46px rgba(15, 23, 42, 0.24) !important;
+        border: 2px solid rgba(255,255,255,0.55) !important;
+    }
+    .pregled-odmori-page .odmori-stat-card--pending {
+        background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    }
+    .pregled-odmori-page .odmori-stat-card--approved {
+        background: linear-gradient(135deg, #10b981, #059669) !important;
+    }
+    .pregled-odmori-page .odmori-stat-card--rejected {
+        background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    }
+    .pregled-odmori-page .odmori-stat-card--canceled {
+        background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+    }
+
+    .pregled-odmori-page .pregled-odmori-table {
+        table-layout: auto;
+    }
+
+    .pregled-odmori-page .pregled-odmori-table th,
+    .pregled-odmori-page .pregled-odmori-table td {
+        font-size: 0.93rem;
+        padding: 0.85rem 0.75rem;
+        white-space: normal;
+    }
+
+    .pregled-odmori-page .pregled-odmori-table th:nth-child(1),
+    .pregled-odmori-page .pregled-odmori-table td:nth-child(1) {
+        min-width: 140px;
+    }
+
+    .pregled-odmori-page .pregled-odmori-table th:nth-child(7),
+    .pregled-odmori-page .pregled-odmori-table td:nth-child(7) {
+        min-width: 150px;
+    }
+
+    .pregled-odmori-page .pregled-odmori-table th:last-child,
+    .pregled-odmori-page .pregled-odmori-table td:last-child {
+        min-width: 170px;
+    }
+
+    #odmoriFilterPlaceholder {
+        background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.95));
+        border: 1px solid rgba(191, 219, 254, 0.65);
+    }
+</style>
 
 
 <!-- ══════════════════════════════════════════
@@ -375,6 +475,83 @@ function otвориOtkazi(id, ime, datumOd, datumDo) {
     var modal = new bootstrap.Modal(document.getElementById('modalOtkazi'));
     modal.show();
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    const filterCards = Array.from(document.querySelectorAll('.odmori-filter-card'));
+    const rows = Array.from(document.querySelectorAll('.pregled-odmori-row'));
+    const tableCard = document.getElementById('odmoriFilteredTableCard');
+    const placeholder = document.getElementById('odmoriFilterPlaceholder');
+    const noResultsRow = document.getElementById('pregledNoResultsRow');
+    const title = document.getElementById('pregledSelectedStatusTitle');
+
+    if (!filterCards.length || !rows.length || !tableCard || !placeholder || !title) {
+        return;
+    }
+
+    let activeStatus = '';
+
+    function hideAllRows() {
+        rows.forEach(function (row) {
+            row.style.display = 'none';
+        });
+    }
+
+    function resetFilter() {
+        activeStatus = '';
+        filterCards.forEach(function (card) {
+            card.classList.remove('active');
+        });
+        hideAllRows();
+        if (noResultsRow) {
+            noResultsRow.style.display = 'none';
+        }
+        tableCard.style.display = 'none';
+        placeholder.style.display = '';
+        title.textContent = 'Сите барања за одмор';
+    }
+
+    function applyFilter(status, label, clickedCard) {
+        let visibleRows = 0;
+        rows.forEach(function (row) {
+            const isMatch = row.dataset.status === status;
+            row.style.display = isMatch ? '' : 'none';
+            if (isMatch) {
+                visibleRows += 1;
+            }
+        });
+
+        filterCards.forEach(function (card) {
+            card.classList.toggle('active', card === clickedCard);
+        });
+
+        if (noResultsRow) {
+            noResultsRow.style.display = visibleRows === 0 ? '' : 'none';
+        }
+
+        activeStatus = status;
+        title.textContent = label;
+        placeholder.style.display = 'none';
+        tableCard.style.display = '';
+        tableCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    filterCards.forEach(function (card) {
+        card.addEventListener('click', function () {
+            const status = card.dataset.status || '';
+            const label = card.dataset.label || 'Филтрирани барања';
+            if (!status) {
+                return;
+            }
+            if (activeStatus === status) {
+                resetFilter();
+                return;
+            }
+            applyFilter(status, label, card);
+        });
+    });
+
+    resetFilter();
+});
 </script>
 
 {% endblock %}

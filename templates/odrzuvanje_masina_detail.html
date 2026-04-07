@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}{{ machine.naziv }} - Машина{% endblock %}
+
+{% block content %}
+{% include "_odrzuvanje_styles.html" %}
+
+<div class="container py-4 py-lg-5 odr-shell">
+  <div class="odr-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Машина</div>
+          <h1 class="display-6 fw-bold mb-3">{{ machine.naziv }}</h1>
+          <p class="mb-0 fs-5">{{ machine.kod }} · {{ machine.linija or 'Без линија' }} · {{ machine.lokacija or 'Без локација' }}</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{{ url_for('odrzuvanje.machine_qr', machine_id=machine.id) }}" target="_blank" class="btn btn-light btn-lg rounded-pill px-4">
+            <i class="fas fa-qrcode me-2"></i>QR код
+          </a>
+          <a href="{{ url_for('odrzuvanje.orders') }}" class="btn btn-outline-light btn-lg rounded-pill px-4">
+            <i class="fas fa-clipboard-list me-2"></i>Налози
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-xl-4">
+      <div class="odr-card h-100">
+        <div class="odr-card-header"><i class="fas fa-camera-retro me-2"></i>Картон на машина</div>
+        <div class="p-3 p-lg-4">
+          {% if machine.slika %}
+          <img src="{{ url_for('static', filename='uploads/odrzuvanje/masini/' ~ machine.slika) }}" alt="{{ machine.naziv }}" class="odr-photo-lg mb-3">
+          {% endif %}
+          <div class="odr-meta">
+            <div class="odr-meta-item"><span class="odr-meta-label">Статус</span><span class="odr-meta-value">{{ machine.status or '—' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Сериски број</span><span class="odr-meta-value">{{ machine.seriski_broj or '—' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Производител</span><span class="odr-meta-value">{{ machine.proizvoditel or '—' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Модел</span><span class="odr-meta-value">{{ machine.model or '—' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Пуштена</span><span class="odr-meta-value">{{ machine.datum_pustanje or '—' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Последен сервис</span><span class="odr-meta-value">{{ machine.posleden_servis_na or '—' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Следна проверка</span><span class="odr-meta-value">{{ machine.sledna_proverka_na or '—' }}</span></div>
+            <div class="odr-meta-item"><span class="odr-meta-label">Интервал</span><span class="odr-meta-value">{{ machine.servis_interval_dena or 0 }} дена · {{ machine.servis_interval_casovi or 0 }} часа</span></div>
+          </div>
+          {% if machine.manual_file %}
+          <a href="{{ url_for('static', filename='uploads/odrzuvanje/manuals/' ~ machine.manual_file) }}" target="_blank" class="btn btn-outline-primary rounded-pill px-4 mt-3 w-100">
+            <i class="fas fa-file-arrow-down me-2"></i>Отвори прирачник
+          </a>
+          {% endif %}
+          {% if machine.belezka %}
+          <div class="odr-form-panel mt-3">
+            <div class="form-label mb-2">Белешка</div>
+            <div class="small text-muted">{{ machine.belezka }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-8">
+      <div class="odr-card mb-4">
+        <div class="odr-card-header alt"><i class="fas fa-pen me-2"></i>Измени машина</div>
+        <div class="p-3 p-lg-4">
+          <form method="POST" action="{{ url_for('odrzuvanje.machine_edit', machine_id=machine.id) }}" enctype="multipart/form-data" class="odr-form-panel">
+            <div class="row g-3">
+              <div class="col-md-4"><label class="form-label">Код</label><input class="form-control" name="kod" value="{{ machine.kod }}"></div>
+              <div class="col-md-8"><label class="form-label">Назив</label><input class="form-control" name="naziv" value="{{ machine.naziv }}"></div>
+              <div class="col-md-4"><label class="form-label">Линија</label><input class="form-control" name="linija" value="{{ machine.linija or '' }}"></div>
+              <div class="col-md-4"><label class="form-label">Локација</label><input class="form-control" name="lokacija" value="{{ machine.lokacija or '' }}"></div>
+              <div class="col-md-4"><label class="form-label">Статус</label>
+                <select class="form-select" name="status">
+                  {% for status in machine_statuses %}
+                  <option value="{{ status }}" {% if machine.status == status %}selected{% endif %}>{{ status }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6"><label class="form-label">Сериски број</label><input class="form-control" name="seriski_broj" value="{{ machine.seriski_broj or '' }}"></div>
+              <div class="col-md-6"><label class="form-label">Производител</label><input class="form-control" name="proizvoditel" value="{{ machine.proizvoditel or '' }}"></div>
+              <div class="col-md-6"><label class="form-label">Модел</label><input class="form-control" name="model" value="{{ machine.model or '' }}"></div>
+              <div class="col-md-6"><label class="form-label">Пуштена</label><input type="date" class="form-control" name="datum_pustanje" value="{{ machine.datum_pustanje or '' }}"></div>
+              <div class="col-md-4"><label class="form-label">Последен сервис</label><input type="date" class="form-control" name="posleden_servis_na" value="{{ machine.posleden_servis_na or '' }}"></div>
+              <div class="col-md-4"><label class="form-label">Следна проверка</label><input type="date" class="form-control" name="sledna_proverka_na" value="{{ machine.sledna_proverka_na or '' }}"></div>
+              <div class="col-md-4"><label class="form-label">Интервал дена</label><input type="number" class="form-control" name="servis_interval_dena" value="{{ machine.servis_interval_dena or 0 }}"></div>
+              <div class="col-md-4"><label class="form-label">Интервал часа</label><input type="number" class="form-control" name="servis_interval_casovi" value="{{ machine.servis_interval_casovi or 0 }}"></div>
+              <div class="col-md-4"><label class="form-label">Нова слика</label><input type="file" class="form-control" name="slika" accept="image/*"></div>
+              <div class="col-md-4"><label class="form-label">Нов прирачник</label><input type="file" class="form-control" name="manual_file" accept=".pdf,.doc,.docx,.xls,.xlsx,image/*"></div>
+              <div class="col-12"><label class="form-label">Белешка</label><textarea class="form-control" name="belezka">{{ machine.belezka or '' }}</textarea></div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4 mt-4">
+              <i class="fas fa-save me-2"></i>Зачувај измени
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-6">
+          <div class="odr-card h-100">
+            <div class="odr-card-header green"><i class="fas fa-list-check me-2"></i>Чеклиста и ставки</div>
+            <div class="p-3 p-lg-4">
+              <form method="POST" action="{{ url_for('odrzuvanje.checklist_add', machine_id=machine.id) }}" class="odr-form-panel mb-3">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <label class="form-label">Постоечка чеклиста</label>
+                    <select class="form-select" name="checklist_id">
+                      <option value="">Нова или основна листа</option>
+                      {% for checklist in checklists %}
+                      <option value="{{ checklist.id }}">{{ checklist.naziv }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Нова листа (ако не бираш горе)</label>
+                    <input type="text" class="form-control" name="checklist_naziv" placeholder="Пример: Неделен сервис">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Ставка *</label>
+                    <input type="text" class="form-control" name="naslov" required>
+                  </div>
+                  <div class="col-8">
+                    <label class="form-label">Опис</label>
+                    <input type="text" class="form-control" name="opis">
+                  </div>
+                  <div class="col-4">
+                    <label class="form-label">Редослед</label>
+                    <input type="number" class="form-control" name="redosled" min="1" value="1">
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-success rounded-pill px-4 mt-3">Додај ставка</button>
+              </form>
+
+              {% if checklist_items %}
+              <div class="odr-timeline">
+                {% for item in checklist_items %}
+                <div class="odr-timeline-item">
+                  <div class="d-flex justify-content-between gap-3">
+                    <div>
+                      <div class="fw-bold">{{ item.naslov }}</div>
+                      <div class="small text-muted">{{ item.checklist_naziv }} · ред {{ item.redosled or 0 }}</div>
+                      {% if item.opis %}<div class="small mt-2">{{ item.opis }}</div>{% endif %}
+                    </div>
+                    <form method="POST" action="{{ url_for('odrzuvanje.checklist_item_delete', item_id=item.id) }}" onsubmit="return confirm('Да се избрише ставката?');">
+                      <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill">Избриши</button>
+                    </form>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              {% else %}
+              <div class="odr-empty">Сѐ уште нема ставки за оваа машина.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="odr-card h-100">
+            <div class="odr-card-header warning"><i class="fas fa-calendar-days me-2"></i>Планови и последни налози</div>
+            <div class="p-3 p-lg-4">
+              <form method="POST" action="{{ url_for('odrzuvanje.plan') }}" class="odr-form-panel mb-3">
+                <input type="hidden" name="masina_id" value="{{ machine.id }}">
+                <div class="row g-3">
+                  <div class="col-12"><label class="form-label">Назив на план *</label><input class="form-control" name="naziv" required></div>
+                  <div class="col-md-6"><label class="form-label">Тип</label>
+                    <select class="form-select" name="tip">
+                      {% for tip in plan_types %}
+                      <option value="{{ tip }}">{{ tip }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-6"><label class="form-label">Одговорен</label><input class="form-control" name="odgovoren"></div>
+                  <div class="col-md-4"><label class="form-label">Интервал дена</label><input type="number" class="form-control" name="interval_dena" value="30"></div>
+                  <div class="col-md-4"><label class="form-label">Интервал часа</label><input type="number" class="form-control" name="interval_casovi" value="0"></div>
+                  <div class="col-md-4"><label class="form-label">Следно извршување</label><input type="date" class="form-control" name="sledno_izvrsuvanje"></div>
+                  <div class="col-12"><label class="form-label">Поврзана чеклиста</label>
+                    <select class="form-select" name="checklist_id">
+                      <option value="">Без чеклиста</option>
+                      {% for checklist in checklists %}
+                      <option value="{{ checklist.id }}">{{ checklist.naziv }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-12">
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" role="switch" id="aktivno-plan" name="aktivno" checked>
+                      <label class="form-check-label" for="aktivno-plan">Планот е активен</label>
+                    </div>
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-warning rounded-pill px-4 mt-3">Додај план</button>
+              </form>
+
+              {% if plans %}
+              <div class="odr-timeline mb-3">
+                {% for plan in plans %}
+                <div class="odr-timeline-item">
+                  <div class="d-flex justify-content-between gap-3">
+                    <div>
+                      <div class="fw-bold">{{ plan.naziv }}</div>
+                      <div class="small text-muted">{{ plan.tip }} · {{ plan.sledno_izvrsuvanje or 'Без датум' }}</div>
+                    </div>
+                    <span class="odr-chip {% if plan.aktivno %}success{% else %}muted{% endif %}">{% if plan.aktivno %}Активен{% else %}Неактивен{% endif %}</span>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              <div class="fw-bold mb-3">Последни налози</div>
+              {% if recent_orders %}
+              <div class="odr-timeline">
+                {% for row in recent_orders %}
+                <a href="{{ url_for('odrzuvanje.order_detail', order_id=row.id) }}" class="odr-timeline-item text-decoration-none">
+                  <div class="d-flex justify-content-between gap-3">
+                    <div>
+                      <div class="fw-bold text-dark">{{ row.broj }} · {{ row.naslov or 'Налог' }}</div>
+                      <div class="small text-muted">{{ row.tip or '—' }} · {{ row.created_at or '' }}</div>
+                    </div>
+                    <span class="odr-chip">{{ row.status }}</span>
+                  </div>
+                </a>
+                {% endfor %}
+              </div>
+              {% else %}
+              <div class="odr-empty">Нема налози за оваа машина.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

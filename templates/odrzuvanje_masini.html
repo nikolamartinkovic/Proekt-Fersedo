@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Машини{% endblock %}
+
+{% block content %}
+{% include "_odrzuvanje_styles.html" %}
+
+<div class="container py-4 py-lg-5 odr-shell">
+  <div class="odr-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Одржување</div>
+          <h1 class="display-6 fw-bold mb-3">Машини и сервисни картони</h1>
+          <p class="mb-0 fs-5">Секоја машина добива свој сервисен картон со локација, интервали, QR пристап, прирачници и историја на налози.</p>
+        </div>
+        <div class="odr-mini-stat">
+          <div class="small text-uppercase opacity-75 mb-2">Вкупно машини</div>
+          <div class="fs-2 fw-bold">{{ machines|length }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-xl-4">
+      <div class="odr-card">
+        <div class="odr-card-header"><i class="fas fa-plus me-2"></i>Нова машина</div>
+        <div class="p-3 p-lg-4">
+          <form method="POST" enctype="multipart/form-data" class="odr-form-panel">
+            <div class="row g-3">
+              <div class="col-md-5">
+                <label class="form-label">Код</label>
+                <input type="text" class="form-control" name="kod" placeholder="Автоматски ако е празно">
+              </div>
+              <div class="col-md-7">
+                <label class="form-label">Назив *</label>
+                <input type="text" class="form-control" name="naziv" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Линија</label>
+                <input type="text" class="form-control" name="linija">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Локација</label>
+                <input type="text" class="form-control" name="lokacija">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Сериски број</label>
+                <input type="text" class="form-control" name="seriski_broj">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Статус</label>
+                <select class="form-select" name="status">
+                  {% for status in machine_statuses %}
+                  <option value="{{ status }}">{{ status }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Производител</label>
+                <input type="text" class="form-control" name="proizvoditel">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Модел</label>
+                <input type="text" class="form-control" name="model">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Пуштена во работа</label>
+                <input type="date" class="form-control" name="datum_pustanje">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Следна проверка</label>
+                <input type="date" class="form-control" name="sledna_proverka_na">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Сервис интервал (дена)</label>
+                <input type="number" class="form-control" name="servis_interval_dena" min="0">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Сервис интервал (часови)</label>
+                <input type="number" class="form-control" name="servis_interval_casovi" min="0">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Забелешка</label>
+                <textarea class="form-control" name="belezka"></textarea>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Слика</label>
+                <input type="file" class="form-control" name="slika" accept="image/*">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Прирачник / PDF</label>
+                <input type="file" class="form-control" name="manual_file" accept=".pdf,.doc,.docx,.xls,.xlsx,image/*">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4 mt-4 w-100">
+              <i class="fas fa-save me-2"></i>Креирај машина
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-8">
+      <div class="odr-card mb-4">
+        <div class="odr-card-header alt"><i class="fas fa-filter me-2"></i>Филтри и пребарување</div>
+        <div class="p-3 p-lg-4">
+          <form method="GET" class="row g-3">
+            <div class="col-lg-7">
+              <input type="text" class="form-control form-control-lg rounded-pill" name="q" value="{{ query }}" placeholder="Пребарај по код, машина, линија, локација или сериски број...">
+            </div>
+            <div class="col-lg-3">
+              <select class="form-select form-select-lg rounded-pill" name="status">
+                <option value="">Сите статуси</option>
+                {% for status in machine_statuses %}
+                <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>{{ status }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-lg-2 d-grid">
+              <button type="submit" class="btn btn-dark btn-lg rounded-pill">Филтрирај</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {% if machines %}
+      <div class="row g-3">
+        {% for machine in machines %}
+        <div class="col-lg-6">
+          <a href="{{ url_for('odrzuvanje.machine_detail', machine_id=machine.id) }}" class="odr-grid-card">
+            <div class="odr-grid-media">
+              {% if machine.slika %}
+              <img src="{{ url_for('static', filename='uploads/odrzuvanje/masini/' ~ machine.slika) }}" alt="{{ machine.naziv }}">
+              {% else %}
+              <i class="fas fa-cogs text-secondary" style="font-size:2.8rem;"></i>
+              {% endif %}
+            </div>
+            <div class="odr-grid-body">
+              <div class="d-flex justify-content-between gap-3 align-items-start mb-2">
+                <div>
+                  <div class="odr-grid-title">{{ machine.naziv }}</div>
+                  <div class="small text-muted">{{ machine.kod }}</div>
+                </div>
+                <span class="odr-chip {% if machine.status == 'работи' %}success{% elif machine.status == 'стопирана' %}danger{% else %}warning{% endif %}">{{ machine.status or '—' }}</span>
+              </div>
+              <div class="small text-muted mb-2">{{ machine.linija or 'Без линија' }} · {{ machine.lokacija or 'Без локација' }}</div>
+              <div class="d-flex flex-wrap gap-2">
+                {% if machine.seriski_broj %}<span class="odr-chip muted">{{ machine.seriski_broj }}</span>{% endif %}
+                {% if machine.sledna_proverka_na %}<span class="odr-chip">{{ machine.sledna_proverka_na }}</span>{% endif %}
+                {% if machine.manual_file %}<span class="odr-chip success"><i class="fas fa-file-arrow-down"></i>Прирачник</span>{% endif %}
+              </div>
+            </div>
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="odr-empty">
+        <i class="fas fa-industry fs-1 mb-3 d-block"></i>
+        Нема машини според избраниот филтер.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

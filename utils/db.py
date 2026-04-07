@@ -11,6 +11,17 @@ DEFAULT_DATABASE_PATH = os.getenv(
     os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "instance", "database.db"),
 )
 
+
+def _configure_connection(conn):
+    """Apply SQLite pragmas that make concurrent access more tolerant."""
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 5000")
+    try:
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA synchronous = NORMAL")
+    except sqlite3.OperationalError:
+        pass
+
 def get_db():
     """Отвора SQLite конекција со dict row factory."""
     global DATABASE_PATH
@@ -26,6 +37,7 @@ def get_db():
         timeout=10,
         check_same_thread=False,
     )
+    _configure_connection(conn)
     conn.row_factory = lambda cursor, row: dict(
         zip([col[0] for col in cursor.description], row)
     )
@@ -467,6 +479,146 @@ def init_db():
     room_id INTEGER NOT NULL, username TEXT NOT NULL,
     last_read_id INTEGER DEFAULT 0,
     PRIMARY KEY (room_id, username))""")
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS odrzuvanje_sequences (
+            name TEXT PRIMARY KEY,
+            last_num INTEGER DEFAULT 0
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS odrzuvanje_masini (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kod TEXT UNIQUE,
+            naziv TEXT NOT NULL,
+            linija TEXT,
+            lokacija TEXT,
+            seriski_broj TEXT,
+            proizvoditel TEXT,
+            model TEXT,
+            datum_pustanje TEXT,
+            status TEXT DEFAULT 'работи',
+            servis_interval_dena INTEGER DEFAULT 0,
+            servis_interval_casovi INTEGER DEFAULT 0,
+            posleden_servis_na TEXT,
+            sledna_proverka_na TEXT,
+            belezka TEXT,
+            slika TEXT,
+            manual_file TEXT,
+            created_by TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS odrzuvanje_checklists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            masina_id INTEGER NOT NULL,
+            naziv TEXT NOT NULL,
+            opis TEXT DEFAULT '',
+            aktivna INTEGER DEFAULT 1,
+            created_by TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (masina_id) REFERENCES odrzuvanje_masini(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS odrzuvanje_checklist_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            checklist_id INTEGER NOT NULL,
+            naslov TEXT NOT NULL,
+            opis TEXT DEFAULT '',
+            redosled INTEGER DEFAULT 0,
+            FOREIGN KEY (checklist_id) REFERENCES odrzuvanje_checklists(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS odrzuvanje_nalozi (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            broj TEXT UNIQUE,
+            masina_id INTEGER NOT NULL,
+            tip TEXT NOT NULL,
+            prioritet TEXT DEFAULT 'среден',
+            status TEXT DEFAULT 'креиран',
+            naslov TEXT NOT NULL,
+            opis_defekt TEXT DEFAULT '',
+            simptom TEXT DEFAULT '',
+            prijavil TEXT DEFAULT '',
+            dodeleno_na TEXT DEFAULT '',
+            created_by TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            pocetok_at TEXT,
+            kraj_at TEXT,
+            zastoj_minuti INTEGER DEFAULT 0,
+            trosok REAL DEFAULT 0,
+            potvrdil TEXT DEFAULT '',
+            resenie TEXT DEFAULT '',
+            FOREIGN KEY (masina_id) REFERENCES odrzuvanje_masini(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS odrzuvanje_nalog_aktivnosti (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nalog_id INTEGER NOT NULL,
+            tip TEXT DEFAULT 'note',
+            poraka TEXT NOT NULL,
+            created_by TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (nalog_id) REFERENCES odrzuvanje_nalozi(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS odrzuvanje_nalog_delovi (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nalog_id INTEGER NOT NULL,
+            part_number TEXT DEFAULT '',
+            opis TEXT NOT NULL,
+            kolicina REAL DEFAULT 1,
+            source_type TEXT DEFAULT 'рачна ставка',
+            nabavka_request_id INTEGER,
+            created_by TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (nalog_id) REFERENCES odrzuvanje_nalozi(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS odrzuvanje_planovi (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            masina_id INTEGER NOT NULL,
+            naziv TEXT NOT NULL,
+            tip TEXT DEFAULT 'превентивно',
+            interval_dena INTEGER DEFAULT 0,
+            interval_casovi INTEGER DEFAULT 0,
+            posledno_izvrseno TEXT,
+            sledno_izvrsuvanje TEXT,
+            odgovoren TEXT DEFAULT '',
+            checklist_id INTEGER,
+            aktivno INTEGER DEFAULT 1,
+            created_by TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (masina_id) REFERENCES odrzuvanje_masini(id),
+            FOREIGN KEY (checklist_id) REFERENCES odrzuvanje_checklists(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS odrzuvanje_nalog_nabavki (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nalog_id INTEGER NOT NULL,
+            nabavka_request_id INTEGER NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (nalog_id) REFERENCES odrzuvanje_nalozi(id),
+            FOREIGN KEY (nabavka_request_id) REFERENCES nabavki_requests(id)
+        )
+    """)
     # ─────────────────────────────────────────────────────────────
     # МИГРАЦИИ (ALTER TABLE) - безбедно со try-except
     # ─────────────────────────────────────────────────────────────
@@ -500,10 +652,11 @@ def init_db():
                 """, (
                     default_username,
                     ph.hash(default_password),
-                    "select_kamin,add_part,moj_zapisi,kalkulacija,artikli,nabavki,dashboard,"
-                    "pregled_greski,admin_users,plan_proizvodstvo,izvestaj,procesni_cekori,"
+                    "select_kamin,add_part,moj_zapisi,artikli,nabavki,dashboard,"
+                    "pregled_greski,admin_users,izvestaj,procesni_cekori,"
                     "odmori,baranje_odmor,odmori_vraboteni,odmori_kalendar,odmori_pregled_odmori,"
-                    "odmori_manager_emails,zalihi,kvalitet"
+                    "odmori_manager_emails,zalihi,kvalitet,odrzuvanje,odrzuvanje_masini,"
+                    "odrzuvanje_nalozi,odrzuvanje_plan,odrzuvanje_istorija"
                 ))
                 conn.commit()
                 print(f"[INIT] Креиран default admin: username='{default_username}', password='{default_password}'")
