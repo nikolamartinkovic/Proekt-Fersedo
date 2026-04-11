@@ -13,7 +13,11 @@
           <h1 class="display-6 fw-bold mb-3">Машини и сервисни картони</h1>
           <p class="mb-0 fs-5">Секоја машина добива свој сервисен картон со локација, интервали, QR пристап, прирачници и историја на налози.</p>
         </div>
-        <div class="odr-mini-stat">
+        <div class="d-flex gap-3 flex-wrap align-items-start">
+          <a href="{{ url_for('odrzuvanje.qr_scan') }}" class="btn btn-outline-light rounded-pill px-4 py-3 fw-semibold">
+            <i class="fas fa-qrcode me-2"></i>QR СЃРєРµРЅРµСЂ
+          </a>
+          <div class="odr-mini-stat">
           <div class="small text-uppercase opacity-75 mb-2">Вкупно машини</div>
           <div class="fs-2 fw-bold">{{ machines|length }}</div>
         </div>

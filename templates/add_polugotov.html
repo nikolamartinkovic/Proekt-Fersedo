@@ -10,9 +10,14 @@
         <p style="font-size: clamp(1.1rem, 4vw, 1.3rem); color: var(--text-secondary);">
             за камин: <strong style="color: var(--text);">{{ kamin }}</strong>
         </p>
-        <a href="{{ url_for('main.polugotov_greski', kamin=kamin) }}" class="btn btn-outline-primary btn-sm mt-2">
-            <i class="fas fa-images me-1"></i> Pregled na greski i sliki
-        </a>
+        <div class="d-flex flex-wrap justify-content-center gap-2 mt-2">
+            <a href="{{ url_for('main.polugotov_greski', kamin=kamin) }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-images me-1"></i> Преглед за овој камин
+            </a>
+            <a href="{{ url_for('main.polugotov_greski') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-globe me-1"></i> Преглед за сите камини
+            </a>
+        </div>
     </div>
 
     <div class="card shadow-xl border-0 rounded-4 overflow-hidden" style="background: var(--surface);">
@@ -78,9 +83,17 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold fs-5">Sliki za greski</label>
+                    <label class="form-label fw-bold fs-5">Видови на грешки</label>
                     <p class="text-muted mb-2" style="font-size: 0.95rem;">
-                        Vnesi broj vo poleto "Greski" i avtomatski ke se pojavat tolku image polinja.
+                        Колку што ќе внесеш во „Грешки“, толку полиња ќе се појават за вид на грешка.
+                    </p>
+                    <div id="errorTypeFields" class="d-grid" style="gap: 0.75rem;"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold fs-5">Слики за грешки</label>
+                    <p class="text-muted mb-2" style="font-size: 0.95rem;">
+                        Внеси број во полето „Грешки“ и автоматски ќе се појават толку полиња за слики.
                     </p>
                     <div id="errorImageFields" class="d-grid" style="gap: 0.75rem;"></div>
                 </div>
@@ -91,13 +104,6 @@
                     <input type="text" id="part_number" name="part_number" class="form-control form-control-lg" 
                            placeholder="Внеси Part Number (опционално)" autocomplete="off">
                     <div id="part_preview" class="mt-3 text-center" style="min-height: 180px;"></div>
-                </div>
-
-                <!-- Вид на грешка -->
-                <div class="mb-4">
-                    <label for="vid_greska" class="form-label fw-bold fs-5">Вид на грешка</label>
-                    <input type="text" id="vid_greska" name="vid_greska" class="form-control form-control-lg" 
-                           placeholder="На пр. 'Лош завар', 'Гребанина' (опционално)">
                 </div>
 
                 <!-- Забелешка -->
@@ -134,47 +140,119 @@ const greskiInput = document.getElementById('greski');
 proizvedeniInput?.addEventListener('input', updateEfektivnost);
 greskiInput?.addEventListener('input', () => {
     updateEfektivnost();
-    renderErrorImageFields();
+    renderErrorDetailFields();
 });
 
-function renderErrorImageFields() {
-    const container = document.getElementById('errorImageFields');
-    if (!container) return;
+function renderErrorDetailFields() {
+    const imageContainer = document.getElementById('errorImageFields');
+    const typeContainer = document.getElementById('errorTypeFields');
+    if (!imageContainer || !typeContainer) return;
 
-    const greski = Math.max(0, parseInt(greskiInput?.value || '0', 10) || 0);
-    container.innerHTML = '';
+    const greski = Math.max(0, Math.min(50, parseInt(greskiInput?.value || '0', 10) || 0));
+
+    const existingTypeValues = {};
+    typeContainer.querySelectorAll('input[name^="vid_greska_"]').forEach(input => {
+        existingTypeValues[input.name] = input.value || '';
+    });
+
+    imageContainer.innerHTML = '';
+    typeContainer.innerHTML = '';
 
     if (greski === 0) {
-        container.innerHTML = '<div class="text-muted small">Nema greski vo ovoj zapis.</div>';
+        const emptyText = '<div class="text-muted small">Нема грешки во овој запис.</div>';
+        typeContainer.innerHTML = emptyText;
+        imageContainer.innerHTML = emptyText;
         return;
     }
 
     for (let i = 1; i <= greski; i += 1) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'border rounded-3 p-2 p-md-3';
-        wrapper.style.borderColor = 'var(--border)';
-        wrapper.style.background = 'var(--background)';
+        const typeWrapper = document.createElement('div');
+        typeWrapper.className = 'border rounded-3 p-2 p-md-3';
+        typeWrapper.style.borderColor = 'var(--border)';
+        typeWrapper.style.background = 'var(--background)';
 
-        const label = document.createElement('label');
-        label.className = 'form-label fw-semibold mb-1';
-        label.setAttribute('for', `error_image_${i}`);
-        label.textContent = `Slika za greska #${i}`;
+        const typeLabel = document.createElement('label');
+        typeLabel.className = 'form-label fw-semibold mb-1';
+        typeLabel.setAttribute('for', `vid_greska_${i}`);
+        typeLabel.textContent = `Вид на грешка #${i}`;
 
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.id = `error_image_${i}`;
-        input.name = `error_image_${i}`;
-        input.accept = 'image/*';
-        input.className = 'form-control';
+        const typeInput = document.createElement('input');
+        typeInput.type = 'text';
+        typeInput.id = `vid_greska_${i}`;
+        typeInput.name = `vid_greska_${i}`;
+        typeInput.className = 'form-control';
+        typeInput.placeholder = `Внеси опис за грешка #${i}`;
+        typeInput.required = true;
+        typeInput.value = existingTypeValues[`vid_greska_${i}`] || '';
 
-        const help = document.createElement('div');
-        help.className = 'form-text';
-        help.textContent = 'Dozvoleno: JPG, PNG, WEBP.';
+        const typeHelp = document.createElement('div');
+        typeHelp.className = 'form-text';
+        typeHelp.textContent = 'Пример: лош завар, гребаница, флека, неправилен агол...';
 
-        wrapper.appendChild(label);
-        wrapper.appendChild(input);
-        wrapper.appendChild(help);
-        container.appendChild(wrapper);
+        typeWrapper.appendChild(typeLabel);
+        typeWrapper.appendChild(typeInput);
+        typeWrapper.appendChild(typeHelp);
+        typeContainer.appendChild(typeWrapper);
+
+        const imageWrapper = document.createElement('div');
+        imageWrapper.className = 'border rounded-3 p-2 p-md-3';
+        imageWrapper.style.borderColor = 'var(--border)';
+        imageWrapper.style.background = 'var(--background)';
+
+        const imageLabel = document.createElement('label');
+        imageLabel.className = 'form-label fw-semibold mb-1';
+        imageLabel.setAttribute('for', `error_image_${i}`);
+        imageLabel.textContent = `Слика за грешка #${i}`;
+
+        const imageInput = document.createElement('input');
+        imageInput.type = 'file';
+        imageInput.id = `error_image_${i}`;
+        imageInput.name = `error_image_${i}`;
+        imageInput.accept = 'image/*';
+        imageInput.className = 'd-none';
+
+        const buttonRow = document.createElement('div');
+        buttonRow.className = 'd-flex flex-wrap gap-2';
+
+        const galleryButton = document.createElement('button');
+        galleryButton.type = 'button';
+        galleryButton.className = 'btn btn-outline-primary btn-sm';
+        galleryButton.textContent = `Галерија за грешка #${i}`;
+        galleryButton.addEventListener('click', () => {
+            imageInput.removeAttribute('capture');
+            imageInput.click();
+        });
+
+        const cameraButton = document.createElement('button');
+        cameraButton.type = 'button';
+        cameraButton.className = 'btn btn-primary btn-sm';
+        cameraButton.textContent = `Камера за грешка #${i}`;
+        cameraButton.addEventListener('click', () => {
+            imageInput.setAttribute('capture', 'environment');
+            imageInput.click();
+        });
+
+        const imageName = document.createElement('div');
+        imageName.className = 'small mt-2 text-muted';
+        imageName.textContent = 'Нема избрана слика';
+
+        imageInput.addEventListener('change', () => {
+            imageName.textContent = imageInput.files?.[0]?.name || 'Нема избрана слика';
+            imageInput.removeAttribute('capture');
+        });
+
+        const imageHelp = document.createElement('div');
+        imageHelp.className = 'form-text';
+        imageHelp.textContent = 'Дозволено: JPG, PNG, WEBP. Може и од галерија и директно од камера.';
+
+        imageWrapper.appendChild(imageLabel);
+        imageWrapper.appendChild(imageInput);
+        buttonRow.appendChild(galleryButton);
+        buttonRow.appendChild(cameraButton);
+        imageWrapper.appendChild(buttonRow);
+        imageWrapper.appendChild(imageName);
+        imageWrapper.appendChild(imageHelp);
+        imageContainer.appendChild(imageWrapper);
     }
 }
 
@@ -268,7 +346,7 @@ document.getElementById('polugotovForm')?.addEventListener('submit', function(e)
 })();
 
 updateEfektivnost();
-renderErrorImageFields();
+renderErrorDetailFields();
 </script>
 
 <style>

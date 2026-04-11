@@ -188,11 +188,12 @@ def send():
     )
     # Означи ја пораката прочитана за испраќачот
     last = conn.execute("SELECT MAX(id) AS mx FROM chat_messages WHERE room_id=?", (room_id,)).fetchone()
+    message_id = last["mx"] or 0
     _mark_read(conn, room_id, me)
     conn.commit()
     conn.close()
 
-    return jsonify({"ok": True, "ts": _fmt(ts)})
+    return jsonify({"ok": True, "ts": _fmt(ts), "message_id": message_id})
 
 
 # ─────────────────────────────────────────────────────────────

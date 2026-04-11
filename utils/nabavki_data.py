@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from io import BytesIO
 
 from openpyxl import Workbook
@@ -34,11 +34,79 @@ def normalize_request_status(status):
     return "креирано"
 
 
+def _parse_request_date(value):
+    text = (value or "").strip() if isinstance(value, str) else value
+    if not text:
+        return None
+    if isinstance(text, datetime):
+        return text.date()
+    if isinstance(text, date):
+        return text
+
+    normalized = str(text).strip()
+    try:
+        return datetime.fromisoformat(normalized.replace("Z", "")).date()
+    except ValueError:
+        pass
+
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(normalized, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def _day_unit(value):
+    return "ден" if abs(int(value)) == 1 else "дена"
+
+
+def _build_deadline_meta(created_at, due_date):
+    created_date = _parse_request_date(created_at)
+    due_date_parsed = _parse_request_date(due_date)
+    today = date.today()
+
+    meta = {
+        "deadline_due_display": due_date or "—",
+        "deadline_total_days": None,
+        "deadline_total_label": "—",
+        "deadline_state_label": "Преостанато",
+        "deadline_state_value": "—",
+        "deadline_state_class": "text-muted",
+        "deadline_is_overdue": False,
+    }
+
+    if due_date_parsed:
+        meta["deadline_due_display"] = due_date_parsed.strftime("%d-%m-%Y")
+
+    if not created_date or not due_date_parsed:
+        return meta
+
+    total_days = max((due_date_parsed - created_date).days, 0)
+    remaining_days = (due_date_parsed - today).days
+
+    meta["deadline_total_days"] = total_days
+    meta["deadline_total_label"] = f"{total_days} {_day_unit(total_days)}"
+
+    if remaining_days >= 0:
+        meta["deadline_state_label"] = "Преостанато"
+        meta["deadline_state_value"] = f"{remaining_days} {_day_unit(remaining_days)}"
+        meta["deadline_state_class"] = "text-success" if remaining_days > 1 else "text-warning"
+    else:
+        overdue_days = abs(remaining_days)
+        meta["deadline_state_label"] = "Надминато"
+        meta["deadline_state_value"] = f"{overdue_days} {_day_unit(overdue_days)}"
+        meta["deadline_state_class"] = "text-danger"
+        meta["deadline_is_overdue"] = True
+
+    return meta
+
+
 def fetch_requests_with_comments(cursor, filter_type, current_user, is_nabavki_user):
     if filter_type == "my_taken" and is_nabavki_user:
         rows = cursor.execute(
             """
-            SELECT *, julianday(datum_itnost) - julianday(datum_kreiranje) AS days_diff
+            SELECT *
             FROM nabavki_requests WHERE prevzemeno_od=? ORDER BY nalog_broj DESC
             """,
             (current_user,),
@@ -47,7 +115,7 @@ def fetch_requests_with_comments(cursor, filter_type, current_user, is_nabavki_u
     elif is_nabavki_user:
         rows = cursor.execute(
             """
-            SELECT *, julianday(datum_itnost) - julianday(datum_kreiranje) AS days_diff
+            SELECT *
             FROM nabavki_requests ORDER BY nalog_broj DESC
             """
         ).fetchall()
@@ -55,7 +123,7 @@ def fetch_requests_with_comments(cursor, filter_type, current_user, is_nabavki_u
     else:
         rows = cursor.execute(
             """
-            SELECT *, julianday(datum_itnost) - julianday(datum_kreiranje) AS days_diff
+            SELECT *
             FROM nabavki_requests WHERE username=? ORDER BY nalog_broj DESC
             """,
             (current_user,),
@@ -71,12 +139,8 @@ def fetch_requests_with_comments(cursor, filter_type, current_user, is_nabavki_u
         item["datum_kreiranje_formatted"] = (
             _format_cet(item["datum_kreiranje"]) if item.get("datum_kreiranje") else "-"
         )
-        diff = item.get("days_diff")
-        item["days_remaining"] = (
-            f"{int(diff)} денови"
-            if diff is not None and diff >= 0
-            else ("Истечен рок!" if diff is not None else "Чека нарачување")
-        )
+        item.update(_build_deadline_meta(item.get("datum_kreiranje"), item.get("datum_itnost")))
+        item["days_remaining"] = item["deadline_state_value"]
         item["comments"] = fetch_comments(cursor, item["id"])
         requests_list.append(item)
 
@@ -273,8 +337,22 @@ def build_api_tbody_html(requests_list, can_manage):
                 <td>{req.get("username", "—")}</td>
                 <td>{req.get("naslov", "—")}</td>
                 <td class="fw-bold">{req.get("kolicina", 0)}</td>
-                <td>{req.get("datum_itnost", "—")}</td>
-                <td><span class="fw-bold text-success">{req["days_remaining"]}</span></td>
+                <td>
+                    <div class="nabavki-deadline-stack">
+                        <div>
+                            <small class="text-muted d-block">Итност</small>
+                            <span class="fw-semibold">{req.get("deadline_due_display", "—")}</span>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block">Вкупно</small>
+                            <span class="fw-semibold">{req.get("deadline_total_label", "—")}</span>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block">{req.get("deadline_state_label", "Преостанато")}</small>
+                            <span class="fw-bold {req.get("deadline_state_class", "text-muted")}">{req.get("deadline_state_value", "—")}</span>
+                        </div>
+                    </div>
+                </td>
                 <td>{slika_cell}</td>
                 <td><span class="badge fs-6 py-2 px-4 rounded-pill {status_cls}">{status_display}</span></td>
                 <td>{prevzemeno}</td>

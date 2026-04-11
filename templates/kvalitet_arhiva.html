@@ -63,9 +63,14 @@
           <h1 class="display-6 fw-bold mb-3">Архива на контроли на квалитет</h1>
           <p class="mb-0 fs-5" style="max-width:760px; color: rgba(255,255,255,.78);">Пребарај по сериски број, камин или датум и отвори ги тековните PDF извештаи и старите верзии од истото место.</p>
         </div>
-        <a href="{{ url_for('kvalitet.nova_kontrola') }}" class="btn btn-light btn-lg rounded-pill px-4">
-          <i class="fas fa-plus me-2"></i>Нова контрола
-        </a>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{{ url_for('kvalitet.kvalitet_greski_statistika') }}" class="btn btn-outline-light btn-lg rounded-pill px-4">
+            <i class="fas fa-chart-column me-2"></i>Статистика
+          </a>
+          <a href="{{ url_for('kvalitet.nova_kontrola') }}" class="btn btn-light btn-lg rounded-pill px-4">
+            <i class="fas fa-plus me-2"></i>Нова контрола
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -75,7 +80,7 @@
       <div class="col-lg-9">
         <div class="input-group input-group-lg">
           <span class="input-group-text bg-white border-end-0 rounded-start-4"><i class="fas fa-search text-muted"></i></span>
-          <input type="text" id="searchInput" class="form-control kvalitet-search border-start-0" placeholder="Пребарај по сериски број, камин или датум...">
+          <input type="text" id="searchInput" class="form-control kvalitet-search border-start-0" placeholder="Пребарај по внатрешен број, сериски број, камин или датум...">
           <button id="clearSearch" class="btn btn-outline-secondary d-none rounded-end-4" type="button">
             <i class="fas fa-times"></i>
           </button>
@@ -95,6 +100,7 @@
           <tr>
             <th>ID</th>
             <th>Камин</th>
+            <th>Внатрешен број</th>
             <th>Сериски број</th>
             <th>Датум и време</th>
             <th>Тековен PDF</th>
@@ -107,6 +113,7 @@
           <tr>
             <td><span class="kvalitet-row-id">#{{ k.id }}</span></td>
             <td>{{ k.kamin }}</td>
+            <td>{{ k.vnatresen_broj or '—' }}</td>
             <td>{{ k.seriski_broj or '—' }}</td>
             <td>
               {% if k.datum %}
@@ -183,15 +190,17 @@ function filterTable() {
 
     originalRows.forEach(row => {
         const cells = row.querySelectorAll('td');
-        if (cells.length < 4) return;
+        if (cells.length < 5) return;
 
         const id = cells[0].textContent.toLowerCase();
         const kamin = cells[1].textContent.toLowerCase();
-        const seriski = cells[2].textContent.toLowerCase();
-        const datum = cells[3].textContent.toLowerCase();
+        const vnatresen = cells[2].textContent.toLowerCase();
+        const seriski = cells[3].textContent.toLowerCase();
+        const datum = cells[4].textContent.toLowerCase();
 
         const match = id.includes(query) ||
                       kamin.includes(query) ||
+                      vnatresen.includes(query) ||
                       seriski.includes(query) ||
                       datum.includes(query);
 

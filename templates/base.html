@@ -163,6 +163,7 @@
             .sidebar:hover { width: var(--sb-width-expanded); box-shadow: var(--sb-shadow); }
         }
 
+        .sidebar.desktop-open,
         .sidebar.mobile-open { width: var(--sb-width-expanded) !important; box-shadow: var(--sb-shadow) !important; }
 
         .sidebar-inner {
@@ -185,16 +186,31 @@
             opacity: 0; transition: opacity var(--sb-transition);
         }
         .sidebar:hover .sb-group::after,
-        .sidebar.mobile-open .sb-group::after { opacity: 1; }
+        .sidebar.mobile-open .sb-group::after,
+        .sidebar.desktop-open .sb-group::after { opacity: 1; }
 
-        .sb-link {
+        .sb-link,
+        .sb-dropdown-toggle {
             position: relative; display: flex; align-items: center;
             gap: 0; padding: 0 0.75rem; height: 46px;
             color: var(--sb-text-color); text-decoration: none;
             border-radius: 10px; margin: 2px 0.5rem; overflow: hidden;
             transition: background 0.2s ease, color 0.2s ease; white-space: nowrap;
         }
-        .sb-link:hover { background: var(--sb-item-hover); color: var(--primary); }
+        .sb-dropdown-toggle {
+            width: calc(100% - 1rem);
+            border: 0;
+            background: transparent;
+            cursor: pointer;
+            text-align: left;
+        }
+        .sb-link:hover,
+        .sb-dropdown-toggle:hover,
+        .sb-dropdown.is-open > .sb-dropdown-toggle,
+        .sb-dropdown.has-active > .sb-dropdown-toggle {
+            background: var(--sb-item-hover);
+            color: var(--primary);
+        }
         .sb-link.active { background: var(--sb-item-active); color: var(--primary); }
         .sb-link.active::before {
             content: ''; position: absolute; left: -0.5rem;
@@ -210,7 +226,11 @@
             transition: color 0.2s ease, background 0.2s ease; flex-shrink: 0;
             position: relative;
         }
-        .sb-link:hover .sb-icon, .sb-link.active .sb-icon {
+        .sb-link:hover .sb-icon,
+        .sb-link.active .sb-icon,
+        .sb-dropdown-toggle:hover .sb-icon,
+        .sb-dropdown.is-open > .sb-dropdown-toggle .sb-icon,
+        .sb-dropdown.has-active > .sb-dropdown-toggle .sb-icon {
             color: var(--primary); background: rgba(102,126,234,0.10);
         }
 
@@ -220,8 +240,81 @@
             transition: opacity 0.28s ease 0.04s, transform 0.28s ease 0.04s;
             pointer-events: none; padding-left: 0.5rem;
         }
-        .sidebar:hover .sb-label, .sidebar.mobile-open .sb-label {
+        .sidebar:hover .sb-label,
+        .sidebar.mobile-open .sb-label,
+        .sidebar.desktop-open .sb-label {
             opacity: 1; transform: translateX(0);
+        }
+
+        .sb-dropdown {
+            display: block;
+            margin-bottom: 0.1rem;
+        }
+        .sb-chevron {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            color: var(--sb-group-color);
+            opacity: 0;
+            transform: translateX(-6px) rotate(0deg);
+            transition: opacity 0.22s ease, transform 0.22s ease, color 0.22s ease;
+            flex-shrink: 0;
+        }
+        .sidebar:hover .sb-chevron,
+        .sidebar.mobile-open .sb-chevron,
+        .sidebar.desktop-open .sb-chevron {
+            opacity: 0.78;
+            transform: translateX(0) rotate(0deg);
+        }
+        .sb-dropdown.is-open > .sb-dropdown-toggle .sb-chevron {
+            color: var(--primary);
+            transform: translateX(0) rotate(180deg);
+            opacity: 1;
+        }
+        .sb-submenu {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            margin: 0 0.2rem 0 0.15rem;
+            transition: max-height 0.28s ease, opacity 0.2s ease, margin 0.28s ease;
+        }
+        .sb-dropdown.is-open > .sb-submenu {
+            max-height: 960px;
+            opacity: 1;
+            margin-bottom: 0.3rem;
+        }
+        .sb-sublink {
+            height: 40px;
+            margin: 2px 0.5rem 2px 1.25rem;
+            padding: 0 0.65rem;
+            border: 1px solid rgba(206, 216, 231, 0.72);
+            background: rgba(255,255,255,0.82);
+            border-radius: 12px;
+        }
+        .sb-sublink .sb-icon {
+            min-width: 32px;
+            width: 32px;
+            height: 32px;
+            font-size: 0.92rem;
+        }
+        .sb-sublink .sb-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .sb-sublink.active {
+            background: linear-gradient(135deg, rgba(102,126,234,0.18), rgba(99,102,241,0.1));
+            border-color: rgba(102,126,234,0.28);
+        }
+        .sb-link-danger {
+            color: #ef4444 !important;
+        }
+        .sb-link-danger .sb-icon {
+            color: #ef4444 !important;
+        }
+        .sb-link-danger:hover {
+            background: rgba(239, 68, 68, 0.08) !important;
         }
 
         /* Badge на иконата во sidebar */
@@ -241,7 +334,8 @@
         }
 
         @media (min-width: 992px) {
-            .sidebar:not(:hover) .sb-link::after {
+            .sidebar:not(:hover):not(.desktop-open) .sb-link::after,
+            .sidebar:not(:hover):not(.desktop-open) .sb-dropdown-toggle::after {
                 content: attr(data-tooltip);
                 position: absolute;
                 left: calc(var(--sb-width-collapsed) - 0.2rem);
@@ -254,8 +348,15 @@
                 box-shadow: 0 4px 16px rgba(0,0,0,0.18);
                 z-index: 9999;
             }
-            .sidebar:not(:hover) .sb-link:hover::after {
+            .sidebar:not(:hover):not(.desktop-open) .sb-link:hover::after,
+            .sidebar:not(:hover):not(.desktop-open) .sb-dropdown-toggle:hover::after {
                 opacity: 1; transition: opacity 0.18s ease 0.4s;
+            }
+            .sidebar:not(:hover):not(.desktop-open) .sb-submenu {
+                display: none;
+            }
+            .sidebar:not(:hover):not(.desktop-open) .sb-chevron {
+                opacity: 0 !important;
             }
         }
 
@@ -1241,6 +1342,8 @@
 
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
+    {% include '_sidebar_nav.html' %}
+    {% if false %}
     <div class="sidebar-inner" id="sidebar-inner">
 
         {% if session.user %}
@@ -1337,9 +1440,17 @@
                 <span class="sb-icon"><i class="fas fa-clipboard-check"></i></span>
                 <span class="sb-label">Нова контрола</span>
             </a>
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_vlezna') }}" data-tooltip="Влезна контрола">
+                <span class="sb-icon"><i class="fas fa-truck-ramp-box"></i></span>
+                <span class="sb-label">Влезна контрола</span>
+            </a>
             <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_arhiva') }}" data-tooltip="Архива на контроли">
                 <span class="sb-icon"><i class="fas fa-folder-open"></i></span>
                 <span class="sb-label">Архива на контроли</span>
+            </a>
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_greski_statistika') }}" data-tooltip="Статистика на грешки">
+                <span class="sb-icon"><i class="fas fa-chart-column"></i></span>
+                <span class="sb-label">Статистика на грешки</span>
             </a>
             <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_template_manager') }}" data-tooltip="QC шаблони">
                 <span class="sb-icon"><i class="fas fa-sliders"></i></span>
@@ -1523,7 +1634,7 @@
             </a>
             {% endif %}
 
-            {% if 'kvalitet' in allowed or 'kvalitet_nova' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_template' in allowed %}
+            {% if 'kvalitet' in allowed or 'kvalitet_nova' in allowed or 'kvalitet_vlezna' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_greski_statistika' in allowed or 'kvalitet_template' in allowed %}
             <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
             {% endif %}
             {% if 'kvalitet' in allowed %}
@@ -1538,10 +1649,22 @@
                 <span class="sb-label">Нова контрола</span>
             </a>
             {% endif %}
+            {% if 'kvalitet_vlezna' in allowed %}
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_vlezna') }}" data-tooltip="Влезна контрола">
+                <span class="sb-icon"><i class="fas fa-truck-ramp-box"></i></span>
+                <span class="sb-label">Влезна контрола</span>
+            </a>
+            {% endif %}
             {% if 'kvalitet_arhiva' in allowed %}
             <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_arhiva') }}" data-tooltip="Архива на контроли">
                 <span class="sb-icon"><i class="fas fa-folder-open"></i></span>
                 <span class="sb-label">Архива на контроли</span>
+            </a>
+            {% endif %}
+            {% if 'kvalitet_greski_statistika' in allowed %}
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_greski_statistika') }}" data-tooltip="Статистика на грешки">
+                <span class="sb-icon"><i class="fas fa-chart-column"></i></span>
+                <span class="sb-label">Статистика на грешки</span>
             </a>
             {% endif %}
             {% if 'kvalitet_template' in allowed %}
@@ -1638,6 +1761,10 @@
         {% endif %}
 
         <div style="height:1px; background:var(--sb-border); margin:0.75rem 0.75rem;"></div>
+        <a class="sb-link" href="{{ url_for('auth.change_password') }}" data-tooltip="Промени лозинка">
+            <span class="sb-icon"><i class="fas fa-key"></i></span>
+            <span class="sb-label">Промени лозинка</span>
+        </a>
         <a class="sb-link" href="{{ url_for('auth.logout') }}" data-tooltip="Одјави се" style="color:#ef4444;">
             <span class="sb-icon" style="color:#ef4444;"><i class="fas fa-right-from-bracket"></i></span>
             <span class="sb-label">Одјави се</span>
@@ -1651,6 +1778,7 @@
         {% endif %}
 
     </div>
+    {% endif %}
 </aside>
 
 <div class="overlay" id="overlay" onclick="toggleMobileSidebar()"></div>
@@ -2003,10 +2131,78 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const path = location.pathname;
-        document.querySelectorAll('.sb-link').forEach(link => {
-            if (link.getAttribute('href') === path) link.classList.add('active');
+        const path = window.location.pathname.replace(/\/+$/, '') || '/';
+        const sidebar = document.getElementById('sidebar');
+        const dropdowns = Array.from(document.querySelectorAll('.sb-dropdown'));
+        const toggles = Array.from(document.querySelectorAll('[data-sidebar-toggle]'));
+        const sidebarLinks = Array.from(document.querySelectorAll('.sb-link[href]'));
+
+        function normalizePath(rawPath) {
+            const cleaned = (rawPath || '').replace(/\/+$/, '');
+            return cleaned || '/';
+        }
+
+        function setDropdownOpen(dropdown, shouldOpen) {
+            if (!dropdown) return;
+            dropdown.classList.toggle('is-open', shouldOpen);
+            dropdown.querySelector('[data-sidebar-toggle]')?.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+        }
+
+        function markActiveSidebarLink() {
+            let bestMatch = null;
+            let bestLength = -1;
+
+            sidebarLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (!href || href.startsWith('#')) return;
+                const url = new URL(href, window.location.origin);
+                const linkPath = normalizePath(url.pathname);
+                const matches = path === linkPath || (linkPath !== '/' && path.startsWith(linkPath + '/'));
+                if (matches && linkPath.length > bestLength) {
+                    bestMatch = link;
+                    bestLength = linkPath.length;
+                }
+            });
+
+            if (!bestMatch) return;
+
+            bestMatch.classList.add('active');
+            const activeDropdown = bestMatch.closest('.sb-dropdown');
+            if (activeDropdown) {
+                activeDropdown.classList.add('has-active');
+                setDropdownOpen(activeDropdown, true);
+            }
+        }
+
+        toggles.forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                const dropdown = toggle.closest('.sb-dropdown');
+                if (!dropdown) return;
+
+                const willOpen = !dropdown.classList.contains('is-open');
+                dropdowns.forEach(item => {
+                    if (item !== dropdown) setDropdownOpen(item, false);
+                });
+                setDropdownOpen(dropdown, willOpen);
+
+                if (window.innerWidth >= 992) {
+                    sidebar?.classList.toggle('desktop-open', willOpen);
+                }
+            });
         });
+
+        document.addEventListener('click', event => {
+            if (window.innerWidth < 992 || !sidebar?.classList.contains('desktop-open')) return;
+            if (sidebar.contains(event.target)) return;
+
+            dropdowns.forEach(dropdown => {
+                const keepOpen = dropdown.classList.contains('has-active');
+                setDropdownOpen(dropdown, keepOpen);
+            });
+            sidebar.classList.remove('desktop-open');
+        });
+
+        markActiveSidebarLink();
 
         let scrollTick;
         window.addEventListener('scroll', () => {

@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+{% block title %}Статистика на грешки - Квалитет{% endblock %}
+
+{% block content %}
+<style>
+  .kvalitet-stats-shell {
+    max-width: 1380px;
+  }
+  .kvalitet-stats-hero {
+    border-radius: 30px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top right, rgba(248, 113, 113, 0.16), transparent 28%),
+      linear-gradient(135deg, #0f172a 0%, #172554 48%, #1d4ed8 100%);
+    box-shadow: 0 24px 56px rgba(15, 23, 42, 0.18);
+  }
+  .kvalitet-stats-hero h1 {
+    color: #f8fbff !important;
+    text-shadow: 0 18px 48px rgba(15, 23, 42, 0.24);
+  }
+  .kvalitet-stats-hero p {
+    color: rgba(255,255,255,.9);
+    max-width: 760px;
+  }
+  .kvalitet-filter-card,
+  .kvalitet-stat-card,
+  .kvalitet-table-card {
+    border-radius: 24px;
+    border: 1px solid rgba(148,163,184,.18);
+    background: #ffffff;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+  }
+  .kvalitet-stat-card {
+    padding: 1.4rem 1.5rem;
+    height: 100%;
+  }
+  .kvalitet-stat-label {
+    font-size: .82rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: .4rem;
+    font-weight: 700;
+  }
+  .kvalitet-stat-value {
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: .35rem;
+  }
+  .kvalitet-stat-help {
+    color: #64748b;
+    font-size: .92rem;
+    margin-bottom: 0;
+  }
+  .kvalitet-table-card .table thead th {
+    background: #0f172a;
+    color: #fff;
+    border-bottom: 0;
+    white-space: nowrap;
+  }
+  .kvalitet-mini-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+  .kvalitet-mini-bar > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #2563eb 0%, #22c55e 100%);
+  }
+  .kvalitet-badge-soft {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .45rem .75rem;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 700;
+    font-size: .88rem;
+  }
+  .kvalitet-thumb {
+    width: 68px;
+    height: 68px;
+    border-radius: 14px;
+    object-fit: cover;
+    border: 1px solid #dbe3f0;
+    box-shadow: 0 10px 22px rgba(15,23,42,.10);
+  }
+  .kvalitet-empty {
+    border: 1px dashed #cbd5e1;
+    border-radius: 20px;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    color: #64748b;
+    background: #f8fbff;
+  }
+</style>
+
+<div class="container py-4 py-lg-5 kvalitet-stats-shell">
+  <div class="kvalitet-stats-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Квалитет</div>
+          <h1 class="display-6 fw-bold mb-3">Статистика на грешки</h1>
+          <p class="mb-0 fs-5">Преглед на сите непоминати точки од контролите: кои грешки се појавуваат најчесто, на кои камини и во кои чекори.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <a href="{{ url_for('kvalitet.kvalitet_arhiva') }}" class="btn btn-light btn-lg rounded-pill px-4">
+            <i class="fas fa-folder-open me-2"></i>Архива
+          </a>
+          <a href="{{ url_for('kvalitet.kvalitet') }}" class="btn btn-outline-light btn-lg rounded-pill px-4">
+            <i class="fas fa-arrow-left me-2"></i>Назад
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kvalitet-filter-card p-4 mb-4">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-lg-4">
+        <label class="form-label fw-bold">Камин</label>
+        <select name="kamin" class="form-select form-select-lg">
+          <option value="">Сите камини</option>
+          {% for kamin in kamini %}
+          <option value="{{ kamin }}" {% if selected_kamin == kamin %}selected{% endif %}>{{ kamin }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-lg-3">
+        <label class="form-label fw-bold">Од датум</label>
+        <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-lg">
+      </div>
+      <div class="col-lg-3">
+        <label class="form-label fw-bold">До датум</label>
+        <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-lg">
+      </div>
+      <div class="col-lg-2 d-grid gap-2">
+        <button type="submit" class="btn btn-primary btn-lg rounded-pill">
+          <i class="fas fa-filter me-2"></i>Филтер
+        </button>
+        <a href="{{ url_for('kvalitet.kvalitet_greski_statistika') }}" class="btn btn-outline-secondary rounded-pill">
+          Исчисти
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+      <div class="kvalitet-stat-card">
+        <div class="kvalitet-stat-label">Контроли во опсег</div>
+        <div class="kvalitet-stat-value">{{ total_controls }}</div>
+        <p class="kvalitet-stat-help">Сите контроли што влегуваат во избраниот филтер.</p>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="kvalitet-stat-card">
+        <div class="kvalitet-stat-label">Евидентирани грешки</div>
+        <div class="kvalitet-stat-value text-danger">{{ total_nok }}</div>
+        <p class="kvalitet-stat-help">Вкупен број на непоминати точки од контролите.</p>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="kvalitet-stat-card">
+        <div class="kvalitet-stat-label">Контроли со грешка</div>
+        <div class="kvalitet-stat-value text-warning">{{ failed_controls }}</div>
+        <p class="kvalitet-stat-help">{{ failure_rate }}% од контролите во филтерот имаат барем една грешка.</p>
+      </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+      <div class="kvalitet-stat-card">
+        <div class="kvalitet-stat-label">Просек по контрола</div>
+        <div class="kvalitet-stat-value text-success">{{ avg_nok_per_failed }}</div>
+        <p class="kvalitet-stat-help">Просечен број грешки по проблематична контрола. Зафатени камини: {{ affected_kamini }}.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-xl-5">
+      <div class="kvalitet-table-card overflow-hidden h-100">
+        <div class="p-4 border-bottom">
+          <h4 class="fw-bold mb-1">Најчести грешки</h4>
+          <div class="text-muted small">Подчекори што најчесто паѓаат во контрола.</div>
+        </div>
+        <div class="p-4">
+          {% if top_errors %}
+            <div class="d-flex flex-column gap-3">
+              {% for item in top_errors %}
+              {% set pct = ((item.nok_count / total_nok) * 100) if total_nok else 0 %}
+              <div>
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+                  <div>
+                    <div class="fw-bold text-dark">{{ item.opis }}</div>
+                    <div class="text-muted small">Контроли: {{ item.controls_count }}</div>
+                  </div>
+                  <span class="kvalitet-badge-soft">{{ item.nok_count }} грешки</span>
+                </div>
+                <div class="kvalitet-mini-bar"><span style="width: {{ '%.2f'|format(pct) }}%"></span></div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="kvalitet-empty">Нема евидентирани грешки за избраниот филтер.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="kvalitet-table-card overflow-hidden h-100">
+        <div class="p-4 border-bottom">
+          <h4 class="fw-bold mb-1">По камин</h4>
+          <div class="text-muted small">Кои модели имаат најмногу евидентирани грешки.</div>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Камин</th>
+                <th>Грешки</th>
+                <th>Контроли</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if top_kamini %}
+                {% for item in top_kamini %}
+                <tr>
+                  <td class="fw-bold">{{ item.kamin }}</td>
+                  <td>{{ item.nok_count }}</td>
+                  <td>{{ item.controls_count }}</td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="3" class="text-center text-muted py-4">Нема податоци.</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3">
+      <div class="kvalitet-table-card overflow-hidden h-100">
+        <div class="p-4 border-bottom">
+          <h4 class="fw-bold mb-1">По чекор</h4>
+          <div class="text-muted small">Кои групи на проверка се најкритични.</div>
+        </div>
+        <div class="table-responsive">
+          <table class="table align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Чекор</th>
+                <th>Грешки</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if top_cekori %}
+                {% for item in top_cekori %}
+                <tr>
+                  <td class="fw-bold">{{ item.cekor }}</td>
+                  <td>{{ item.nok_count }}</td>
+                </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="2" class="text-center text-muted py-4">Нема податоци.</td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kvalitet-table-card overflow-hidden">
+    <div class="p-4 border-bottom">
+      <h4 class="fw-bold mb-1">Последни евидентирани грешки</h4>
+      <div class="text-muted small">Последни непоминати точки со забелешка и приложена слика, ако има.</div>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Контрола</th>
+            <th>Камин</th>
+            <th>Чекор / грешка</th>
+            <th>Забелешка</th>
+            <th>Слика</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if recent_findings %}
+            {% for item in recent_findings %}
+            <tr>
+              <td>
+                <div class="fw-bold">#{{ item.id }}</div>
+                <div class="small text-muted">{{ item.vnatresen_broj or '-' }}</div>
+                <div class="small text-muted">{{ item.seriski_broj or '-' }}</div>
+                <div class="small text-muted">
+                  {% if item.datum %}
+                    {{ item.datum | datetimeformat("%d-%m-%Y %H:%M") }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </div>
+              </td>
+              <td class="fw-bold">{{ item.kamin }}</td>
+              <td>
+                <div class="fw-bold">{{ item.cekor }}</div>
+                <div class="text-muted small">{{ item.opis }}</div>
+              </td>
+              <td style="min-width: 280px;">{{ item.zabeleska or '—' }}</td>
+              <td>
+                {% if item.slika %}
+                  <a href="{{ url_for('static', filename='kvalitet_sliki/' ~ item.slika) }}" target="_blank">
+                    <img src="{{ url_for('static', filename='kvalitet_sliki/' ~ item.slika) }}" alt="Грешка" class="kvalitet-thumb">
+                  </a>
+                {% else %}
+                  <span class="text-muted">Нема</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="5" class="text-center text-muted py-5">Нема евидентирани грешки за избраниот филтер.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

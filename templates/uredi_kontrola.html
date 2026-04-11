@@ -107,13 +107,18 @@
             </div>
 
             <div class="row g-4">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label fw-bold">Камин</label>
                     <input type="text" class="form-control qc-edit-input" value="{{ kontrola.kamin }}" disabled>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Сериски број</label>
-                    <input type="text" name="seriski_broj" class="form-control qc-edit-input" value="{{ kontrola.seriski_broj }}" required>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Внатрешен број</label>
+                    <input type="text" class="form-control qc-edit-input" value="{{ kontrola.vnatresen_broj or '-' }}" disabled>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Сериски број <span id="serialRequiredMark" class="text-danger d-none">*</span></label>
+                    <input type="text" id="seriski_broj" name="seriski_broj" class="form-control qc-edit-input" value="{{ kontrola.seriski_broj }}">
+                    <div id="serialRequirementHelp" class="text-muted small mt-1">Серискиот број станува задолжителен само ако сите чекори се означени како добри.</div>
                 </div>
             </div>
         </div>
@@ -208,6 +213,22 @@
 </div>
 
 <script>
+function updateSerialRequirement() {
+    const serialInput = document.getElementById("seriski_broj");
+    const requiredMark = document.getElementById("serialRequiredMark");
+    const helpText = document.getElementById("serialRequirementHelp");
+    const checkboxes = Array.from(document.querySelectorAll(".qc-edit-switch"));
+
+    if (!serialInput || !requiredMark || !helpText) return;
+
+    const allPassed = checkboxes.length > 0 && checkboxes.every(checkbox => checkbox.checked);
+    serialInput.required = allPassed;
+    requiredMark.classList.toggle("d-none", !allPassed);
+    helpText.textContent = allPassed
+        ? "Сите чекори се означени како добри, затоа серискиот број сега е задолжителен."
+        : "Серискиот број станува задолжителен само ако сите чекори се означени како добри.";
+}
+
 document.querySelectorAll('input[type="file"]').forEach(input => {
     input.addEventListener('change', function () {
         const previewId = "preview_" + this.name.split('_')[1];
@@ -232,6 +253,12 @@ document.querySelectorAll('input[type="file"]').forEach(input => {
         }
     });
 });
+
+document.querySelectorAll('.qc-edit-switch').forEach(input => {
+    input.addEventListener('change', updateSerialRequirement);
+});
+
+updateSerialRequirement();
 </script>
 
 {% endblock %}

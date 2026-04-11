@@ -31,6 +31,7 @@ WELCOME_MODULES = [
     {"value": "zalihi", "label": "Залихи", "description": "Состојба и движења на залихите.", "endpoint": "zalihi.zalihi", "icon": "fas fa-warehouse", "group": "Залихи"},
     {"value": "kvalitet", "label": "Квалитет", "description": "Преглед на активни контроли за квалитет.", "endpoint": "kvalitet.kvalitet", "icon": "fas fa-check-circle", "group": "Квалитет"},
     {"value": "kvalitet_nova", "label": "Нова контрола", "description": "Започни нова контрола за квалитет.", "endpoint": "kvalitet.kvalitet_select_kamin", "icon": "fas fa-clipboard-check", "group": "Квалитет"},
+    {"value": "kvalitet_vlezna", "label": "Влезна контрола", "description": "Приемна контрола на материјали по испратница или фактура.", "endpoint": "kvalitet.kvalitet_vlezna", "icon": "fas fa-truck-ramp-box", "group": "Квалитет"},
     {"value": "kvalitet_arhiva", "label": "Архива на контроли", "description": "Историја на претходно завршени контроли.", "endpoint": "kvalitet.kvalitet_arhiva", "icon": "fas fa-folder-open", "group": "Квалитет"},
     {"value": "kvalitet_template", "label": "QC шаблони", "description": "Управување со шаблони за контрола.", "endpoint": "kvalitet.kvalitet_template_manager", "icon": "fas fa-sliders", "group": "Квалитет"},
     {"value": "nabavki", "label": "Набавки", "description": "Тековни барања и процес на набавки.", "endpoint": "nabavki.nabavki", "icon": "fas fa-shopping-cart", "group": "Набавки"},
@@ -403,6 +404,36 @@ def _save_polugotov_error_images(cursor, performance_id, greski_count, username)
     return saved_paths
 
 
+def _collect_polugotov_error_types(greski_count):
+    if greski_count <= 0:
+        return "-"
+
+    dynamic_fields_present = any(
+        request.form.get(f"vid_greska_{i}") is not None
+        for i in range(1, greski_count + 1)
+    )
+
+    if not dynamic_fields_present:
+        fallback = (request.form.get("vid_greska") or "").strip()
+        return fallback or "-"
+
+    collected = []
+    missing = []
+
+    for i in range(1, greski_count + 1):
+        value = (request.form.get(f"vid_greska_{i}") or "").strip()
+        if value:
+            collected.append(f"#{i}: {value}")
+        else:
+            missing.append(i)
+
+    if missing:
+        missing_str = ", ".join(f"#{idx}" for idx in missing)
+        raise ValueError(f"Недостасува вид на грешка за: {missing_str}")
+
+    return " | ".join(collected)
+
+
 @main_bp.route("/add_gotov/<kamin>", methods=["GET", "POST"])
 @login_required
 def add_gotov(kamin):
@@ -454,7 +485,10 @@ def add_polugotov(kamin):
             proizvedeni = int(request.form.get("proizvedeni", 0) or 0)
             greski = int(request.form.get("greski", 0) or 0)
             if proizvedeni < 0 or greski < 0:
-                raise ValueError("Brojot na proizvedeni i greski ne moze da bide negativen.")
+                raise ValueError("Бројот на произведени и грешки не може да биде негативен.")
+            if greski > 50:
+                raise ValueError("Максимално дозволени се 50 грешки во еден запис.")
+            vid_greska_value = _collect_polugotov_error_types(greski)
             cursor.execute("""
                 INSERT INTO performance
                 (datum, oddel, proizvod, proizvedeni, greski, vid_greska, zabeleska,
@@ -466,7 +500,7 @@ def add_polugotov(kamin):
                 kamin,
                 proizvedeni,
                 greski,
-                request.form.get("vid_greska", "-").strip(),
+                vid_greska_value,
                 request.form.get("zabeleska", "").strip(),
                 session["user"], now, kamin,
                 request.form.get("part_number", "").strip(),
@@ -493,13 +527,19 @@ def add_polugotov(kamin):
     conn.close()
     return render_template("add_polugotov.html", today=date.today().isoformat(), kamin=kamin)
 
+@main_bp.route("/polugotov_greski")
 @main_bp.route("/polugotov_greski/<kamin>")
 @login_required
 @module_required("select_kamin")
-def polugotov_greski(kamin):
+def polugotov_greski(kamin=None):
     datum_od = request.args.get("datum_od", "").strip()
     datum_do = request.args.get("datum_do", "").strip()
     selected_oddel = request.args.get("oddel", "").strip()
+    selected_kamin = request.args.get("kamin", "").strip()
+    all_mode = kamin is None
+
+    if not all_mode:
+        selected_kamin = (kamin or "").strip()
 
     if not datum_do:
         datum_do = date.today().isoformat()
@@ -519,26 +559,49 @@ def polugotov_greski(kamin):
     cursor = conn.cursor()
     _ensure_performance_error_images_table(cursor)
 
-    oddeli_rows = cursor.execute(
+    kamini_rows = cursor.execute(
         """
+        SELECT DISTINCT kamin
+        FROM performance
+        WHERE tip_proizvod = 'polugotov'
+          AND COALESCE(greski, 0) > 0
+          AND kamin IS NOT NULL
+          AND TRIM(kamin) != ''
+        ORDER BY kamin
+        """
+    ).fetchall()
+    kamini = [row["kamin"] for row in kamini_rows]
+
+    oddel_sql = """
         SELECT DISTINCT oddel
         FROM performance
-        WHERE tip_proizvod = 'polugotov' AND kamin = ? AND oddel IS NOT NULL AND TRIM(oddel) != ''
-        ORDER BY oddel
-        """,
-        (kamin,),
-    ).fetchall()
+        WHERE tip_proizvod = 'polugotov'
+          AND COALESCE(greski, 0) > 0
+          AND oddel IS NOT NULL
+          AND TRIM(oddel) != ''
+    """
+    oddel_params = []
+    if selected_kamin:
+        oddel_sql += " AND kamin = ?"
+        oddel_params.append(selected_kamin)
+    oddel_sql += " ORDER BY oddel"
+
+    oddeli_rows = cursor.execute(oddel_sql, tuple(oddel_params)).fetchall()
     oddeli = [row["oddel"] for row in oddeli_rows]
 
     sql = """
-        SELECT id, datum, timestamp, oddel, proizvod, proizvedeni, greski, vid_greska, zabeleska, username, part_number
+        SELECT id, datum, timestamp, oddel, proizvod, proizvedeni, greski, vid_greska, zabeleska, username, part_number, kamin
         FROM performance
         WHERE tip_proizvod = 'polugotov'
-          AND kamin = ?
+          AND COALESCE(greski, 0) > 0
           AND datum >= ?
           AND datum < ?
     """
-    params = [kamin, datum_od, datum_do_plus]
+    params = [datum_od, datum_do_plus]
+
+    if selected_kamin:
+        sql += " AND kamin = ?"
+        params.append(selected_kamin)
 
     if selected_oddel:
         sql += " AND oddel = ?"
@@ -569,13 +632,16 @@ def polugotov_greski(kamin):
 
     return render_template(
         "polugotov_greski_pregled.html",
-        kamin=kamin,
+        kamin=selected_kamin,
+        all_mode=all_mode,
         records=records,
         images_by_record=images_by_record,
         datum_od=datum_od,
         datum_do=datum_do,
         oddeli=oddeli,
         selected_oddel=selected_oddel,
+        kamini=kamini,
+        selected_kamin=selected_kamin,
     )
 
 
@@ -592,11 +658,14 @@ def moj_zapisi():
             placeholders = ",".join("?" for _ in selected_ids)
             image_rows = cursor.execute(
                 f"""
-                SELECT image_path
-                FROM performance_error_images
-                WHERE performance_id IN ({placeholders})
+                SELECT pei.image_path
+                FROM performance_error_images pei
+                JOIN performance p ON p.id = pei.performance_id
+                WHERE pei.performance_id IN ({placeholders})
+                  AND p.username = ?
+                  AND p.tip_proizvod = ?
                 """,
-                tuple(selected_ids),
+                (*selected_ids, session["user"], tip),
             ).fetchall()
             image_paths = [row["image_path"] for row in image_rows if row.get("image_path")]
             cursor.execute(

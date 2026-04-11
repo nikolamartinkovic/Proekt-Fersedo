@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+{% block title %}Нова влезна контрола{% endblock %}
+
+{% block content %}
+<style>
+  .vlezna-form-shell {
+    max-width: 1220px;
+  }
+  .vlezna-form-hero {
+    border-radius: 30px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top right, rgba(74, 222, 128, 0.18), transparent 28%),
+      linear-gradient(135deg, #0f172a 0%, #134e4a 52%, #0f766e 100%);
+    box-shadow: 0 24px 56px rgba(15, 23, 42, 0.16);
+  }
+  .vlezna-form-card,
+  .vlezna-row-card {
+    border-radius: 24px;
+    border: 1px solid rgba(148,163,184,.18);
+    background: #ffffff;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+  }
+  .vlezna-form-input,
+  .vlezna-form-select,
+  .vlezna-form-textarea {
+    border-radius: 16px;
+    border: 1px solid #dbe3f0;
+    background: #f8fafc;
+  }
+  .vlezna-form-input,
+  .vlezna-form-select {
+    min-height: 54px;
+  }
+  .vlezna-form-textarea {
+    min-height: 120px;
+  }
+  .vlezna-form-input:focus,
+  .vlezna-form-select:focus,
+  .vlezna-form-textarea:focus {
+    border-color: #34d399;
+    box-shadow: 0 0 0 0.2rem rgba(52, 211, 153, 0.15);
+  }
+  .vlezna-row-card {
+    padding: 1.2rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  }
+  .vlezna-row-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .8rem;
+    margin-bottom: 1rem;
+  }
+  .vlezna-row-index {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #dcfce7 0%, #d1fae5 100%);
+    color: #047857;
+    font-weight: 800;
+  }
+  .vlezna-upload-box {
+    min-height: 120px;
+    border-radius: 18px;
+    border: 1px dashed #cbd5e1;
+    background: #f8fafc;
+    padding: 1rem;
+  }
+  .vlezna-upload-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .6rem;
+  }
+  .vlezna-upload-preview {
+    display: none;
+    margin-top: .85rem;
+    padding: .8rem;
+    border-radius: 16px;
+    background: #ffffff;
+    border: 1px solid #dbe3f0;
+    align-items: center;
+    gap: .75rem;
+  }
+  .vlezna-upload-preview.is-visible {
+    display: flex;
+  }
+  .vlezna-upload-preview img {
+    width: 78px;
+    height: 78px;
+    border-radius: 14px;
+    object-fit: cover;
+    border: 1px solid #e2e8f0;
+  }
+  .vlezna-upload-placeholder {
+    color: #64748b;
+    font-size: .92rem;
+    line-height: 1.5;
+  }
+  .vlezna-upload-meta {
+    min-width: 0;
+  }
+  .vlezna-upload-name {
+    font-weight: 700;
+    color: #0f172a;
+    word-break: break-word;
+  }
+  .vlezna-upload-subtext {
+    font-size: .82rem;
+    color: #64748b;
+  }
+  @media (max-width: 991.98px) {
+    .vlezna-upload-actions {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="container py-4 py-lg-5 vlezna-form-shell">
+  <div class="vlezna-form-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Влезна контрола</div>
+          <h1 class="display-6 fw-bold mb-3">Нов запис за прием на материјали</h1>
+          <p class="mb-0 fs-5" style="max-width:760px; color: rgba(255,255,255,.84);">
+            Внеси по кој документ е примен материјалот, означи дали е добар или не е добар,
+            и додади забелешка и слика ако има отстапување.
+          </p>
+        </div>
+        <a href="{{ url_for('kvalitet.kvalitet_vlezna') }}" class="btn btn-light btn-lg rounded-pill px-4">
+          <i class="fas fa-arrow-left me-2"></i>Назад
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data">
+    <div class="vlezna-form-card p-4 p-lg-5 mb-4">
+      <div class="row g-4">
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Датум</label>
+          <input type="date" name="datum_kontrola" class="form-control vlezna-form-input" value="{{ defaults.datum_kontrola }}" required>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Тип на документ</label>
+          <select name="dokument_tip" class="form-select vlezna-form-select" required>
+            <option value="ispratnica" {% if defaults.dokument_tip == 'ispratnica' %}selected{% endif %}>Испратница</option>
+            <option value="faktura" {% if defaults.dokument_tip == 'faktura' %}selected{% endif %}>Фактура</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Број на документ</label>
+          <input
+            type="text"
+            name="dokument_broj"
+            class="form-control vlezna-form-input"
+            value="{{ defaults.dokument_broj }}"
+            placeholder="Внеси број на документ..."
+            required
+          >
+        </div>
+        <div class="col-md-3">
+          <label class="form-label fw-bold">Добавувач</label>
+          <input
+            type="text"
+            name="dobavuvac"
+            class="form-control vlezna-form-input"
+            value="{{ defaults.dobavuvac }}"
+            placeholder="Опционално"
+          >
+        </div>
+      </div>
+    </div>
+
+    <div class="vlezna-form-card p-4 p-lg-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+          <h4 class="fw-bold mb-1">Материјали за контрола</h4>
+          <div class="text-muted small">За секој материјал внеси статус, забелешка и по потреба приложи слика.</div>
+        </div>
+        <button type="button" class="btn btn-outline-success rounded-pill px-4" onclick="addMaterialRow()">
+          <i class="fas fa-plus me-2"></i>Додај материјал
+        </button>
+      </div>
+
+      <div id="materialRows" class="d-flex flex-column gap-3">
+        {% for stavka in stavki %}
+        <div class="vlezna-row-card material-row">
+          <div class="vlezna-row-head">
+            <div class="d-flex align-items-center gap-3">
+              <span class="vlezna-row-index">{{ loop.index }}</span>
+              <div class="fw-bold material-row-title">Материјал #{{ loop.index }}</div>
+            </div>
+            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="removeMaterialRow(this)">
+              <i class="fas fa-trash me-1"></i>Избриши
+            </button>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-xl-4">
+              <label class="form-label fw-bold">Материјал</label>
+              <input
+                type="text"
+                name="materijal[]"
+                class="form-control vlezna-form-input"
+                value="{{ stavka.materijal }}"
+                placeholder="На пример: шамотна плоча, рачка, стакло..."
+                required
+              >
+            </div>
+            <div class="col-xl-2">
+              <label class="form-label fw-bold">Статус</label>
+              <select name="status[]" class="form-select vlezna-form-select">
+                <option value="DOBAR" {% if stavka.status == 'DOBAR' %}selected{% endif %}>Добар</option>
+                <option value="NE_DOBAR" {% if stavka.status == 'NE_DOBAR' %}selected{% endif %}>Не е добар</option>
+              </select>
+            </div>
+            <div class="col-xl-3">
+              <label class="form-label fw-bold">Забелешка</label>
+              <textarea
+                name="zabeleska[]"
+                class="form-control vlezna-form-textarea"
+                rows="4"
+                placeholder="Опиши што е забележано..."
+              >{{ stavka.zabeleska }}</textarea>
+            </div>
+            <div class="col-xl-3">
+              <label class="form-label fw-bold">Слика</label>
+              <div class="vlezna-upload-box">
+                <input type="file" name="slika[]" class="material-image-input d-none" accept="image/*" onchange="handleMaterialImageChange(this)">
+                <div class="vlezna-upload-actions">
+                  <button type="button" class="btn btn-outline-primary rounded-pill" onclick="openMaterialPicker(this, 'gallery')">
+                    <i class="fas fa-images me-2"></i>Галерија
+                  </button>
+                  <button type="button" class="btn btn-outline-success rounded-pill" onclick="openMaterialPicker(this, 'camera')">
+                    <i class="fas fa-camera me-2"></i>Камера
+                  </button>
+                </div>
+                <div class="vlezna-upload-placeholder mt-3 material-image-empty">
+                  Избери слика од галерија или сликај директно со камера.
+                </div>
+                {% if stavka.slika %}
+                <div class="small text-warning mt-2 material-image-previous">
+                  Повторно избери слика: {{ stavka.slika }}
+                </div>
+                {% else %}
+                <div class="small text-warning mt-2 d-none material-image-previous"></div>
+                {% endif %}
+                <div class="vlezna-upload-preview material-image-preview">
+                  <img src="" alt="Preview" class="material-image-preview-img">
+                  <div class="vlezna-upload-meta">
+                    <div class="vlezna-upload-name material-image-name"></div>
+                    <div class="vlezna-upload-subtext">Сликата ќе се зачува со оваа ставка.</div>
+                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill mt-2" onclick="clearMaterialImage(this)">
+                      <i class="fas fa-times me-1"></i>Отстрани
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="text-end mt-4">
+        <button type="submit" class="btn btn-success btn-lg rounded-pill px-5">
+          <i class="fas fa-save me-2"></i>Зачувај и генерирај PDF
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<template id="materialRowTemplate">
+  <div class="vlezna-row-card material-row">
+    <div class="vlezna-row-head">
+      <div class="d-flex align-items-center gap-3">
+        <span class="vlezna-row-index">1</span>
+        <div class="fw-bold material-row-title">Материјал #1</div>
+      </div>
+      <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="removeMaterialRow(this)">
+        <i class="fas fa-trash me-1"></i>Избриши
+      </button>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-xl-4">
+        <label class="form-label fw-bold">Материјал</label>
+        <input
+          type="text"
+          name="materijal[]"
+          class="form-control vlezna-form-input"
+          placeholder="На пример: шамотна плоча, рачка, стакло..."
+          required
+        >
+      </div>
+      <div class="col-xl-2">
+        <label class="form-label fw-bold">Статус</label>
+        <select name="status[]" class="form-select vlezna-form-select">
+          <option value="DOBAR" selected>Добар</option>
+          <option value="NE_DOBAR">Не е добар</option>
+        </select>
+      </div>
+      <div class="col-xl-3">
+        <label class="form-label fw-bold">Забелешка</label>
+        <textarea
+          name="zabeleska[]"
+          class="form-control vlezna-form-textarea"
+          rows="4"
+          placeholder="Опиши што е забележано..."
+        ></textarea>
+      </div>
+      <div class="col-xl-3">
+        <label class="form-label fw-bold">Слика</label>
+        <div class="vlezna-upload-box">
+          <input type="file" name="slika[]" class="material-image-input d-none" accept="image/*" onchange="handleMaterialImageChange(this)">
+          <div class="vlezna-upload-actions">
+            <button type="button" class="btn btn-outline-primary rounded-pill" onclick="openMaterialPicker(this, 'gallery')">
+              <i class="fas fa-images me-2"></i>Галерија
+            </button>
+            <button type="button" class="btn btn-outline-success rounded-pill" onclick="openMaterialPicker(this, 'camera')">
+              <i class="fas fa-camera me-2"></i>Камера
+            </button>
+          </div>
+          <div class="vlezna-upload-placeholder mt-3 material-image-empty">
+            Избери слика од галерија или сликај директно со камера.
+          </div>
+          <div class="small text-warning mt-2 d-none material-image-previous"></div>
+          <div class="vlezna-upload-preview material-image-preview">
+            <img src="" alt="Preview" class="material-image-preview-img">
+            <div class="vlezna-upload-meta">
+              <div class="vlezna-upload-name material-image-name"></div>
+              <div class="vlezna-upload-subtext">Сликата ќе се зачува со оваа ставка.</div>
+              <button type="button" class="btn btn-sm btn-outline-danger rounded-pill mt-2" onclick="clearMaterialImage(this)">
+                <i class="fas fa-times me-1"></i>Отстрани
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+function updateMaterialRowIndexes() {
+  const rows = document.querySelectorAll('#materialRows .material-row');
+  rows.forEach((row, index) => {
+    const number = index + 1;
+    const badge = row.querySelector('.vlezna-row-index');
+    const title = row.querySelector('.material-row-title');
+    if (badge) badge.textContent = number;
+    if (title) title.textContent = `Материјал #${number}`;
+  });
+}
+
+function getMaterialRowContext(source) {
+  const row = source.closest('.material-row');
+  return {
+    row,
+    input: row.querySelector('.material-image-input'),
+    preview: row.querySelector('.material-image-preview'),
+    previewImg: row.querySelector('.material-image-preview-img'),
+    previewName: row.querySelector('.material-image-name'),
+    emptyText: row.querySelector('.material-image-empty'),
+    previousText: row.querySelector('.material-image-previous')
+  };
+}
+
+function resetMaterialImageState(row) {
+  const context = getMaterialRowContext(row);
+  context.input.value = '';
+  context.input.removeAttribute('capture');
+  context.preview.classList.remove('is-visible');
+  context.previewImg.src = '';
+  context.previewName.textContent = '';
+  context.emptyText.classList.remove('d-none');
+  if (context.previousText) {
+    context.previousText.classList.add('d-none');
+    context.previousText.textContent = '';
+  }
+}
+
+function handleMaterialImageChange(input) {
+  const context = getMaterialRowContext(input);
+  const file = input.files && input.files[0] ? input.files[0] : null;
+
+  if (!file) {
+    resetMaterialImageState(context.row);
+    return;
+  }
+
+  context.emptyText.classList.add('d-none');
+  if (context.previousText) {
+    context.previousText.classList.add('d-none');
+  }
+  context.preview.classList.add('is-visible');
+  context.previewName.textContent = file.name;
+
+  const reader = new FileReader();
+  reader.onload = function(event) {
+    context.previewImg.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function openMaterialPicker(button, mode) {
+  const context = getMaterialRowContext(button);
+  if (mode === 'camera') {
+    context.input.setAttribute('capture', 'environment');
+  } else {
+    context.input.removeAttribute('capture');
+  }
+  context.input.click();
+}
+
+function clearMaterialImage(button) {
+  const row = button.closest('.material-row');
+  resetMaterialImageState(row);
+}
+
+function addMaterialRow() {
+  const template = document.getElementById('materialRowTemplate');
+  const clone = template.content.cloneNode(true);
+  document.getElementById('materialRows').appendChild(clone);
+  updateMaterialRowIndexes();
+}
+
+function removeMaterialRow(button) {
+  const rows = document.querySelectorAll('#materialRows .material-row');
+  if (rows.length === 1) {
+    const row = rows[0];
+    row.querySelectorAll('input[type="text"], textarea').forEach(el => el.value = '');
+    const select = row.querySelector('select[name="status[]"]');
+    if (select) select.value = 'DOBAR';
+    resetMaterialImageState(row);
+    return;
+  }
+  button.closest('.material-row').remove();
+  updateMaterialRowIndexes();
+}
+
+updateMaterialRowIndexes();
+</script>
+{% endblock %}

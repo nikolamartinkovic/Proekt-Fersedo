@@ -14,7 +14,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from flask import Flask, current_app, jsonify, request, send_file, send_from_directory, session, url_for
+from flask import Flask, current_app, jsonify, redirect, request, send_file, send_from_directory, session, url_for
 from pywebpush import webpush
 
 from extensions import db, migrate
@@ -89,6 +89,27 @@ def normalize_session_state():
         session["user_group"] = ""
     elif not isinstance(user_group, str):
         session["user_group"] = str(user_group)
+
+    must_change_password = session.get("must_change_password")
+    if must_change_password is None:
+        session["must_change_password"] = False
+    else:
+        session["must_change_password"] = bool(must_change_password)
+
+
+@app.before_request
+def enforce_password_change():
+    if "user" not in session or not session.get("must_change_password"):
+        return None
+
+    endpoint = request.endpoint or ""
+    if endpoint in {"auth.change_password", "auth.change_password_verify", "auth.logout", "static", "manifest", "sw"}:
+        return None
+
+    if endpoint.startswith("static"):
+        return None
+
+    return redirect(url_for("auth.change_password"))
 
 # ─────────────────────────────────────────────────────────────
 # FONT REGISTRATION

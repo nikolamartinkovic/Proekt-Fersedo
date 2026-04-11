@@ -2,6 +2,7 @@
 import sqlite3
 import io
 import os
+import secrets
 import time
 import threading
 from datetime import date, datetime, timedelta
@@ -33,9 +34,15 @@ from utils.helpers import add_page_number, get_compressed_image_buffer
 from utils.odmori_helpers import get_email_log
 from utils.runtime import read_app_log_entries
 from utils.stock_reports import isprati_zaliha_email
+from utils.emailing import send_new_user_credentials_email
 from io import BytesIO
 
 ph = PasswordHasher()
+
+
+def _generate_temporary_password(length=10):
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+    return "Fs-" + "".join(secrets.choice(alphabet) for _ in range(length))
 
 last_deleted_records  = []
 last_deleted_datum_od = None
@@ -54,7 +61,7 @@ ALL_MODULES = (
     "odmori,baranje_odmor,odmori_vraboteni,odmori_kalendar,odmori_pregled_odmori,"
     "odmori_sekojdnevni_otsustva,odmori_manager_emails,zalihi,"
     "odrzuvanje,odrzuvanje_masini,odrzuvanje_nalozi,odrzuvanje_plan,odrzuvanje_istorija,"
-    "kvalitet,kvalitet_nova,kvalitet_arhiva,kvalitet_template,"
+    "kvalitet,kvalitet_nova,kvalitet_vlezna,kvalitet_arhiva,kvalitet_greski_statistika,kvalitet_template,"
     "ponudi,ponudi_arhiva,chat"
 )
 
@@ -83,7 +90,9 @@ MODULE_LABELS = {
     "zalihi":                     "Залихи",
     "kvalitet":                   "Квалитет",
     "kvalitet_nova":              "Квалитет — Нова контрола",
+    "kvalitet_vlezna":            "Квалитет — Влезна контрола",
     "kvalitet_arhiva":            "Квалитет — Архива",
+    "kvalitet_greski_statistika": "Квалитет — Статистика на грешки",
     "kvalitet_template":          "Квалитет — QC Шаблони",
     "ponudi":                     "Понуди",
     "ponudi_arhiva":              "Архива на понуди",
@@ -113,28 +122,39 @@ def admin_users():
         action = request.form.get("action")
 
         if action == "create":
-            username    = request.form.get("username", "").strip()
-            password    = request.form.get("password", "").strip()
-            email       = request.form.get("email", "").strip().lower()
-            is_admin    = int(request.form.get("is_admin", 0))
-            user_group  = request.form.get("user_group", "").strip()
+            username = request.form.get("username", "").strip()
+            email = request.form.get("email", "").strip().lower()
+            is_admin = int(request.form.get("is_admin", 0))
+            user_group = request.form.get("user_group", "").strip()
             allowed_modules = ALL_MODULES if is_admin else ",".join(
                 [m.strip() for m in request.form.getlist("allowed_modules") if m.strip()]
             )
-            if not username or not password:
-                flash("Корисничко ime и лозинка се задолжителни!", "danger")
+            if not username or not email:
+                flash("Корисничко име и email адреса се задолжителни!", "danger")
             else:
+                temporary_password = _generate_temporary_password()
                 try:
                     cursor.execute("""
                         INSERT INTO users
-                        (username, hashed_password, is_admin, user_group, allowed_modules, email)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    """, (username, ph.hash(password), is_admin, user_group, allowed_modules, email))
+                        (username, hashed_password, is_admin, user_group, allowed_modules, email, must_change_password)
+                        VALUES (?, ?, ?, ?, ?, ?, 1)
+                    """, (username, ph.hash(temporary_password), is_admin, user_group, allowed_modules, email))
+                    send_new_user_credentials_email(
+                        email,
+                        username,
+                        temporary_password,
+                        login_url=url_for("auth.login", _external=True),
+                    )
                     conn.commit()
-                    flash(f'Корисникот <strong>{username}</strong> е успешно креиран!', "success")
+                    flash(
+                        f'Корисникот <strong>{username}</strong> е успешно креиран и привремената лозинка е испратена на <strong>{email}</strong>.',
+                        "success",
+                    )
                 except sqlite3.IntegrityError:
-                    flash(f"Корисничкото ime <strong>{username}</strong> веќе постои!", "danger")
+                    conn.rollback()
+                    flash(f"Корисничкото име <strong>{username}</strong> веќе постои!", "danger")
                 except Exception as e:
+                    conn.rollback()
                     flash(f"Грешка при креирање: {str(e)}", "danger")
 
         elif action == "delete":
@@ -153,33 +173,26 @@ def admin_users():
                     flash(f"Грешка при бришење: {str(e)}", "danger")
 
         elif action == "edit":
-            username        = request.form.get("username", "").strip()
-            is_admin        = int(request.form.get("is_admin", 0))
-            user_group      = request.form.get("user_group", "").strip()
-            new_password    = request.form.get("new_password", "").strip()
-            email           = request.form.get("email", "").strip().lower()
+            username = request.form.get("username", "").strip()
+            is_admin = int(request.form.get("is_admin", 0))
+            user_group = request.form.get("user_group", "").strip()
+            email = request.form.get("email", "").strip().lower()
             allowed_modules = ALL_MODULES if is_admin else ",".join(
                 [m.strip() for m in request.form.getlist("allowed_modules") if m.strip()]
             )
             try:
-                if new_password:
-                    cursor.execute("""
-                        UPDATE users
-                        SET is_admin=?, user_group=?, allowed_modules=?, hashed_password=?, email=?
-                        WHERE username=?
-                    """, (is_admin, user_group, allowed_modules, ph.hash(new_password), email, username))
-                else:
-                    cursor.execute("""
-                        UPDATE users
-                        SET is_admin=?, user_group=?, allowed_modules=?, email=?
-                        WHERE username=?
-                    """, (is_admin, user_group, allowed_modules, email, username))
+                cursor.execute("""
+                    UPDATE users
+                    SET is_admin=?, user_group=?, allowed_modules=?, email=?
+                    WHERE username=?
+                """, (is_admin, user_group, allowed_modules, email, username))
                 if cursor.rowcount > 0:
                     conn.commit()
                     flash(f"Корисникот <strong>{username}</strong> е успешно ажуриран!", "success")
                 else:
                     flash(f"Корисникот <strong>{username}</strong> не постои.", "warning")
             except Exception as e:
+                conn.rollback()
                 flash(f"Грешка при ажурирање: {str(e)}", "danger")
 
         conn.close()
@@ -233,7 +246,9 @@ def admin_users():
         "kvalitet": [
             {"value": "kvalitet",          "label": "Квалитет"},
             {"value": "kvalitet_nova",     "label": "Нова контрола"},
+            {"value": "kvalitet_vlezna",   "label": "Влезна контрола"},
             {"value": "kvalitet_arhiva",   "label": "Архива на контроли"},
+            {"value": "kvalitet_greski_statistika", "label": "Статистика на грешки"},
             {"value": "kvalitet_template", "label": "QC Шаблони"},
         ],
     }

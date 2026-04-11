@@ -8,16 +8,31 @@
                 Pregled na greski i sliki
             </h1>
             <p style="margin: 0.35rem 0 0; color: var(--text-secondary); font-size: 1rem;">
+                {% if all_mode %}
+                Kamin: <strong style="color: var(--primary);">Site kamini</strong>
+                {% else %}
                 Kamin: <strong style="color: var(--primary);">{{ kamin }}</strong>
+                {% endif %}
             </p>
         </div>
         <div class="d-flex flex-wrap gap-2">
+            {% if kamin %}
             <a href="{{ url_for('main.add_polugotov', kamin=kamin) }}" class="btn btn-primary">
                 <i class="fas fa-plus me-2"></i> Nov zapis
+            </a>
+            {% endif %}
+            {% if not all_mode %}
+            <a href="{{ url_for('main.polugotov_greski') }}" class="btn btn-outline-primary">
+                <i class="fas fa-globe me-2"></i> Site kamini
             </a>
             <a href="{{ url_for('main.select_kamin_type', kamin=kamin) }}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-2"></i> Nazad
             </a>
+            {% else %}
+            <a href="{{ url_for('main.select_kamin') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i> Nazad na kamini
+            </a>
+            {% endif %}
         </div>
     </div>
 
@@ -32,6 +47,17 @@
                     <label class="form-label fw-semibold">Do datum</label>
                     <input type="date" name="datum_do" value="{{ datum_do }}" class="form-control">
                 </div>
+                {% if all_mode %}
+                <div class="col-lg-3 col-md-4">
+                    <label class="form-label fw-semibold">Kamin</label>
+                    <select name="kamin" class="form-select">
+                        <option value="">Site kamini</option>
+                        {% for k in kamini %}
+                        <option value="{{ k }}" {% if selected_kamin == k %}selected{% endif %}>{{ k }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
                 <div class="col-lg-3 col-md-4">
                     <label class="form-label fw-semibold">Oddel</label>
                     <select name="oddel" class="form-select">
@@ -66,6 +92,12 @@
             </div>
             <div class="card-body p-3 p-md-4">
                 <div class="row g-3 mb-3">
+                    {% if all_mode %}
+                    <div class="col-md-2">
+                        <div class="meta-label">Kamin</div>
+                        <div class="meta-value">{{ rec['kamin'] or '-' }}</div>
+                    </div>
+                    {% endif %}
                     <div class="col-md-2">
                         <div class="meta-label">Oddel</div>
                         <div class="meta-value">{{ rec['oddel'] or '-' }}</div>
@@ -80,7 +112,15 @@
                     </div>
                     <div class="col-md-3">
                         <div class="meta-label">Vid greska</div>
-                        <div class="meta-value">{{ rec['vid_greska'] or '-' }}</div>
+                        <div class="meta-value">
+                            {% if rec['vid_greska'] and ' | ' in rec['vid_greska'] %}
+                                {% for item in rec['vid_greska'].split(' | ') %}
+                                <div>{{ item }}</div>
+                                {% endfor %}
+                            {% else %}
+                                {{ rec['vid_greska'] or '-' }}
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="col-md-3">
                         <div class="meta-label">Part number</div>
@@ -120,7 +160,7 @@
         <div class="card-body text-center py-5">
             <i class="fas fa-image text-muted mb-3" style="font-size: 2.2rem;"></i>
             <h5 style="margin-bottom: 0.5rem;">Nema zapisi vo izbraniot period</h5>
-            <p class="text-muted mb-0">Smmeni filter i probaj povtorno.</p>
+            <p class="text-muted mb-0">Smeni filter i probaj povtorno.</p>
         </div>
     </div>
     {% endif %}

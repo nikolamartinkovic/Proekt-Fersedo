@@ -17,6 +17,9 @@
           <a href="{{ url_for('odrzuvanje.manual_pdf') }}" class="btn btn-light rounded-pill px-4 py-3 fw-semibold shadow-sm align-self-start">
             <i class="fas fa-file-pdf text-danger me-2"></i>Прирачник PDF
           </a>
+          <a href="{{ url_for('odrzuvanje.qr_scan') }}" class="btn btn-outline-light rounded-pill px-4 py-3 fw-semibold align-self-start">
+            <i class="fas fa-qrcode me-2"></i>QR СЃРєРµРЅРµСЂ
+          </a>
           <div class="odr-mini-stat">
             <div class="small text-uppercase opacity-75 mb-2">Машини</div>
             <div class="fs-2 fw-bold">{{ stats.machines }}</div>
@@ -113,6 +116,17 @@
         <div class="odr-grid-body">
           <div class="odr-grid-title">Историја</div>
           <p class="odr-grid-subtitle">Завршени интервенции, трошок, застој и машина со најмногу дефекти.</p>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <a href="{{ url_for('odrzuvanje.qr_scan') }}" class="odr-grid-card">
+        <div class="odr-grid-media" style="height:110px;">
+          <i class="fas fa-qrcode text-danger" style="font-size:3rem;"></i>
+        </div>
+        <div class="odr-grid-body">
+          <div class="odr-grid-title">QR СЃРєРµРЅРµСЂ</div>
+          <p class="odr-grid-subtitle">РЎРєРµРЅРёСЂР°С QR / barcode Рё РѕС‚РІРѕСЂРё РјР°С€РёРЅР° РІРµРґРЅР°С€ РѕРґ С‚РµР»РµС„РѕРЅ РёР»Рё РєР°РјРµСЂР°.</p>
         </div>
       </a>
     </div>

@@ -37,7 +37,8 @@
         </div>
         {% endif %}
     {% endfor %}
-    {% set odrz_items = modules.get('odrzuvanje', []) %}
+
+    {% set odrz_items = modules.get("odrzuvanje", []) %}
     {% if odrz_items %}
     <div class="admin-mod-group">
         <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
@@ -103,16 +104,14 @@
         color: #64748b;
     }
     .admin-form-input,
-    .admin-form-select,
-    .admin-password-input {
+    .admin-form-select {
         min-height: 54px;
         border-radius: 16px;
         border: 1px solid #dbe3f0;
         background: #f8fafc;
     }
     .admin-form-input:focus,
-    .admin-form-select:focus,
-    .admin-password-input:focus {
+    .admin-form-select:focus {
         border-color: #60a5fa;
         box-shadow: 0 0 0 0.2rem rgba(59,130,246,.15);
     }
@@ -199,7 +198,7 @@
                 <div>
                     <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Администрација</div>
                     <h1 class="display-6 fw-bold mb-3">Корисници и дозволи</h1>
-                    <p class="mb-0 fs-5" style="max-width:780px;color:rgba(255,255,255,.78);">Креирај корисници, менувај пристапи и контролирај точно кои модули и копчиња ќе му бидат достапни на секој профил.</p>
+                    <p class="mb-0 fs-5" style="max-width:780px;">Креирај корисници, менувај пристапи и контролирај точно кои модули и копчиња ќе му бидат достапни на секој профил.</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <div class="admin-summary-pill">
@@ -213,7 +212,7 @@
                         <i class="fas fa-shield-alt"></i>
                         <div>
                             <div class="small opacity-75">Модули</div>
-                            <div class="fw-bold fs-5">{{ modules.values() | map('length') | sum }}</div>
+                            <div class="fw-bold fs-5">{{ modules.values() | map("length") | sum }}</div>
                         </div>
                     </div>
                 </div>
@@ -241,7 +240,7 @@
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
             <div>
                 <div class="admin-users-section-title">Креирај нов корисник</div>
-                <div class="admin-users-muted small">Пополнете основни податоци, група и модулите што ќе бидат достапни на новиот корисник.</div>
+                <div class="admin-users-muted small">Пополнете основни податоци, група и модули што ќе бидат достапни за новиот корисник.</div>
             </div>
         </div>
 
@@ -260,24 +259,15 @@
                 </div>
 
                 <div class="col-md-6">
-                    <label for="password" class="form-label fw-bold">Лозинка</label>
-                    <div class="input-group input-group-lg">
-                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                        <input type="password" id="password" name="password" class="form-control admin-password-input"
-                               placeholder="Внеси лозинка" required>
-                        <div class="invalid-feedback">Ова поле е задолжително.</div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
                     <label for="email" class="form-label fw-bold">
                         Email адреса
-                        <small class="text-muted fw-normal">(за нотификации)</small>
+                        <small class="text-muted fw-normal">(за пристапни податоци и нотификации)</small>
                     </label>
                     <div class="input-group input-group-lg">
                         <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                         <input type="email" id="email" name="email" class="form-control admin-form-input"
-                               placeholder="korisnik@fersedo.com.mk">
+                               placeholder="korisnik@fersedo.com.mk" required>
+                        <div class="invalid-feedback">Внесете валидна email адреса.</div>
                     </div>
                 </div>
 
@@ -298,6 +288,19 @@
                         <option value="Proizvodstvo">Proizvodstvo</option>
                     </select>
                 </div>
+
+                <div class="col-12">
+                    <div class="alert alert-info border-0 rounded-4 mb-0">
+                        <div class="d-flex align-items-start gap-3">
+                            <i class="fas fa-envelope-open-text mt-1"></i>
+                            <div>
+                                <strong>Системско креирање лозинка</strong><br>
+                                По креирање на корисникот, системот автоматски генерира привремена лозинка и ја испраќа на внесената email адреса заедно со корисничкото име.
+                                При првото најавување, корисникот задолжително ќе мора да ја промени лозинката.
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="mt-5">
@@ -305,7 +308,7 @@
                     <label class="form-label fw-bold fs-5 mb-0">Дозволени модули</label>
                     <small class="text-muted">За админ корисници автоматски се овозможуваат сите модули.</small>
                 </div>
-                {{ render_module_sections('create', []) }}
+                {{ render_module_sections("create", []) }}
             </div>
 
             <div class="text-end mt-5">
@@ -342,7 +345,7 @@
                 <tbody>
                     {% for user in users %}
                     {% set user_idx = loop.index %}
-                    {% set allowed = (user.allowed_modules or '').split(',') | map('trim') | list %}
+                    {% set allowed = (user.allowed_modules or "").split(",") | map("trim") | list %}
                     <tr>
                         <td class="px-4">
                             <span class="admin-user-chip">
@@ -350,7 +353,7 @@
                                 {{ user.username }}
                             </span>
                         </td>
-                        <td>{{ user.email or '—' }}</td>
+                        <td>{{ user.email or "Нема" }}</td>
                         <td>
                             {% if user.is_admin %}
                             <span class="badge bg-success px-3 py-2 rounded-pill">Да</span>
@@ -358,10 +361,10 @@
                             <span class="badge bg-secondary px-3 py-2 rounded-pill">Не</span>
                             {% endif %}
                         </td>
-                        <td>{{ user.user_group or '—' }}</td>
+                        <td>{{ user.user_group or "Нема" }}</td>
                         <td>
                             {% if user.allowed_modules %}
-                            <span class="badge bg-info text-dark px-3 py-2 rounded-pill">{{ user.allowed_modules.split(',')|length }} модули</span>
+                            <span class="badge bg-info text-dark px-3 py-2 rounded-pill">{{ allowed | select | list | length }} модули</span>
                             {% else %}
                             <span class="badge bg-secondary px-3 py-2 rounded-pill">Нема</span>
                             {% endif %}
@@ -414,16 +417,10 @@
                                                 <label class="form-label fw-bold">Група</label>
                                                 <select name="user_group" class="form-select form-select-lg admin-form-select">
                                                     <option value="">Без група</option>
-                                                    <option value="Administracija" {% if user.user_group == 'Administracija' %}selected{% endif %}>Administracija</option>
-                                                    <option value="Nabavki" {% if user.user_group == 'Nabavki' %}selected{% endif %}>Nabavki</option>
-                                                    <option value="Proizvodstvo" {% if user.user_group == 'Proizvodstvo' %}selected{% endif %}>Proizvodstvo</option>
+                                                    <option value="Administracija" {% if user.user_group == "Administracija" %}selected{% endif %}>Administracija</option>
+                                                    <option value="Nabavki" {% if user.user_group == "Nabavki" %}selected{% endif %}>Nabavki</option>
+                                                    <option value="Proizvodstvo" {% if user.user_group == "Proizvodstvo" %}selected{% endif %}>Proizvodstvo</option>
                                                 </select>
-                                            </div>
-
-                                            <div class="col-md-4">
-                                                <label class="form-label fw-bold">Нова лозинка</label>
-                                                <input type="password" name="new_password" class="form-control form-control-lg admin-password-input"
-                                                       placeholder="Остави празно ако не менуваш">
                                             </div>
 
                                             <div class="col-12">
@@ -438,11 +435,24 @@
                                                            value="{{ user.email or '' }}">
                                                 </div>
                                             </div>
+
+                                            <div class="col-12">
+                                                <div class="alert alert-light border rounded-4 mb-0">
+                                                    <div class="d-flex align-items-start gap-3">
+                                                        <i class="fas fa-key text-primary mt-1"></i>
+                                                        <div>
+                                                            Лозинката не се менува рачно од админ.
+                                                            Секој корисник има свое копче <strong>„Промени лозинка“</strong>
+                                                            и самостојно си ја ажурира кога е потребно.
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div class="mt-5">
                                             <label class="form-label fw-bold fs-5 mb-3">Дозволени модули</label>
-                                            {{ render_module_sections('edit_' ~ user_idx, allowed) }}
+                                            {{ render_module_sections("edit_" ~ user_idx, allowed) }}
                                         </div>
 
                                         <div class="text-end mt-5">
@@ -463,22 +473,22 @@
     {% else %}
     <div class="admin-empty-state text-center py-5 shadow-sm rounded-4">
         <i class="fas fa-users-slash fa-4x mb-4 text-info opacity-75"></i>
-        <h4 class="fw-light">Сè уште нема креирани корисници</h4>
+        <h4 class="fw-light">Се уште нема креирани корисници</h4>
         <p class="lead mb-0">Користи ја формата погоре за да го додадеш првиот корисник.</p>
     </div>
     {% endif %}
 </div>
 
 <script>
-document.getElementById('createUserForm')?.addEventListener('submit', function (e) {
+document.getElementById("createUserForm")?.addEventListener("submit", function (e) {
     if (!this.checkValidity()) {
         e.preventDefault();
-        this.classList.add('was-validated');
+        this.classList.add("was-validated");
         return;
     }
-    const btn = document.getElementById('createBtn');
-    document.getElementById('createText').classList.add('d-none');
-    document.getElementById('createSpinner').classList.remove('d-none');
+    const btn = document.getElementById("createBtn");
+    document.getElementById("createText").classList.add("d-none");
+    document.getElementById("createSpinner").classList.remove("d-none");
     btn.disabled = true;
 });
 </script>

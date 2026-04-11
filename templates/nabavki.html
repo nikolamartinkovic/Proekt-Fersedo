@@ -104,7 +104,7 @@
                                 <label class="btn btn-outline-success btn-md w-100 py-3 d-flex align-items-center justify-content-center"
                                        for="cameraInput" id="cameraLabel">
                                     <input type="file" class="d-none"
-                                           accept="image/*" capture="environment" id="cameraInput"
+                                           accept="image/*" id="cameraInput"
                                            onchange="handleCameraCapture(this)">
                                     <i class="fas fa-camera me-2"></i>
                                     <span id="cameraLabelText">Сликај со камера</span>
@@ -276,15 +276,15 @@
                                         <div class="nabavki-deadline-stack">
                                             <div>
                                                 <small class="text-muted d-block">Итност</small>
-                                                <span class="fw-semibold">{{ r.datum_itnost or '—' }}</span>
+                                                <span class="fw-semibold">{{ r.deadline_due_display or '—' }}</span>
                                             </div>
                                             <div>
-                                                <small class="text-muted d-block">Преостанато</small>
-                                                {% if r.datum_kreiranje and r.datum_itnost %}
-                                                    <span class="fw-bold text-success">{{ r.days_remaining }} денови</span>
-                                                {% else %}
-                                                    <span class="text-muted">—</span>
-                                                {% endif %}
+                                                <small class="text-muted d-block">Вкупно</small>
+                                                <span class="fw-semibold">{{ r.deadline_total_label or '—' }}</span>
+                                            </div>
+                                            <div>
+                                                <small class="text-muted d-block">{{ r.deadline_state_label or 'Преостанато' }}</small>
+                                                <span class="fw-bold {{ r.deadline_state_class or 'text-muted' }}">{{ r.deadline_state_value or '—' }}</span>
                                             </div>
                                         </div>
                                     </td>

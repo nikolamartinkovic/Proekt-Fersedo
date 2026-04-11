@@ -9,6 +9,13 @@ from utils.db import get_db
 from utils.notifications import send_push_to_user
 
 
+def _safe_order_url(order_id):
+    try:
+        return url_for("odrzuvanje.order_detail", order_id=order_id)
+    except Exception:
+        return f"/odrzuvanje/nalozi/{order_id}"
+
+
 def _maintenance_users(cursor):
     rows = cursor.execute(
         """
@@ -156,7 +163,7 @@ def notify_new_order(order_id):
         recipients.extend(_maintenance_users(cursor))
     conn.close()
 
-    internal_url = url_for("odrzuvanje.order_detail", order_id=order_id)
+    internal_url = _safe_order_url(order_id)
     intro = f"Креиран е нов работен налог за машината <strong>{order['masina_naziv']}</strong>."
     if order.get("opis_defekt"):
         intro += f"<br><br><strong>Опис на дефект:</strong> {order['opis_defekt']}"
@@ -208,7 +215,7 @@ def notify_order_assignment(order_id, assignee, previous_assignee=""):
     if not row:
         return {"push": 0, "email": 0}
     order = dict(row)
-    internal_url = url_for("odrzuvanje.order_detail", order_id=order_id)
+    internal_url = _safe_order_url(order_id)
     title = f"Доделен налог {order['broj']}"
     body = f"{order['masina_naziv']} · {order.get('naslov') or order.get('tip') or 'Одржување'}"
     intro = f"На тебе ти е доделен работниот налог <strong>{order['broj']}</strong>."

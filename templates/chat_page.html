@@ -3,446 +3,279 @@
 
 {% block content %}
 <style>
-/* ── Layout ─────────────────────────────────────── */
-.chat-wrap {
-  display: flex;
-  height: calc(100vh - 70px);
-  overflow: hidden;
-  background: #f1f5f9;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0,0,0,.10);
-  margin: 12px;
+:root {
+  --chat-ink: #16213f;
+  --chat-muted: #64748b;
+  --chat-line: rgba(214, 227, 243, 0.95);
+  --chat-blue: #4d83ff;
+  --chat-blue-deep: #2449b1;
+  --chat-violet: #6d68ff;
 }
-
-/* ── Sidebar ─────────────────────────────────────── */
+.chat-shell {
+  display: flex;
+  gap: 20px;
+  min-height: calc(100vh - 150px);
+  padding: 16px;
+  border-radius: 34px;
+  background:
+    radial-gradient(circle at top left, rgba(77,131,255,.14), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(109,104,255,.12), transparent 22%),
+    linear-gradient(180deg, #f8fbff 0%, #f3f7ff 100%);
+  box-shadow: 0 22px 70px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
 .chat-sidebar {
-  width: 280px;
-  min-width: 220px;
-  background: #1e293b;
-  color: #e2e8f0;
+  width: 320px;
+  min-width: 320px;
   display: flex;
   flex-direction: column;
-  border-radius: 16px 0 0 16px;
-  overflow: hidden;
-}
-.sidebar-header {
-  padding: 18px 16px 12px;
-  font-size: 18px;
-  font-weight: 700;
+  padding: 22px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, #172554 0%, #1f3d93 52%, #2449b1 100%);
   color: #fff;
-  border-bottom: 1px solid #334155;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  box-shadow: 0 24px 60px rgba(23, 37, 84, 0.26);
 }
+.sidebar-header { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+.header-pill {
+  align-self:flex-start; padding:8px 12px; border-radius:999px;
+  background:rgba(255,255,255,.12); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase;
+}
+.header-title { font-size:28px; font-weight:900; line-height:1.02; }
+.header-copy { font-size:14px; line-height:1.7; color:rgba(226,237,255,.84); }
+.sidebar-user-card {
+  display:flex; align-items:center; gap:12px; padding:14px; border-radius:22px;
+  background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.12); margin-bottom:14px;
+}
+.sidebar-user-card .avatar, .room-item .avatar, .tbar-avatar, .u-avatar {
+  display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; flex-shrink:0;
+}
+.sidebar-user-card .avatar {
+  width:44px; height:44px; border-radius:16px; background:linear-gradient(135deg,#4d83ff,#7d62ff);
+  box-shadow:0 14px 28px rgba(77,131,255,.26);
+}
+.sidebar-user-card strong { display:block; font-size:15px; }
+.sidebar-user-card span { display:block; margin-top:4px; font-size:12px; color:rgba(226,237,255,.76); }
 .sidebar-section {
-  padding: 10px 14px 4px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: .06em;
+  margin:18px 4px 10px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.12em; color:rgba(219,232,255,.68);
 }
+.sidebar-scroll { flex:1; overflow-y:auto; padding-right:4px; }
+.sidebar-scroll::-webkit-scrollbar { width:5px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background:rgba(208,221,255,.22); border-radius:999px; }
 .room-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  cursor: pointer;
-  border-radius: 10px;
-  margin: 2px 8px;
-  transition: background .15s;
-  font-size: 14px;
-  color: #cbd5e1;
-  position: relative;
+  display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:18px; margin-bottom:8px;
+  cursor:pointer; transition:transform .15s, background .15s, border-color .15s;
+  border:1px solid transparent; background:rgba(255,255,255,.05);
 }
-.room-item:hover { background: #334155; }
-.room-item.active { background: #3b82f6; color: #fff; }
+.room-item:hover { transform:translateX(2px); background:rgba(255,255,255,.10); }
+.room-item.active { background:#fff; border-color:rgba(77,131,255,.16); box-shadow:0 14px 28px rgba(15,23,42,.12); }
 .room-item .avatar {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  background: linear-gradient(135deg,#6366f1,#8b5cf6);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; color: #fff;
-  flex-shrink: 0;
+  width:40px; height:40px; border-radius:14px; background:linear-gradient(135deg,#4d83ff,#7d62ff); font-size:14px;
 }
-.room-item .room-meta { flex: 1; min-width: 0; }
-.room-item .room-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.room-item .room-preview { font-size: 12px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.room-item.active .room-preview { color: #bfdbfe; }
+.room-item .room-meta { flex:1; min-width:0; }
+.room-item .room-name { font-size:14px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#fff; }
+.room-item .room-preview { margin-top:4px; font-size:12px; color:rgba(221,230,255,.72); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.room-item.active .room-name { color:var(--chat-ink); }
+.room-item.active .room-preview { color:#64748b; }
 .badge {
-  background: #ef4444;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 1px 7px;
-  min-width: 20px;
-  text-align: center;
-  flex-shrink: 0;
+  min-width:22px; padding:2px 8px; border-radius:999px; background:#ef4444; color:#fff; text-align:center; font-size:11px; font-weight:800;
 }
-
 .new-dm-btn {
-  margin: 10px 12px 6px;
-  padding: 9px 0;
-  background: #334155;
-  border: none;
-  color: #93c5fd;
-  border-radius: 10px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background .15s;
-  font-weight: 600;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin:14px 4px 6px; padding:13px 16px; border:none; border-radius:18px; cursor:pointer;
+  background:linear-gradient(135deg,#4d83ff,#6e67ff); color:#fff; font-size:14px; font-weight:800;
+  display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 14px 30px rgba(63,104,246,.28);
 }
-.new-dm-btn:hover { background: #3b82f6; color: #fff; }
-
-.sidebar-scroll { flex: 1; overflow-y: auto; padding-bottom: 12px; }
-.sidebar-scroll::-webkit-scrollbar { width: 4px; }
-.sidebar-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-
-/* ── Main chat area ──────────────────────────────── */
 .chat-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: #fff;
-  border-radius: 0 16px 16px 0;
+  flex:1; min-width:0; display:flex; flex-direction:column; overflow:hidden; border-radius:30px;
+  background:rgba(255,255,255,.9); border:1px solid var(--chat-line); box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
 }
 .chat-topbar {
-  padding: 14px 20px;
-  border-bottom: 1px solid #e2e8f0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: #fff;
-  flex-shrink: 0;
+  display:flex; align-items:center; justify-content:space-between; gap:16px; padding:22px;
+  background:linear-gradient(135deg, rgba(20,37,86,.98), rgba(36,73,177,.94)); color:#fff; border-bottom:1px solid rgba(214,227,243,.95);
 }
-.chat-topbar .tbar-avatar {
-  width: 40px; height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg,#6366f1,#8b5cf6);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 17px; font-weight: 700; color: #fff;
+.chat-topbar-main { display:flex; align-items:center; gap:14px; min-width:0; }
+.tbar-avatar {
+  width:58px; height:58px; border-radius:20px; background:linear-gradient(135deg,#4d83ff,#7d62ff); font-size:22px; box-shadow:0 16px 30px rgba(77,131,255,.26);
 }
-.chat-topbar .tbar-name { font-size: 16px; font-weight: 700; color: #1e293b; }
-.chat-topbar .tbar-sub  { font-size: 12px; color: #64748b; }
-.online-dot {
-  width: 9px; height: 9px;
-  background: #22c55e;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  margin-left: -12px; margin-top: 22px;
-}
-
-/* ── Messages ────────────────────────────────────── */
+.online-dot { width:10px; height:10px; border-radius:50%; background:#22c55e; border:2px solid #fff; margin-left:-12px; margin-top:22px; }
+.tbar-name { font-size:34px; line-height:1.04; font-weight:900; color:#fff; }
+.tbar-sub { margin-top:8px; font-size:14px; line-height:1.7; color:rgba(226,237,255,.84); }
+.chat-stats { display:grid; grid-template-columns:repeat(2,minmax(112px,1fr)); gap:12px; min-width:240px; }
+.chat-stat { padding:14px 16px; border-radius:18px; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.12); }
+.chat-stat small { display:block; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:rgba(230,239,255,.68); }
+.chat-stat strong { display:block; margin-top:8px; font-size:22px; color:#fff; }
 .messages-area {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px 24px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex:1; overflow-y:auto; padding:24px 24px 12px; display:flex; flex-direction:column; gap:10px;
+  background:radial-gradient(circle at top right, rgba(77,131,255,.08), transparent 28%), linear-gradient(180deg, rgba(248,250,255,.88), rgba(255,255,255,.98));
 }
-.messages-area::-webkit-scrollbar { width: 5px; }
-.messages-area::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
-.msg-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  margin-bottom: 4px;
-  animation: msgIn .18s ease;
+.messages-area::-webkit-scrollbar { width:5px; }
+.messages-area::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:4px; }
+.chat-placeholder {
+  margin:26px auto 10px; padding:10px 16px; border-radius:999px; background:rgba(148,163,184,.12); color:#64748b; font-size:12px; font-weight:800;
 }
-.msg-row.mine { flex-direction: row-reverse; }
-
-@keyframes msgIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
+.msg-row { display:flex; align-items:flex-end; gap:10px; animation:msgIn .18s ease; }
+.msg-row.mine { flex-direction:row-reverse; }
+@keyframes msgIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 .msg-avatar {
-  width: 30px; height: 30px;
-  border-radius: 50%;
-  background: linear-gradient(135deg,#6366f1,#8b5cf6);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 700; color: #fff;
-  flex-shrink: 0;
-  margin-bottom: 18px;
+  width:36px; height:36px; border-radius:14px; background:linear-gradient(135deg,#6366f1,#8b5cf6); font-size:13px; margin-bottom:22px;
+  box-shadow:0 10px 20px rgba(99,102,241,.22);
 }
-.msg-row.mine .msg-avatar { background: linear-gradient(135deg,#3b82f6,#6366f1); }
-
-.msg-content { max-width: 68%; }
-.msg-sender {
-  font-size: 11px; font-weight: 600; color: #64748b;
-  margin-bottom: 2px; padding-left: 2px;
-}
-.msg-row.mine .msg-sender { text-align: right; padding-right: 2px; }
-
+.msg-row.mine .msg-avatar { background:linear-gradient(135deg,#3b82f6,#6366f1); }
+.msg-content { max-width:min(72%, 560px); }
+.msg-sender { margin:0 0 6px; padding-left:6px; font-size:11px; font-weight:800; color:#64748b; }
+.msg-row.mine .msg-sender { text-align:right; padding-right:6px; }
 .msg-bubble {
-  padding: 10px 14px;
-  border-radius: 18px;
-  font-size: 14px;
-  line-height: 1.5;
-  word-break: break-word;
-  white-space: pre-wrap;
+  padding:14px 16px; border-radius:22px; font-size:14px; line-height:1.65; word-break:break-word; white-space:pre-wrap; box-shadow:0 14px 28px rgba(15,23,42,.07);
 }
-.msg-row:not(.mine) .msg-bubble {
-  background: #f1f5f9; color: #1e293b;
-  border-bottom-left-radius: 4px;
-}
-.msg-row.mine .msg-bubble {
-  background: linear-gradient(135deg,#3b82f6,#6366f1);
-  color: #fff; border-bottom-right-radius: 4px;
-}
-
-.msg-time { font-size: 10px; color: #94a3b8; margin-top: 3px; padding: 0 4px; }
-.msg-row.mine .msg-time { text-align: right; }
-
-/* ── Input bar ───────────────────────────────────── */
+.msg-row:not(.mine) .msg-bubble { background:linear-gradient(180deg,#ffffff,#f8fbff); color:#1e293b; border:1px solid var(--chat-line); border-bottom-left-radius:8px; }
+.msg-row.mine .msg-bubble { background:linear-gradient(135deg,#3b82f6,#6366f1); color:#fff; border-bottom-right-radius:8px; }
+.msg-time { margin-top:6px; padding:0 8px; font-size:10px; font-weight:700; color:#94a3b8; }
+.msg-row.mine .msg-time { text-align:right; }
 .chat-input-bar {
-  padding: 14px 20px;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  gap: 10px;
-  align-items: flex-end;
-  background: #fff;
-  flex-shrink: 0;
+  padding:16px 20px 18px; display:flex; gap:10px; align-items:flex-end; border-top:1px solid #e2e8f0;
+  background:linear-gradient(180deg,#fff,#f8fbff);
 }
+.compose-wrap { flex:1; display:flex; flex-direction:column; gap:8px; }
+.compose-hint { padding-left:6px; font-size:11px; font-weight:700; color:#94a3b8; }
 .chat-input-bar textarea {
-  flex: 1;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 10px 14px;
-  font-size: 14px;
-  resize: none;
-  outline: none;
-  max-height: 120px;
-  min-height: 42px;
-  background: #f8fafc;
-  color: #1e293b;
-  transition: border .2s;
-  font-family: inherit;
+  min-height:50px; max-height:120px; padding:13px 16px; border:1.5px solid #dbe5f3; border-radius:18px; background:#f8fafc;
+  color:#1e293b; resize:none; outline:none; transition:border .2s, box-shadow .2s, background .2s; font:inherit;
 }
-.chat-input-bar textarea:focus { border-color: #3b82f6; background: #fff; }
+.chat-input-bar textarea:focus { border-color:#4d83ff; background:#fff; box-shadow:0 0 0 4px rgba(77,131,255,.12); }
 .send-btn {
-  width: 44px; height: 44px;
-  background: linear-gradient(135deg,#3b82f6,#6366f1);
-  border: none; border-radius: 50%;
-  color: #fff; font-size: 18px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  transition: transform .15s, opacity .15s;
+  min-width:56px; height:56px; border:none; border-radius:20px; background:linear-gradient(135deg,#3b82f6,#6366f1);
+  color:#fff; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  box-shadow:0 16px 28px rgba(59,130,246,.28); transition:transform .15s, box-shadow .15s, opacity .15s;
 }
-.send-btn:hover { transform: scale(1.08); }
-.send-btn:disabled { opacity: .5; cursor: not-allowed; }
-
-/* ── Empty state ─────────────────────────────────── */
+.send-btn:hover { transform:translateY(-1px); box-shadow:0 20px 34px rgba(59,130,246,.34); }
+.send-btn:disabled { opacity:.5; cursor:not-allowed; }
 .chat-empty {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  color: #94a3b8; gap: 10px;
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:36px; color:#64748b;
 }
-.chat-empty .empty-icon { font-size: 52px; }
-.chat-empty p { font-size: 15px; }
-
-/* ── Notification toast ──────────────────────────── */
-.notif-toast {
-  position: fixed; bottom: 24px; left: 24px;
-  background: #1e293b; color: #fff;
-  border-radius: 14px; padding: 12px 16px;
-  box-shadow: 0 8px 30px rgba(0,0,0,.25);
-  display: flex; align-items: center; gap: 12px;
-  z-index: 9999; cursor: pointer;
-  animation: toastIn .3s ease;
-  max-width: 300px;
-  border-left: 4px solid #3b82f6;
+.chat-empty .empty-icon {
+  width:92px; height:92px; border-radius:28px; display:flex; align-items:center; justify-content:center;
+  font-size:40px; color:#456ff5; background:linear-gradient(135deg, rgba(77,131,255,.14), rgba(109,104,255,.14));
 }
-.notif-toast .nt-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: linear-gradient(135deg,#3b82f6,#6366f1);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 700; flex-shrink: 0;
+.chat-empty h2 { margin:0; font-size:30px; color:var(--chat-ink); }
+.chat-empty p { max-width:480px; margin:0; font-size:15px; line-height:1.75; }
+.chat-empty-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+.ghost-btn {
+  padding:12px 18px; border-radius:16px; border:1px solid rgba(77,131,255,.18); background:rgba(255,255,255,.92);
+  color:#3556b8; font-size:14px; font-weight:800; cursor:pointer; box-shadow:0 10px 24px rgba(15,23,42,.06);
 }
-.notif-toast .nt-body { flex: 1; min-width: 0; }
-.notif-toast .nt-name { font-size: 12px; font-weight: 700; color: #93c5fd; }
-.notif-toast .nt-text { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.notif-toast .nt-close {
-  font-size: 16px; color: #64748b; flex-shrink: 0;
-  width: 20px; text-align: center;
-}
-.notif-toast .nt-close:hover { color: #fff; }
-
-@keyframes toastIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── User picker modal ───────────────────────────── */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,.45);
-  display: none; z-index: 9999;
-  align-items: center; justify-content: center;
-}
-.modal-overlay.open { display: flex; }
-.modal-box {
-  background: #fff; border-radius: 16px;
-  padding: 24px; width: 340px; max-height: 480px;
-  display: flex; flex-direction: column; gap: 12px;
-  box-shadow: 0 20px 60px rgba(0,0,0,.2);
-}
-.modal-box h3 { font-size: 17px; font-weight: 700; color: #1e293b; margin: 0; }
-.modal-search {
-  padding: 9px 12px; border: 1.5px solid #e2e8f0;
-  border-radius: 10px; font-size: 14px; outline: none;
-  width: 100%; box-sizing: border-box;
-}
-.modal-search:focus { border-color: #3b82f6; }
-.user-list { overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 4px; }
-.user-list-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px; border-radius: 10px;
-  cursor: pointer; transition: background .15s;
-  font-size: 14px; color: #1e293b; font-weight: 500;
-}
-.user-list-item:hover { background: #eff6ff; color: #3b82f6; }
-.user-list-item .u-avatar {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: linear-gradient(135deg,#6366f1,#8b5cf6);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; color: #fff;
-}
-.modal-close-btn {
-  padding: 9px; background: #f1f5f9; border: none;
-  border-radius: 10px; cursor: pointer;
-  font-size: 13px; color: #64748b; font-weight: 600;
-}
-.modal-close-btn:hover { background: #e2e8f0; }
-
-/* ── Notification permission banner ─────────────── */
-.notif-banner {
-  background: linear-gradient(135deg,#1d4ed8,#4338ca);
-  color: #fff; padding: 10px 20px;
-  display: flex; align-items: center; gap: 12px;
-  font-size: 13px; flex-shrink: 0;
-}
-.notif-banner button {
-  background: #fff; color: #1d4ed8; border: none;
-  border-radius: 8px; padding: 5px 14px;
-  font-size: 12px; font-weight: 700; cursor: pointer;
-}
-.notif-banner .nb-dismiss { background: transparent; color: rgba(255,255,255,.6); font-size: 18px; padding: 0; margin-left: auto; }
-
-/* ── Responsive ──────────────────────────────────── */
+.notif-toast, .modal-overlay, .modal-box, .user-list-item, .notif-banner { box-sizing:border-box; }
+.notif-toast { position:fixed; bottom:24px; left:24px; max-width:340px; padding:14px 16px; display:flex; gap:12px; align-items:center; cursor:pointer; z-index:9999; color:#fff; background:rgba(18,28,58,.96); border-radius:18px; border:1px solid rgba(148,163,184,.22); backdrop-filter:blur(10px); box-shadow:0 24px 44px rgba(15,23,42,.34); animation:toastIn .3s ease; }
+.notif-toast .nt-avatar { width:40px; height:40px; border-radius:14px; background:linear-gradient(135deg,#4d83ff,#6366f1); font-size:15px; }
+.notif-toast .nt-body { flex:1; min-width:0; }
+.notif-toast .nt-name { font-size:12px; font-weight:800; color:#b9d1ff; }
+.notif-toast .nt-text { margin-top:4px; font-size:13px; color:rgba(255,255,255,.92); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.notif-toast .nt-close { width:20px; text-align:center; color:rgba(255,255,255,.5); font-size:16px; }
+.modal-overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:9999; background:rgba(15,23,42,.55); backdrop-filter:blur(10px); }
+.modal-overlay.open { display:flex; }
+.modal-box { width:380px; max-height:560px; padding:24px; display:flex; flex-direction:column; gap:12px; border-radius:28px; background:linear-gradient(180deg,#fff,#f8fbff); border:1px solid var(--chat-line); box-shadow:0 28px 70px rgba(15,23,42,.26); }
+.modal-box h3 { margin:0; font-size:22px; font-weight:800; color:var(--chat-ink); }
+.modal-box p { margin:-4px 0 2px; color:#64748b; font-size:14px; line-height:1.6; }
+.modal-search { width:100%; padding:12px 14px; border:1.5px solid #dbe5f3; border-radius:16px; font-size:14px; outline:none; transition:border .2s, box-shadow .2s; }
+.modal-search:focus { border-color:#4d83ff; box-shadow:0 0 0 4px rgba(77,131,255,.12); }
+.user-list { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:8px; padding-right:4px; }
+.user-list-item { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:16px; border:1px solid var(--chat-line); background:rgba(255,255,255,.75); color:#1e293b; font-size:14px; font-weight:700; cursor:pointer; transition:background .15s, transform .15s, border-color .15s; }
+.user-list-item:hover { background:#eff6ff; color:#3b82f6; transform:translateY(-1px); border-color:rgba(77,131,255,.24); }
+.u-avatar { width:36px; height:36px; border-radius:14px; background:linear-gradient(135deg,#6366f1,#8b5cf6); font-size:13px; box-shadow:0 10px 18px rgba(99,102,241,.18); }
+.modal-close-btn { padding:12px 14px; border:none; border-radius:16px; background:#eef4ff; color:#3556b8; font-size:13px; font-weight:800; cursor:pointer; }
+.notif-banner { display:flex; align-items:center; gap:12px; padding:12px 20px; background:linear-gradient(135deg,#18358b,#3158d9); color:#fff; font-size:13px; }
+.notif-banner button { padding:8px 15px; border:none; border-radius:999px; background:#fff; color:#1d4ed8; font-size:12px; font-weight:800; cursor:pointer; }
+.notif-banner .nb-dismiss { margin-left:auto; padding:0; background:transparent; color:rgba(255,255,255,.6); font-size:18px; }
 @media (max-width: 640px) {
-  .chat-sidebar { width: 60px; min-width: 60px; }
-  .sidebar-section, .room-item .room-meta,
-  .new-dm-btn span, .sidebar-header span { display: none; }
-  .room-item { justify-content: center; padding: 10px 0; }
-  .new-dm-btn { padding: 10px 0; }
+  .chat-shell { flex-direction:column; min-height:calc(100vh - 124px); padding:14px; gap:14px; }
+  .chat-sidebar { width:100%; min-width:100%; max-height:300px; }
+  .chat-topbar { flex-direction:column; align-items:stretch; }
+  .tbar-name { font-size:26px; }
+  .chat-stats { min-width:0; }
+  .msg-content { max-width:84%; }
+  .modal-box { width:calc(100vw - 28px); max-height:calc(100vh - 40px); }
 }
 </style>
 
 <div id="notifBanner" class="notif-banner" style="display:none;">
-  🔔 <span>Овозможи нотификации за нови пораки</span>
-  <button onclick="requestNotifPermission()">Овозможи</button>
-  <button class="nb-dismiss" onclick="document.getElementById('notifBanner').style.display='none'">✕</button>
+  🔔 <span>Вклучи известувања за да не пропуштиш нова порака од тимот.</span>
+  <button onclick="requestNotifPermission()">Вклучи</button>
+  <button class="nb-dismiss" onclick="hideNotifBanner()">✕</button>
 </div>
 
-<div class="chat-wrap">
-
-  <!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
-  <div class="chat-sidebar">
-    <div class="sidebar-header">💬 <span>Чат</span></div>
-
+<div class="chat-shell">
+  <aside class="chat-sidebar">
+    <div class="sidebar-header">
+      <div class="header-pill">Работна комуникација</div>
+      <div class="header-title">Fersedo Chat</div>
+      <div class="header-copy">Брзи разговори, директни пораки и едно место за координација со целиот тим.</div>
+    </div>
+    <div class="sidebar-user-card">
+      <div class="avatar">{{ me[0]|upper }}</div>
+      <div><strong>{{ me }}</strong><span>Поврзан сега</span></div>
+    </div>
     <div class="sidebar-scroll">
-      <!-- Global room -->
       <div class="sidebar-section">Канали</div>
-      <div class="room-item {% if open_room == global_room_id %}active{% endif %}"
-           id="room-{{ global_room_id }}"
-           onclick="openRoom({{ global_room_id }}, 'global', 'Општ чат')">
+      <div class="room-item {% if open_room == global_room_id %}active{% endif %}" id="room-{{ global_room_id }}" onclick='openRoom({{ global_room_id }}, "global", "Општ чат")'>
         <div class="avatar">#</div>
-        <div class="room-meta">
-          <div class="room-name">Општ чат</div>
-          <div class="room-preview">Сите вработени</div>
-        </div>
-        <span class="badge" id="badge-{{ global_room_id }}"
-              style="display:{{ 'inline' if unread.get(global_room_id, 0) else 'none' }}">
-          {{ unread.get(global_room_id, 0) }}
-        </span>
+        <div class="room-meta"><div class="room-name">Општ чат</div><div class="room-preview">Сите вработени</div></div>
+        <span class="badge" id="badge-{{ global_room_id }}" style="display:{{ 'inline' if unread.get(global_room_id, 0) else 'none' }}">{{ unread.get(global_room_id, 0) }}</span>
       </div>
-
-      <!-- DM rooms -->
       <div class="sidebar-section">Директни пораки</div>
       <div id="dmList">
         {% for dm in dm_list %}
-        <div class="room-item {% if open_room == dm.id %}active{% endif %}"
-             id="room-{{ dm.id }}"
-             onclick="openRoom({{ dm.id }}, 'dm', '{{ dm.other }}')">
+        <div class="room-item {% if open_room == dm.id %}active{% endif %}" id="room-{{ dm.id }}" onclick='openRoom({{ dm.id }}, "dm", {{ dm.other|tojson }})'>
           <div class="avatar">{{ dm.other[0]|upper }}</div>
-          <div class="room-meta">
-            <div class="room-name">{{ dm.other }}</div>
-            <div class="room-preview">{{ dm.last_msg[:30] if dm.last_msg else 'Нема пораки' }}</div>
-          </div>
-          <span class="badge" id="badge-{{ dm.id }}"
-                style="display:{{ 'inline' if dm.unread else 'none' }}">
-            {{ dm.unread }}
-          </span>
+          <div class="room-meta"><div class="room-name">{{ dm.other }}</div><div class="room-preview">{{ dm.last_msg[:30] if dm.last_msg else 'Нема пораки уште' }}</div></div>
+          <span class="badge" id="badge-{{ dm.id }}" style="display:{{ 'inline' if dm.unread else 'none' }}">{{ dm.unread }}</span>
         </div>
         {% endfor %}
       </div>
-
-      <button class="new-dm-btn" onclick="openDMModal()">
-        ✉️ <span>Нова порака</span>
-      </button>
+      <button class="new-dm-btn" onclick="openDMModal()">✉️ <span>Нова порака</span></button>
     </div>
-  </div>
+  </aside>
 
-  <!-- ══ MAIN ════════════════════════════════════════════════ -->
-  <div class="chat-main" id="chatMain">
+  <section class="chat-main" id="chatMain">
     <div class="chat-empty" id="emptyState">
       <div class="empty-icon">💬</div>
-      <p>Изберете соба за да почнете</p>
+      <h2>Избери разговор и почни веднаш</h2>
+      <p>Отвори го општиот канал за брза комуникација со сите вработени, или започни директна порака со конкретен колега.</p>
+      <div class="chat-empty-actions">
+        <button class="ghost-btn" onclick='openRoom({{ global_room_id }}, "global", "Општ чат")'>Отвори општ чат</button>
+        <button class="ghost-btn" onclick="openDMModal()">Нова директна порака</button>
+      </div>
     </div>
 
     <div id="activeChatArea" style="display:none; flex:1; overflow:hidden; flex-direction:column;">
       <div class="chat-topbar" id="chatTopbar">
-        <div class="tbar-avatar" id="topbarAvatar">?</div>
-        <div class="online-dot" id="topbarDot" style="display:none;"></div>
-        <div>
-          <div class="tbar-name" id="topbarName">–</div>
-          <div class="tbar-sub"  id="topbarSub">–</div>
+        <div class="chat-topbar-main">
+          <div class="tbar-avatar" id="topbarAvatar">?</div>
+          <div class="online-dot" id="topbarDot" style="display:none;"></div>
+          <div><div class="tbar-name" id="topbarName">-</div><div class="tbar-sub" id="topbarSub">-</div></div>
+        </div>
+        <div class="chat-stats">
+          <div class="chat-stat"><small>Тип на разговор</small><strong id="roomTypeLabel">-</strong></div>
+          <div class="chat-stat"><small>Пораки</small><strong id="messageCountLabel">0</strong></div>
         </div>
       </div>
-
       <div class="messages-area" id="messagesArea"></div>
-
       <div class="chat-input-bar">
-        <textarea id="msgInput"
-                  placeholder="Напиши порака... (Enter за испрати, Shift+Enter за нов ред)"
-                  rows="1"
-                  onkeydown="handleKey(event)"
-                  oninput="autoResize(this)"></textarea>
+        <div class="compose-wrap">
+          <div class="compose-hint">Enter за испраќање, Shift + Enter за нов ред.</div>
+          <textarea id="msgInput" placeholder="Напиши порака..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        </div>
         <button class="send-btn" onclick="sendMessage()" id="sendBtn">➤</button>
       </div>
     </div>
-  </div>
+  </section>
 </div>
 
-<!-- ══ USER PICKER MODAL ════════════════════════════════════ -->
 <div class="modal-overlay" id="dmModal" onclick="closeDMModal(event)">
   <div class="modal-box" onclick="event.stopPropagation()">
-    <h3>💬 Нова директна порака</h3>
-    <input class="modal-search" type="text" placeholder="Пребарај корисник..."
-           id="userSearch" oninput="filterUsers()">
+    <h3>Нова директна порака</h3>
+    <p>Избери колега од листата и отвори приватен разговор за побрза координација.</p>
+    <input class="modal-search" type="text" placeholder="Пребарај корисник..." id="userSearch" oninput="filterUsers()">
     <div class="user-list" id="userList">
       {% for u in users %}
-      <div class="user-list-item" onclick="startDM('{{ u.username }}')">
-        <div class="u-avatar">{{ u.username[0]|upper }}</div>
-        {{ u.username }}
-      </div>
+      <div class="user-list-item" onclick='startDM({{ u.username|tojson }})'><div class="u-avatar">{{ u.username[0]|upper }}</div>{{ u.username }}</div>
       {% endfor %}
     </div>
     <button class="modal-close-btn" onclick="closeDMModalBtn()">✕ Затвори</button>
@@ -450,92 +283,86 @@
 </div>
 
 <script>
-// ── State ──────────────────────────────────────────
 const ME = {{ me|tojson }};
 const GLOBAL_ROOM_ID = {{ global_room_id }};
+const INITIAL_ROOM_ID = {{ (open_room or global_room_id)|tojson }};
 
-let currentRoomId   = null;
+let currentRoomId = null;
 let currentRoomType = null;
 let currentRoomName = null;
-let lastMessageId   = 0;
-let pollTimer       = null;
-let badgeTimer      = null;
-let activeToasts    = [];
-let knownRooms      = new Set();  // за нотификации
+let lastMessageId = 0;
+let pollTimer = null;
+let badgeTimer = null;
+let activeToasts = [];
+let knownRooms = new Set();
+let currentMessageCount = 0;
 
-// ── On load ────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
-  // Собери ги сите познати room IDs од sidebar
-  document.querySelectorAll(".room-item[id^='room-']").forEach(el => {
-    knownRooms.add(parseInt(el.id.replace("room-", "")));
+  document.querySelectorAll(".room-item[id^='room-']").forEach((el) => {
+    knownRooms.add(parseInt(el.id.replace("room-", ""), 10));
   });
-
-  openRoom(GLOBAL_ROOM_ID, "global", "Општ чат");
+  const initialItem = document.getElementById(`room-${INITIAL_ROOM_ID}`);
+  if (initialItem) initialItem.click();
+  else openRoom(GLOBAL_ROOM_ID, "global", "Општ чат");
   startBadgePoller();
   initNotifications();
 });
 
-// ── Open room ──────────────────────────────────────
 function openRoom(roomId, type, name) {
-  currentRoomId   = roomId;
+  currentRoomId = roomId;
   currentRoomType = type;
   currentRoomName = name;
-  lastMessageId   = 0;
-
-  document.querySelectorAll(".room-item").forEach(el => el.classList.remove("active"));
-  const rEl = document.getElementById("room-" + roomId);
-  if (rEl) rEl.classList.add("active");
-
-  // Hide badge immediately when opening
-  const badge = document.getElementById("badge-" + roomId);
+  lastMessageId = 0;
+  currentMessageCount = 0;
+  setMessageCount(0);
+  document.querySelectorAll(".room-item").forEach((el) => el.classList.remove("active"));
+  const roomEl = document.getElementById(`room-${roomId}`);
+  if (roomEl) roomEl.classList.add("active");
+  const badge = document.getElementById(`badge-${roomId}`);
   if (badge) badge.style.display = "none";
-
   document.getElementById("emptyState").style.display = "none";
-  const area = document.getElementById("activeChatArea");
-  area.style.display = "flex";
-  area.style.flexDirection = "column";
-
-  const av = document.getElementById("topbarAvatar");
-  av.textContent = type === "global" ? "#" : name[0].toUpperCase();
+  const areaWrap = document.getElementById("activeChatArea");
+  areaWrap.style.display = "flex";
+  areaWrap.style.flexDirection = "column";
+  document.getElementById("topbarAvatar").textContent = type === "global" ? "#" : String(name || "?")[0].toUpperCase();
   document.getElementById("topbarName").textContent = name;
-  document.getElementById("topbarSub").textContent =
-    type === "global" ? "Сите вработени" : "Директна порака";
+  document.getElementById("topbarSub").textContent = type === "global" ? "Канал за цел тим и брза координација." : "Приватен разговор со колега.";
+  document.getElementById("roomTypeLabel").textContent = type === "global" ? "Канал" : "ДМ";
   document.getElementById("topbarDot").style.display = type === "dm" ? "block" : "none";
-
-  document.getElementById("messagesArea").innerHTML =
-    '<div style="color:#94a3b8;font-size:13px;text-align:center;margin-top:30px;">⏳ Се вчитуваат пораките...</div>';
+  document.getElementById("messagesArea").innerHTML = '<div class="chat-placeholder">Се вчитуваат пораките...</div>';
   document.getElementById("msgInput").focus();
-
   fetch(`/chat/history?room_id=${roomId}`)
-    .then(r => r.json())
-    .then(data => {
+    .then((r) => r.json())
+    .then((data) => {
       const area = document.getElementById("messagesArea");
       area.innerHTML = "";
       if (!data.messages || data.messages.length === 0) {
-        area.innerHTML = '<div style="color:#94a3b8;font-size:13px;text-align:center;margin-top:40px;">Нема пораки уште. Почнете разговор! 👋</div>';
+        area.innerHTML = '<div class="chat-placeholder">Нема пораки уште. Почни разговор.</div>';
       } else {
-        data.messages.forEach(m => appendMessage(m, false));
+        data.messages.forEach((m) => appendMessage(m, false));
         lastMessageId = data.messages[data.messages.length - 1].id;
+        currentMessageCount = data.messages.length;
+        setMessageCount(currentMessageCount);
       }
       scrollToBottom(false);
     });
-
   stopPolling();
   pollTimer = setInterval(pollMessages, 2000);
 }
 
-// ── Poll for new messages in active room ───────────
 function pollMessages() {
   if (!currentRoomId) return;
   fetch(`/chat/messages?room_id=${currentRoomId}&after=${lastMessageId}`)
-    .then(r => r.json())
-    .then(data => {
+    .then((r) => r.json())
+    .then((data) => {
       if (data.messages && data.messages.length) {
         const area = document.getElementById("messagesArea");
-        const placeholder = area.querySelector("div[style*='color:#94a3b8']");
+        const placeholder = area.querySelector(".chat-placeholder");
         if (placeholder) placeholder.remove();
-        data.messages.forEach(m => appendMessage(m, true));
+        data.messages.forEach((m) => appendMessage(m, true));
         lastMessageId = data.messages[data.messages.length - 1].id;
+        currentMessageCount += data.messages.length;
+        setMessageCount(currentMessageCount);
         scrollToBottom(true);
       }
       updateBadges(data.unread || {}, data.total_unread || 0);
@@ -543,15 +370,17 @@ function pollMessages() {
 }
 
 function stopPolling() {
-  if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
 }
 
-// ── Badge poller (when no active room open) ────────
 function startBadgePoller() {
   badgeTimer = setInterval(() => {
     fetch("/chat/unread")
-      .then(r => r.json())
-      .then(data => {
+      .then((r) => r.json())
+      .then((data) => {
         updateBadges(data.per_room || {}, data.total || 0);
         checkNewDMs(data.per_room || {});
       });
@@ -559,41 +388,34 @@ function startBadgePoller() {
 }
 
 function updateBadges(perRoom, total) {
-  document.querySelectorAll(".badge[id^='badge-']").forEach(b => {
-    const rid = parseInt(b.id.replace("badge-",""));
-    if (rid === currentRoomId) { b.style.display = "none"; return; }
-    const cnt = perRoom[String(rid)] || perRoom[rid] || 0;
-    b.textContent = cnt;
-    b.style.display = cnt > 0 ? "inline" : "none";
+  document.querySelectorAll(".badge[id^='badge-']").forEach((badgeEl) => {
+    const roomId = parseInt(badgeEl.id.replace("badge-", ""), 10);
+    if (roomId === currentRoomId) {
+      badgeEl.style.display = "none";
+      return;
+    }
+    const count = perRoom[String(roomId)] || perRoom[roomId] || 0;
+    badgeEl.textContent = count;
+    badgeEl.style.display = count > 0 ? "inline" : "none";
   });
-
-  // Nav badge (if exists in base.html)
   const navBadge = document.getElementById("chatNavBadge");
   if (navBadge) {
     navBadge.textContent = total;
     navBadge.style.display = total > 0 ? "inline" : "none";
   }
-
-  // Tab title
-  if (total > 0) {
-    document.title = `(${total}) Чат`;
-  } else {
-    document.title = "Чат";
-  }
+  document.title = total > 0 ? `(${total}) Чат` : "Чат";
 }
 
-// Check for new DM rooms not yet in sidebar
 function checkNewDMs(perRoom) {
-  Object.keys(perRoom).forEach(ridStr => {
-    const rid = parseInt(ridStr);
-    if (!knownRooms.has(rid) && rid !== GLOBAL_ROOM_ID) {
-      // New DM room — reload sidebar entry
-      fetch(`/chat/dm/info?room_id=${rid}`)
-        .then(r => r.json())
-        .then(data => {
+  Object.keys(perRoom).forEach((roomIdStr) => {
+    const roomId = parseInt(roomIdStr, 10);
+    if (!knownRooms.has(roomId) && roomId !== GLOBAL_ROOM_ID) {
+      fetch(`/chat/dm/info?room_id=${roomId}`)
+        .then((r) => r.json())
+        .then((data) => {
           if (data.other) {
-            addDMToSidebar(rid, data.other);
-            knownRooms.add(rid);
+            addDMToSidebar(roomId, data.other);
+            knownRooms.add(roomId);
           }
         })
         .catch(() => {});
@@ -601,97 +423,102 @@ function checkNewDMs(perRoom) {
   });
 }
 
-// ── Append a single message ────────────────────────
-function appendMessage(m, animate) {
+function appendMessage(message, animate) {
   const area = document.getElementById("messagesArea");
-  const isMine = m.sender === ME;
+  const isMine = message.sender === ME;
   const row = document.createElement("div");
-  row.className = "msg-row" + (isMine ? " mine" : "");
+  row.className = `msg-row${isMine ? " mine" : ""}`;
   if (!animate) row.style.animation = "none";
-
   row.innerHTML = `
-    <div class="msg-avatar">${escHtml(m.sender[0].toUpperCase())}</div>
+    <div class="msg-avatar">${escHtml(String(message.sender || "?")[0].toUpperCase())}</div>
     <div class="msg-content">
-      ${!isMine ? `<div class="msg-sender">${escHtml(m.sender)}</div>` : ""}
-      <div class="msg-bubble">${escHtml(m.text)}</div>
-      <div class="msg-time">${m.ts}</div>
+      ${!isMine ? `<div class="msg-sender">${escHtml(message.sender)}</div>` : ""}
+      <div class="msg-bubble">${escHtml(message.text)}</div>
+      <div class="msg-time">${message.ts || ""}</div>
     </div>`;
-
   area.appendChild(row);
-
-  // Desktop notification for incoming messages
+  setRoomPreview(currentRoomId, message.text);
   if (!isMine && animate) {
-    showToast(m.sender, m.text, currentRoomId, currentRoomName);
-    sendBrowserNotif(m.sender, m.text);
+    showToast(message.sender, message.text, currentRoomId, currentRoomName);
+    sendBrowserNotif(message.sender, message.text);
   }
 }
 
-// ── Send message ───────────────────────────────────
 function sendMessage() {
   const input = document.getElementById("msgInput");
-  const text  = input.value.trim();
+  const text = input.value.trim();
   if (!text || !currentRoomId) return;
-
-  const btn = document.getElementById("sendBtn");
-  btn.disabled = true;
+  const button = document.getElementById("sendBtn");
+  button.disabled = true;
   input.value = "";
   autoResize(input);
-
   fetch("/chat/send", {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({room_id: currentRoomId, text})
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ room_id: currentRoomId, text })
   })
-  .then(r => r.json())
-  .then(data => {
-    if (data.ok) {
-      const area = document.getElementById("messagesArea");
-      const placeholder = area.querySelector("div[style*='color:#94a3b8']");
-      if (placeholder) placeholder.remove();
-      appendMessage({sender: ME, text, ts: data.ts || ""}, true);
-      scrollToBottom(true);
-    } else {
-      alert(data.error || "Грешка при испраќање");
-    }
-  })
-  .catch(() => alert("Грешка при испраќање"))
-  .finally(() => { btn.disabled = false; input.focus(); });
+    .then((r) => r.json())
+    .then((data) => {
+      if (data.ok) {
+        const area = document.getElementById("messagesArea");
+        const placeholder = area.querySelector(".chat-placeholder");
+        if (placeholder) placeholder.remove();
+        appendMessage({ sender: ME, text, ts: data.ts || "" }, true);
+        lastMessageId = Math.max(lastMessageId, data.message_id || 0);
+        currentMessageCount += 1;
+        setMessageCount(currentMessageCount);
+        scrollToBottom(true);
+      } else {
+        alert(data.error || "Настана грешка при испраќање.");
+      }
+    })
+    .catch(() => alert("Настана грешка при испраќање."))
+    .finally(() => {
+      button.disabled = false;
+      input.focus();
+    });
 }
 
-function handleKey(e) {
-  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+function handleKey(event) {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    sendMessage();
+  }
 }
 
 function autoResize(el) {
   el.style.height = "auto";
-  el.style.height = Math.min(el.scrollHeight, 120) + "px";
+  el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
 }
 
 function scrollToBottom(smooth) {
   const area = document.getElementById("messagesArea");
   const isNearBottom = area.scrollHeight - area.scrollTop - area.clientHeight < 80;
-  if (smooth && !isNearBottom) return; // Don't force scroll if user is reading history
-  area.scrollTo({ top: area.scrollHeight, behavior: smooth ? "smooth" : "instant" });
+  if (smooth && !isNearBottom) return;
+  area.scrollTo({ top: area.scrollHeight, behavior: smooth ? "smooth" : "auto" });
 }
 
-// ── DM Modal ───────────────────────────────────────
 function openDMModal() {
   document.getElementById("dmModal").classList.add("open");
   document.getElementById("userSearch").value = "";
   filterUsers();
   document.getElementById("userSearch").focus();
 }
-function closeDMModal(e) {
-  if (e.target === document.getElementById("dmModal"))
+
+function closeDMModal(event) {
+  if (event.target === document.getElementById("dmModal")) {
     document.getElementById("dmModal").classList.remove("open");
+  }
 }
+
 function closeDMModalBtn() {
   document.getElementById("dmModal").classList.remove("open");
 }
+
 function filterUsers() {
-  const q = document.getElementById("userSearch").value.toLowerCase();
-  document.querySelectorAll(".user-list-item").forEach(el => {
-    el.style.display = el.textContent.trim().toLowerCase().includes(q) ? "" : "none";
+  const query = document.getElementById("userSearch").value.toLowerCase();
+  document.querySelectorAll(".user-list-item").forEach((el) => {
+    el.style.display = el.textContent.trim().toLowerCase().includes(query) ? "" : "none";
   });
 }
 
@@ -699,67 +526,60 @@ function startDM(username) {
   closeDMModalBtn();
   fetch("/chat/dm/open", {
     method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({username})
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username })
   })
-  .then(r => r.json())
-  .then(data => {
-    if (data.room_id) {
-      if (!document.getElementById("room-" + data.room_id)) {
-        addDMToSidebar(data.room_id, data.other);
+    .then((r) => r.json())
+    .then((data) => {
+      if (data.room_id) {
+        if (!document.getElementById(`room-${data.room_id}`)) addDMToSidebar(data.room_id, data.other);
+        openRoom(data.room_id, "dm", data.other);
+      } else {
+        alert(data.error || "Не можеше да се отвори разговорот.");
       }
-      openRoom(data.room_id, "dm", data.other);
-    } else {
-      alert(data.error || "Грешка");
-    }
-  });
+    });
 }
 
 function addDMToSidebar(roomId, other) {
   knownRooms.add(roomId);
-  if (document.getElementById("room-" + roomId)) return;
-  const btn = document.querySelector(".new-dm-btn");
+  if (document.getElementById(`room-${roomId}`)) return;
+  const button = document.querySelector(".new-dm-btn");
   const item = document.createElement("div");
   item.className = "room-item";
-  item.id = "room-" + roomId;
+  item.id = `room-${roomId}`;
   item.onclick = () => openRoom(roomId, "dm", other);
   item.innerHTML = `
-    <div class="avatar">${escHtml(other[0].toUpperCase())}</div>
+    <div class="avatar">${escHtml(String(other || "?")[0].toUpperCase())}</div>
     <div class="room-meta">
       <div class="room-name">${escHtml(other)}</div>
-      <div class="room-preview">Нема пораки</div>
+      <div class="room-preview">Нема пораки уште</div>
     </div>
     <span class="badge" id="badge-${roomId}" style="display:none;">0</span>`;
-  btn.parentNode.insertBefore(item, btn);
+  button.parentNode.insertBefore(item, button);
 }
 
-// ── In-app toast notification ──────────────────────
 function showToast(sender, text, roomId, roomName) {
-  // Don't show toast if window is focused on that room
   if (document.hasFocus() && currentRoomId === roomId) return;
-
   const toast = document.createElement("div");
   toast.className = "notif-toast";
   toast.innerHTML = `
-    <div class="nt-avatar">${escHtml(sender[0].toUpperCase())}</div>
+    <div class="nt-avatar">${escHtml(String(sender || "?")[0].toUpperCase())}</div>
     <div class="nt-body">
-      <div class="nt-name">${escHtml(sender)} — ${escHtml(roomName || "Чат")}</div>
+      <div class="nt-name">${escHtml(sender)} • ${escHtml(roomName || "Чат")}</div>
       <div class="nt-text">${escHtml(text)}</div>
     </div>
     <div class="nt-close">✕</div>`;
-
-  toast.onclick = (e) => {
-    if (e.target.classList.contains("nt-close")) { removeToast(toast); return; }
+  toast.onclick = (event) => {
+    if (event.target.classList.contains("nt-close")) {
+      removeToast(toast);
+      return;
+    }
     openRoom(roomId, roomId === GLOBAL_ROOM_ID ? "global" : "dm", roomName);
     removeToast(toast);
   };
-
   document.body.appendChild(toast);
   activeToasts.push(toast);
-
-  // Position toasts vertically
   repositionToasts();
-
   setTimeout(() => removeToast(toast), 5000);
 }
 
@@ -769,54 +589,63 @@ function removeToast(toast) {
   toast.style.transition = "all .3s";
   setTimeout(() => {
     toast.remove();
-    activeToasts = activeToasts.filter(t => t !== toast);
+    activeToasts = activeToasts.filter((t) => t !== toast);
     repositionToasts();
   }, 300);
 }
 
 function repositionToasts() {
-  activeToasts.forEach((t, i) => {
-    t.style.bottom = (24 + i * 80) + "px";
+  activeToasts.forEach((toast, index) => {
+    toast.style.bottom = `${24 + index * 88}px`;
   });
 }
 
-// ── Browser Notifications ──────────────────────────
 function initNotifications() {
   if (!("Notification" in window)) return;
-  if (Notification.permission === "default") {
-    document.getElementById("notifBanner").style.display = "flex";
-  }
+  if (Notification.permission === "default") document.getElementById("notifBanner").style.display = "flex";
 }
 
 function requestNotifPermission() {
-  Notification.requestPermission().then(p => {
-    document.getElementById("notifBanner").style.display = "none";
-  });
+  Notification.requestPermission().then(() => hideNotifBanner());
+}
+
+function hideNotifBanner() {
+  document.getElementById("notifBanner").style.display = "none";
 }
 
 function sendBrowserNotif(sender, text) {
-  if (!("Notification" in window)) return;
-  if (Notification.permission !== "granted") return;
-  if (document.hasFocus()) return; // Don't spam when window active
-
-  const n = new Notification(`💬 ${sender}`, {
-    body: text.length > 80 ? text.slice(0, 80) + "…" : text,
+  if (!("Notification" in window) || Notification.permission !== "granted" || document.hasFocus()) return;
+  const notification = new Notification(`💬 ${sender}`, {
+    body: text.length > 80 ? `${text.slice(0, 80)}...` : text,
     icon: "/static/favicon.ico",
-    tag: "chat-" + sender,
-    renotify: true,
+    tag: `chat-${sender}`,
+    renotify: true
   });
-  n.onclick = () => { window.focus(); n.close(); };
-  setTimeout(() => n.close(), 5000);
+  notification.onclick = () => {
+    window.focus();
+    notification.close();
+  };
+  setTimeout(() => notification.close(), 5000);
 }
 
-// ── Utils ──────────────────────────────────────────
+function setRoomPreview(roomId, text) {
+  const room = document.getElementById(`room-${roomId}`);
+  if (!room) return;
+  const preview = room.querySelector(".room-preview");
+  if (preview) preview.textContent = text.length > 36 ? `${text.slice(0, 36)}...` : text;
+}
+
+function setMessageCount(count) {
+  document.getElementById("messageCountLabel").textContent = count;
+}
+
 function escHtml(str) {
   if (!str) return "";
   return String(str)
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 </script>
 {% endblock %}

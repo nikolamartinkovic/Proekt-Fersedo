@@ -8,6 +8,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from utils.db import get_db
 from utils.backup_manager import create_backup
 from utils.odrzuvanje_notifications import notify_due_maintenance_plans
+from utils.odrzuvanje_plan_automation import auto_create_due_maintenance_orders
 from utils.odmori_notifications import (
     isprati_dnevni_izvestaj_otsustva,
     isprati_nedelen_izvestaj_otsustva,
@@ -124,6 +125,15 @@ def init_scheduler(app, auto_assign_interval_seconds):
         replace_existing=True,
     )
     scheduler.add_job(
+        _with_app_context(app, auto_create_due_maintenance_orders),
+        trigger="cron",
+        day_of_week="mon-sun",
+        hour=6,
+        minute=55,
+        id="odrzuvanje_auto_plan_orders",
+        replace_existing=True,
+    )
+    scheduler.add_job(
         _with_app_context(app, notify_due_maintenance_plans),
         trigger="cron",
         day_of_week="mon-sun",
@@ -147,6 +157,7 @@ def init_scheduler(app, auto_assign_interval_seconds):
     print("[SCHEDULER] Zaliha email started - every Wednesday at 08:00")
     print("[SCHEDULER] Otsustva dnevni started - every day at 08:00")
     print("[SCHEDULER] Otsustva nedelen started - every Friday at 15:00")
+    print("[SCHEDULER] Odrzuvanje auto-plan orders started - every day at 06:55")
     print("[SCHEDULER] Odrzuvanje due plans started - every day at 07:00")
     if app.config.get("AUTO_BACKUP_ENABLED", True):
         print(

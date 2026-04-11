@@ -58,7 +58,13 @@
         </div>
     </div>
 
-    <div class="text-center mt-5">
+    <div class="text-center mt-5 d-flex flex-wrap gap-3 justify-content-center">
+        <a href="{{ url_for('main.polugotov_greski', kamin=kamin) }}" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-images me-2"></i> Преглед на грешки и слики
+        </a>
+        <a href="{{ url_for('main.polugotov_greski') }}" class="btn btn-outline-primary btn-lg px-5 py-3 fw-bold shadow">
+            <i class="fas fa-globe me-2"></i> Сите камини
+        </a>
         <a href="{{ url_for('main.select_kamin') }}" class="btn btn-outline-secondary btn-lg px-5 py-3 fw-bold shadow">
             <i class="fas fa-arrow-left me-2"></i> Назад на избор на камин
         </a>

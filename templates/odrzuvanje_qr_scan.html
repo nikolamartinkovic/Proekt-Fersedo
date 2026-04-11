@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% block title %}QR Скенер · Одржување{% endblock %}
+
+{% block content %}
+{% include "_odrzuvanje_styles.html" %}
+
+<div class="container py-4 py-lg-5 odr-shell">
+  <div class="odr-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">QR пристап</div>
+          <h1 class="display-6 fw-bold mb-3">QR / Barcode скенер за машини</h1>
+          <p class="mb-0 fs-5">Скенирај го кодот од машина и системот веднаш ќе ти го отвори картонот.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a href="{{ url_for('odrzuvanje.machines') }}" class="btn btn-outline-light rounded-pill px-4 py-3 fw-semibold">
+            <i class="fas fa-industry me-2"></i>Сите машини
+          </a>
+          <a href="{{ url_for('odrzuvanje.dashboard') }}" class="btn btn-light rounded-pill px-4 py-3 fw-semibold shadow-sm">
+            <i class="fas fa-arrow-left me-2"></i>Назад
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <div class="col-xl-7">
+      <div class="odr-card h-100">
+        <div class="odr-card-header"><i class="fas fa-camera me-2"></i>Скенирај со камера</div>
+        <div class="p-3 p-lg-4">
+          <div class="odr-form-panel">
+            <div class="ratio ratio-16x9 rounded-4 overflow-hidden border border-primary-subtle bg-dark mb-3">
+              <video id="scanner-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
+            </div>
+            <div id="scan-status" class="small text-muted mb-3">Притисни „Старт скенирање“ за да се вклучи камерата.</div>
+            <div class="d-flex flex-wrap gap-2">
+              <button id="start-scan-btn" type="button" class="btn btn-primary rounded-pill px-4">
+                <i class="fas fa-play me-2"></i>Старт скенирање
+              </button>
+              <button id="stop-scan-btn" type="button" class="btn btn-outline-secondary rounded-pill px-4" disabled>
+                <i class="fas fa-stop me-2"></i>Стоп
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-5">
+      <div class="odr-card mb-4">
+        <div class="odr-card-header alt"><i class="fas fa-keyboard me-2"></i>Рачно внесување</div>
+        <div class="p-3 p-lg-4">
+          <form id="manual-resolve-form" class="odr-form-panel">
+            <label class="form-label">QR вредност / URL / код на машина</label>
+            <input id="manual-value" type="text" class="form-control" placeholder="Пример: FERS-MACHINE:12 или код на машина">
+            <button type="submit" class="btn btn-dark rounded-pill px-4 mt-3">
+              <i class="fas fa-magnifying-glass me-2"></i>Отвори машина
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <div class="odr-card">
+        <div class="odr-card-header green"><i class="fas fa-image me-2"></i>Скенирај од слика</div>
+        <div class="p-3 p-lg-4">
+          <div class="odr-form-panel">
+            <label class="form-label">Избери слика со QR / barcode</label>
+            <input id="scan-image-input" type="file" class="form-control" accept="image/*">
+            <div class="small text-muted mt-2">Ова работи ако прелистувачот поддржува BarcodeDetector.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const resolveUrl = "{{ url_for('odrzuvanje.qr_resolve') }}";
+  const videoEl = document.getElementById("scanner-video");
+  const statusEl = document.getElementById("scan-status");
+  const startBtn = document.getElementById("start-scan-btn");
+  const stopBtn = document.getElementById("stop-scan-btn");
+  const manualForm = document.getElementById("manual-resolve-form");
+  const manualValueEl = document.getElementById("manual-value");
+  const imageInputEl = document.getElementById("scan-image-input");
+
+  let stream = null;
+  let detector = null;
+  let scanTimer = null;
+  let busy = false;
+  let scanning = false;
+
+  const supportsBarcodeDetector = "BarcodeDetector" in window;
+
+  function setStatus(message, kind = "muted") {
+    const map = {
+      muted: "text-muted",
+      success: "text-success",
+      danger: "text-danger",
+      warning: "text-warning",
+      info: "text-primary"
+    };
+    statusEl.className = `small mb-3 ${map[kind] || map.muted}`;
+    statusEl.textContent = message;
+  }
+
+  function stopCamera() {
+    scanning = false;
+    if (scanTimer) {
+      clearTimeout(scanTimer);
+      scanTimer = null;
+    }
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+    videoEl.srcObject = null;
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  }
+
+  async function resolveScannedValue(value) {
+    const payload = (value || "").trim();
+    if (!payload || busy) return;
+    busy = true;
+    setStatus("Се проверува скенираната вредност...", "info");
+    try {
+      const response = await fetch(resolveUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: payload })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        setStatus(data.message || "Неуспешно читање на кодот.", "danger");
+        busy = false;
+        return;
+      }
+      setStatus(`Пронајдена машина: ${data.machine_code || ""} ${data.machine_name || ""}. Се отвора...`, "success");
+      window.location.href = data.url;
+    } catch (err) {
+      setStatus("Грешка при комуникација со серверот.", "danger");
+      busy = false;
+    }
+  }
+
+  async function scanOnce() {
+    if (!scanning || !detector || busy) return;
+    try {
+      const codes = await detector.detect(videoEl);
+      if (codes && codes.length) {
+        const value = (codes[0].rawValue || "").trim();
+        if (value) {
+          stopCamera();
+          await resolveScannedValue(value);
+          return;
+        }
+      }
+    } catch (err) {
+      // ignore frame-level failures
+    }
+    scanTimer = setTimeout(scanOnce, 450);
+  }
+
+  async function startCameraAndScan() {
+    if (!supportsBarcodeDetector) {
+      setStatus("Овој уред не поддржува BarcodeDetector. Користи рачно внесување или скенирање од слика.", "warning");
+      return;
+    }
+    if (scanning) return;
+    try {
+      detector = new BarcodeDetector({
+        formats: ["qr_code", "code_128", "code_39", "ean_13", "ean_8", "upc_a", "upc_e"]
+      });
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false
+      });
+      videoEl.srcObject = stream;
+      scanning = true;
+      startBtn.disabled = true;
+      stopBtn.disabled = false;
+      setStatus("Камерата е активна. Насочи го QR/barcode кодот во кадар.", "success");
+      scanOnce();
+    } catch (err) {
+      setStatus("Не може да се вклучи камера. Провери browser camera permission.", "danger");
+      stopCamera();
+    }
+  }
+
+  async function scanImageFile(file) {
+    if (!file) return;
+    if (!supportsBarcodeDetector) {
+      setStatus("Овој уред не поддржува скенирање од слика (BarcodeDetector).", "warning");
+      return;
+    }
+    try {
+      detector = detector || new BarcodeDetector({
+        formats: ["qr_code", "code_128", "code_39", "ean_13", "ean_8", "upc_a", "upc_e"]
+      });
+      const bitmap = await createImageBitmap(file);
+      const codes = await detector.detect(bitmap);
+      if (!codes || !codes.length || !(codes[0].rawValue || "").trim()) {
+        setStatus("Не е пронајден QR/barcode на избраната слика.", "warning");
+        return;
+      }
+      await resolveScannedValue(codes[0].rawValue);
+    } catch (err) {
+      setStatus("Сликата не може да се скенира.", "danger");
+    }
+  }
+
+  startBtn.addEventListener("click", startCameraAndScan);
+  stopBtn.addEventListener("click", () => {
+    stopCamera();
+    setStatus("Скенирањето е запрено.", "muted");
+  });
+
+  manualForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await resolveScannedValue(manualValueEl.value);
+  });
+
+  imageInputEl.addEventListener("change", async () => {
+    const file = imageInputEl.files && imageInputEl.files[0];
+    if (file) {
+      await scanImageFile(file);
+      imageInputEl.value = "";
+    }
+  });
+
+  window.addEventListener("beforeunload", stopCamera);
+})();
+</script>
+{% endblock %}

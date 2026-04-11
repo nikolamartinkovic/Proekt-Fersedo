@@ -65,7 +65,8 @@ def init_db():
             hashed_password TEXT NOT NULL,
             is_admin INTEGER DEFAULT 0,
             user_group TEXT DEFAULT '',
-            allowed_modules TEXT DEFAULT ''
+            allowed_modules TEXT DEFAULT '',
+            must_change_password INTEGER DEFAULT 0
         )
     """)
 
@@ -335,6 +336,7 @@ def init_db():
             email TEXT,
             pozicija TEXT,
             datum_vrabotuvanje DATE,
+            datum_posleden_sistematski DATE,
             oddel TEXT,
             prekin_staz INTEGER DEFAULT 0
         )
@@ -422,7 +424,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS kvalitet_kontrola (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             kamin TEXT NOT NULL,
-            seriski_broj TEXT NOT NULL,
+            seriski_broj TEXT DEFAULT '',
+            vnatresen_broj TEXT DEFAULT '',
             naslov TEXT NOT NULL,
             datum TEXT NOT NULL,
             username TEXT NOT NULL,
@@ -440,6 +443,22 @@ def init_db():
             status INTEGER,
             zabeleska TEXT,
             slika TEXT
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS kvalitet_odgovori_snapshot (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kontrola_id INTEGER NOT NULL,
+            odgovor_id INTEGER,
+            podcekor_id INTEGER,
+            cekor_naslov TEXT,
+            podcekor_opis TEXT,
+            status INTEGER,
+            zabeleska TEXT,
+            slika TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (kontrola_id) REFERENCES kvalitet_kontrola(id) ON DELETE CASCADE
         )
     """)
 
@@ -475,6 +494,33 @@ def init_db():
             verzija INTEGER NOT NULL,
             datum TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (kontrola_id) REFERENCES kvalitet_kontrola(id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS kvalitet_vlezna_kontrola (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            datum_kontrola TEXT NOT NULL,
+            dokument_broj TEXT NOT NULL,
+            dokument_tip TEXT NOT NULL,
+            dobavuvac TEXT DEFAULT '',
+            status TEXT DEFAULT 'DOBAR',
+            username TEXT NOT NULL,
+            pdf_file TEXT DEFAULT '',
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS kvalitet_vlezna_stavki (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kontrola_id INTEGER NOT NULL,
+            materijal TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'DOBAR',
+            zabeleska TEXT DEFAULT '',
+            slika TEXT DEFAULT '',
+            redosled INTEGER DEFAULT 0,
+            FOREIGN KEY (kontrola_id) REFERENCES kvalitet_vlezna_kontrola(id) ON DELETE CASCADE
         )
     """)
     cursor.execute("""CREATE TABLE IF NOT EXISTS chat_rooms (
@@ -570,6 +616,8 @@ def init_db():
             trosok REAL DEFAULT 0,
             potvrdil TEXT DEFAULT '',
             resenie TEXT DEFAULT '',
+            plan_id INTEGER,
+            auto_kreirano INTEGER DEFAULT 0,
             FOREIGN KEY (masina_id) REFERENCES odrzuvanje_masini(id)
         )
     """)
@@ -614,6 +662,7 @@ def init_db():
             odgovoren TEXT DEFAULT '',
             checklist_id INTEGER,
             aktivno INTEGER DEFAULT 1,
+            auto_kreiraj_nalog INTEGER DEFAULT 1,
             created_by TEXT,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (masina_id) REFERENCES odrzuvanje_masini(id),

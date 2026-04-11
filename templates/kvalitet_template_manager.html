@@ -35,6 +35,10 @@
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 1.25rem;
     }
+    .qc-kamin-grid.qc-kamin-grid-single {
+        grid-template-columns: minmax(260px, 340px);
+        justify-content: start;
+    }
     .qc-kamin-option {
         display: block;
         text-decoration: none;
@@ -181,12 +185,32 @@
                 <h5 class="fw-bold mb-1">Избор на камин</h5>
                 <div class="text-muted small">Кликни на картичка за да го отвориш шаблонот за избраниот камин.</div>
             </div>
-            {% if selected_kamin %}
-            <span class="badge rounded-pill text-bg-primary px-3 py-2">{{ selected_kamin }}</span>
-            {% endif %}
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                {% if selected_kamin %}
+                <span class="badge rounded-pill text-bg-primary px-3 py-2">{{ selected_kamin }}</span>
+                <a href="{{ url_for('kvalitet.kvalitet_template_manager') }}"
+                   class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                    <i class="bi bi-grid me-1"></i>&#1057;&#1080;&#1090;&#1077; &#1082;&#1072;&#1084;&#1080;&#1085;&#1080;
+                </a>
+                {% endif %}
+            </div>
         </div>
 
-        <div class="qc-kamin-grid">
+        <div class="qc-kamin-grid {% if selected_kamin %}qc-kamin-grid-single{% endif %}">
+            {% if selected_kamin %}
+            <a href="{{ url_for('kvalitet.kvalitet_template_manager', kamin=selected_kamin) }}"
+               class="qc-kamin-option active">
+                <div class="qc-kamin-option-thumb">
+                    <img src="{{ url_for('main.kamin_static', filename=selected_kamin ~ '.png') }}"
+                         alt="{{ selected_kamin }}"
+                         onerror="this.onerror=null; this.src='{{ url_for('main.kamin_static', filename='default-kamin.png') }}';">
+                </div>
+                <div class="qc-kamin-option-body">
+                    <div class="qc-kamin-option-title">{{ selected_kamin }}</div>
+                    <p class="qc-kamin-option-text">&#1050;&#1083;&#1080;&#1082;&#1085;&#1080; &#1079;&#1072; &#1076;&#1072; &#1075;&#1086; &#1086;&#1090;&#1074;&#1086;&#1088;&#1080;&#1096; &#1080; &#1091;&#1088;&#1077;&#1076;&#1080;&#1096; QC &#1096;&#1072;&#1073;&#1083;&#1086;&#1085;&#1086;&#1090; &#1079;&#1072; &#1086;&#1074;&#1086;&#1112; &#1082;&#1072;&#1084;&#1080;&#1085;.</p>
+                </div>
+            </a>
+            {% else %}
             {% for k in kamini %}
             <a href="{{ url_for('kvalitet.kvalitet_template_manager', kamin=k) }}"
                class="qc-kamin-option {% if k == selected_kamin %}active{% endif %}">
@@ -201,6 +225,7 @@
                 </div>
             </a>
             {% endfor %}
+            {% endif %}
             {% if not kamini %}
             <div class="qc-empty-state text-center p-5">
                 <div class="mb-3" style="font-size:2rem;color:#4338ca;">

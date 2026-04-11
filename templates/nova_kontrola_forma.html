@@ -27,6 +27,10 @@
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 1.25rem;
     }
+    .qc-form-kamin-grid.qc-form-kamin-grid-single {
+        grid-template-columns: minmax(260px, 340px);
+        justify-content: start;
+    }
     .qc-form-kamin-card {
         display: block;
         text-decoration: none;
@@ -179,12 +183,31 @@
                 <h5 class="fw-bold mb-1">Избор на камин</h5>
                 <div class="text-muted small">Избери модел за кој ќе се отвори соодветниот сет на QC чекори.</div>
             </div>
-            {% if selected_kamin %}
-            <span class="badge rounded-pill text-bg-primary px-3 py-2">{{ selected_kamin }}</span>
-            {% endif %}
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                {% if selected_kamin %}
+                <span class="badge rounded-pill text-bg-primary px-3 py-2">{{ selected_kamin }}</span>
+                <a href="{{ url_for('kvalitet.kvalitet_select_kamin') }}"
+                   class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                    <i class="bi bi-grid me-1"></i>&#1057;&#1080;&#1090;&#1077; &#1082;&#1072;&#1084;&#1080;&#1085;&#1080;
+                </a>
+                {% endif %}
+            </div>
         </div>
 
-        <div class="qc-form-kamin-grid">
+        <div class="qc-form-kamin-grid {% if selected_kamin %}qc-form-kamin-grid-single{% endif %}">
+            {% if selected_kamin %}
+            <a href="{{ url_for('kvalitet.nova_kontrola', kamin=selected_kamin) }}" class="qc-form-kamin-card active">
+                <div class="qc-form-kamin-thumb">
+                    <img src="{{ url_for('main.kamin_static', filename=selected_kamin ~ '.png') }}"
+                         alt="{{ selected_kamin }}"
+                         onerror="this.onerror=null; this.src='{{ url_for('main.kamin_static', filename='default-kamin.png') }}';">
+                </div>
+                <div class="qc-form-kamin-body">
+                    <div class="qc-form-kamin-title">{{ selected_kamin }}</div>
+                    <p class="qc-form-kamin-text">&#1050;&#1083;&#1080;&#1082;&#1085;&#1080; &#1079;&#1072; &#1076;&#1072; &#1086;&#1090;&#1074;&#1086;&#1088;&#1080;&#1096; &#1085;&#1086;&#1074;&#1072; &#1082;&#1086;&#1085;&#1090;&#1088;&#1086;&#1083;&#1072; &#1079;&#1072; &#1086;&#1074;&#1086;&#1112; &#1082;&#1072;&#1084;&#1080;&#1085;.</p>
+                </div>
+            </a>
+            {% else %}
             {% for k in kamini %}
             <a href="{{ url_for('kvalitet.nova_kontrola', kamin=k) }}" class="qc-form-kamin-card {% if k == selected_kamin %}active{% endif %}">
                 <div class="qc-form-kamin-thumb">
@@ -198,6 +221,7 @@
                 </div>
             </a>
             {% endfor %}
+            {% endif %}
         </div>
     </div>
 
@@ -214,13 +238,19 @@
             </div>
 
             <div class="row g-4">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label fw-bold">Камин</label>
                     <input type="text" class="form-control qc-form-input" value="{{ selected_kamin }}" disabled>
                 </div>
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Сериски број <span class="text-danger">*</span></label>
-                    <input type="text" name="seriski_broj" class="form-control qc-form-input" required placeholder="Внеси сериски број...">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Внатрешен број</label>
+                    <input type="text" class="form-control qc-form-input" value="{{ preview_vnatresen_broj or 'QC-000001' }}" disabled>
+                    <div class="text-muted small mt-1">Системски се генерира при секоја нова контрола.</div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Сериски број <span id="serialRequiredMark" class="text-danger d-none">*</span></label>
+                    <input type="text" id="seriski_broj" name="seriski_broj" class="form-control qc-form-input" placeholder="Внеси сериски број...">
+                    <div id="serialRequirementHelp" class="text-muted small mt-1">Серискиот број станува задолжителен само ако сите чекори се означени како добри.</div>
                 </div>
             </div>
         </div>
@@ -304,6 +334,22 @@
 </div>
 
 <script>
+function updateSerialRequirement() {
+    const serialInput = document.getElementById("seriski_broj");
+    const requiredMark = document.getElementById("serialRequiredMark");
+    const helpText = document.getElementById("serialRequirementHelp");
+    const checkboxes = Array.from(document.querySelectorAll(".qc-form-check"));
+
+    if (!serialInput || !requiredMark || !helpText) return;
+
+    const allPassed = checkboxes.length > 0 && checkboxes.every(checkbox => checkbox.checked);
+    serialInput.required = allPassed;
+    requiredMark.classList.toggle("d-none", !allPassed);
+    helpText.textContent = allPassed
+        ? "Сите чекори се означени како добри, затоа серискиот број сега е задолжителен."
+        : "Серискиот број станува задолжителен само ако сите чекори се означени како добри.";
+}
+
 function toggleNok(id, checkbox) {
     const nokDiv = document.getElementById("nok_" + id);
     if (!checkbox.checked) {
@@ -312,6 +358,7 @@ function toggleNok(id, checkbox) {
         nokDiv.classList.add("d-none");
         document.getElementById("preview_" + id).innerHTML = '<small class="text-muted">Ќе се прикаже preview по избор</small>';
     }
+    updateSerialRequirement();
 }
 
 document.querySelectorAll('input[type="file"]').forEach(input => {
@@ -337,6 +384,8 @@ document.querySelectorAll('input[type="file"]').forEach(input => {
         }
     });
 });
+
+updateSerialRequirement();
 </script>
 
 {% endblock %}

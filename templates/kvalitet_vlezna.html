@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}Влезна контрола{% endblock %}
+
+{% block content %}
+<style>
+  .vlezna-shell {
+    max-width: 1240px;
+  }
+  .vlezna-hero {
+    border-radius: 30px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top right, rgba(74, 222, 128, 0.18), transparent 28%),
+      linear-gradient(135deg, #0f172a 0%, #134e4a 52%, #0f766e 100%);
+    box-shadow: 0 24px 56px rgba(15, 23, 42, 0.16);
+  }
+  .vlezna-hero h1 {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff;
+    text-shadow: 0 6px 18px rgba(15, 23, 42, 0.28);
+  }
+  .vlezna-hero .badge {
+    color: #ffffff !important;
+  }
+  .vlezna-hero p {
+    max-width: 760px;
+    color: rgba(255,255,255,.84);
+  }
+  .vlezna-stat-card,
+  .vlezna-table-wrap,
+  .vlezna-filter-card {
+    border-radius: 24px;
+    border: 1px solid rgba(148,163,184,.18);
+    background: #ffffff;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+  }
+  .vlezna-stat-card {
+    padding: 1.4rem 1.5rem;
+  }
+  .vlezna-stat-label {
+    color: #64748b;
+    font-size: .86rem;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    font-weight: 700;
+    margin-bottom: .35rem;
+  }
+  .vlezna-stat-value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1;
+  }
+  .vlezna-filter-card {
+    padding: 1.2rem;
+  }
+  .vlezna-input,
+  .vlezna-select {
+    min-height: 52px;
+    border-radius: 16px;
+    border: 1px solid #dbe3f0;
+    background: #f8fafc;
+  }
+  .vlezna-input:focus,
+  .vlezna-select:focus {
+    border-color: #34d399;
+    box-shadow: 0 0 0 0.2rem rgba(52, 211, 153, 0.15);
+  }
+  .vlezna-table thead th {
+    background: #172554;
+    color: #ffffff;
+    border: 0;
+    padding: 1rem .9rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .vlezna-table tbody td {
+    padding: 1rem .9rem;
+    vertical-align: middle;
+    border-color: #e5e7eb;
+  }
+  .vlezna-doc-number {
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .vlezna-subtle {
+    color: #64748b;
+    font-size: .9rem;
+  }
+  .vlezna-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .48rem .8rem;
+    border-radius: 999px;
+    font-size: .86rem;
+    font-weight: 800;
+  }
+  .vlezna-status.good {
+    background: rgba(22, 163, 74, .12);
+    color: #15803d;
+  }
+  .vlezna-status.bad {
+    background: rgba(220, 38, 38, .12);
+    color: #b91c1c;
+  }
+  .vlezna-empty {
+    border-radius: 24px;
+    border: 1px dashed #cbd5e1;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  }
+</style>
+
+<div class="container py-4 py-lg-5 vlezna-shell">
+  <div class="vlezna-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Квалитет</div>
+          <h1 class="display-6 fw-bold mb-3" style="color:#ffffff !important; -webkit-text-fill-color:#ffffff; text-shadow:0 6px 18px rgba(15,23,42,.28);">Влезна контрола</h1>
+          <p class="mb-0 fs-5">Следи ги пристигнатите материјали по документ, евидентирај дали се добри или не се добри и отвори PDF запис за секоја извршена влезна контрола.</p>
+        </div>
+        <a href="{{ url_for('kvalitet.kvalitet_vlezna_nova') }}" class="btn btn-light btn-lg rounded-pill px-4">
+          <i class="fas fa-plus me-2"></i>Нова влезна контрола
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-4">
+      <div class="vlezna-stat-card">
+        <div class="vlezna-stat-label">Вкупно контроли</div>
+        <div class="vlezna-stat-value">{{ total_records }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="vlezna-stat-card">
+        <div class="vlezna-stat-label">Добри приеми</div>
+        <div class="vlezna-stat-value text-success">{{ good_records }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="vlezna-stat-card">
+        <div class="vlezna-stat-label">Недобри приеми</div>
+        <div class="vlezna-stat-value text-danger">{{ bad_records }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vlezna-filter-card mb-4">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-lg-6">
+        <label class="form-label fw-bold">Пребарување</label>
+        <input type="text" name="q" value="{{ query }}" class="form-control vlezna-input" placeholder="Број на документ, добавувач, материјал или забелешка...">
+      </div>
+      <div class="col-lg-3">
+        <label class="form-label fw-bold">Статус</label>
+        <select name="status" class="form-select vlezna-select">
+          <option value="">Сите</option>
+          <option value="DOBAR" {% if status_filter == 'DOBAR' %}selected{% endif %}>Добар</option>
+          <option value="NE_DOBAR" {% if status_filter == 'NE_DOBAR' %}selected{% endif %}>Не е добар</option>
+        </select>
+      </div>
+      <div class="col-lg-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4 flex-grow-1">
+          <i class="fas fa-search me-2"></i>Филтрирај
+        </button>
+        <a href="{{ url_for('kvalitet.kvalitet_vlezna') }}" class="btn btn-outline-secondary btn-lg rounded-pill px-4">
+          <i class="fas fa-rotate-left"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+
+  {% if kontroli %}
+  <div class="vlezna-table-wrap overflow-auto">
+    <table class="table vlezna-table align-middle mb-0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Датум</th>
+          <th>Документ</th>
+          <th>Добавувач</th>
+          <th>Ставки</th>
+          <th>Статус</th>
+          <th>Внесено од</th>
+          <th>Акции</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for kontrola in kontroli %}
+        <tr>
+          <td class="fw-bold">#{{ kontrola.id }}</td>
+          <td>{{ format_date(kontrola.datum_kontrola) }}</td>
+          <td>
+            <div class="vlezna-doc-number">{{ kontrola.dokument_broj }}</div>
+            <div class="vlezna-subtle">{{ label_document_type(kontrola.dokument_tip) }}</div>
+          </td>
+          <td>{{ kontrola.dobavuvac or '-' }}</td>
+          <td>
+            <div class="fw-bold">{{ kontrola.broj_stavki or 0 }}</div>
+            <div class="vlezna-subtle">Не добри: {{ kontrola.broj_nedobri or 0 }}</div>
+          </td>
+          <td>
+            <span class="vlezna-status {% if kontrola.status == 'NE_DOBAR' %}bad{% else %}good{% endif %}">
+              <i class="fas {% if kontrola.status == 'NE_DOBAR' %}fa-circle-xmark{% else %}fa-circle-check{% endif %}"></i>
+              {{ label_status(kontrola.status) }}
+            </span>
+          </td>
+          <td>{{ kontrola.username }}</td>
+          <td>
+            <div class="d-flex flex-wrap gap-2">
+              <a href="{{ url_for('kvalitet.kvalitet_vlezna_detali', kontrola_id=kontrola.id) }}" class="btn btn-outline-primary rounded-pill px-3">
+                <i class="fas fa-eye me-1"></i>Детали
+              </a>
+              {% if kontrola.pdf_file %}
+              <a href="{{ url_for('static', filename='kvalitet_vlezna_pdf/' ~ kontrola.pdf_file) }}" target="_blank" class="btn btn-outline-dark rounded-pill px-3">
+                <i class="fas fa-file-pdf me-1"></i>PDF
+              </a>
+              {% endif %}
+              {% if session.get('is_admin') %}
+              <form method="POST" action="{{ url_for('kvalitet.kvalitet_vlezna_delete', kontrola_id=kontrola.id) }}" class="d-inline" onsubmit="return confirm('Дали си сигурен дека сакаш да ја избришеш оваа влезна контрола?');">
+                <button type="submit" class="btn btn-outline-danger rounded-pill px-3">
+                  <i class="fas fa-trash me-1"></i>Избриши
+                </button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="vlezna-empty text-center py-5 px-4">
+    <div class="fs-2 text-secondary mb-3"><i class="fas fa-inbox"></i></div>
+    <h4 class="fw-bold mb-2">Нема записи за влезна контрола</h4>
+    <p class="text-muted mb-4">Започни со првиот запис и евидентирај ги материјалите што пристигнале по документ.</p>
+    <a href="{{ url_for('kvalitet.kvalitet_vlezna_nova') }}" class="btn btn-primary btn-lg rounded-pill px-4">
+      <i class="fas fa-plus me-2"></i>Нова влезна контрола
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

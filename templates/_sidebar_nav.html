@@ -1,0 +1,179 @@
+<div class="sidebar-inner" id="sidebar-inner">
+    {% macro sb_nav_link(href, icon, label, tooltip=None, extra_class='', icon_id='', badge_id='') -%}
+    <a class="sb-link{{ ' ' ~ extra_class if extra_class else '' }}" href="{{ href }}" data-tooltip="{{ tooltip or label }}">
+        <span class="sb-icon"{% if icon_id %} id="{{ icon_id }}"{% endif %}>
+            <i class="{{ icon }}"></i>
+            {% if badge_id %}<span class="sb-badge" id="{{ badge_id }}"></span>{% endif %}
+        </span>
+        <span class="sb-label">{{ label }}</span>
+    </a>
+    {%- endmacro %}
+
+    {% macro sb_nav_dropdown(group_id, icon, label) -%}
+    <div class="sb-dropdown" data-sidebar-group="{{ group_id }}">
+        <button type="button"
+                class="sb-dropdown-toggle"
+                data-sidebar-toggle
+                data-tooltip="{{ label }}"
+                aria-expanded="false"
+                aria-controls="submenu-{{ group_id }}">
+            <span class="sb-icon"><i class="{{ icon }}"></i></span>
+            <span class="sb-label">{{ label }}</span>
+            <span class="sb-chevron"><i class="fas fa-chevron-down"></i></span>
+        </button>
+        <div class="sb-submenu" id="submenu-{{ group_id }}">
+            {{ caller() }}
+        </div>
+    </div>
+    {%- endmacro %}
+
+    {% if session.user %}
+    {% set allowed = (session.allowed_modules or '').split(',') | map('trim') | list %}
+
+    <div class="sb-group"><i class="fas fa-compass" style="font-size:0.7rem;"></i> Брз пристап</div>
+    {{ sb_nav_link(url_for('main.welcome'), 'fas fa-house', 'Почетен екран', 'Почетен екран') }}
+
+    <div class="sb-group"><i class="fas fa-grip" style="font-size:0.7rem;"></i> Главни модули</div>
+
+    {% if session.is_admin %}
+        {% call sb_nav_dropdown('admin', 'fas fa-shield-halved', 'Админ') %}
+            {{ sb_nav_link(url_for('admin.dashboard'), 'fas fa-chart-line', 'Dashboard', 'Dashboard', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('admin.admin_users'), 'fas fa-users-cog', 'Корисници', 'Корисници', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('admin.pregled_greski'), 'fas fa-triangle-exclamation', 'Грешки', 'Грешки', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('admin.system_logs'), 'fas fa-wave-square', 'Системски логови', 'Системски логови', 'sb-sublink') }}
+        {% endcall %}
+
+        {% call sb_nav_dropdown('production', 'fas fa-industry', 'Производство') %}
+            {{ sb_nav_link(url_for('main.select_kamin'), 'fas fa-plus-circle', 'Нов запис', 'Нов запис', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('artikli.add'), 'fas fa-box-open', 'Отвори нов артикл', 'Отвори нов артикл', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('main.moj_zapisi'), 'fas fa-list', 'Мои записи', 'Мои записи', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('artikli.artikli'), 'fas fa-boxes-stacked', 'Артикли', 'Артикли', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('main.izvestaj'), 'fas fa-file-alt', 'Извештај', 'Извештај', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('admin.procesni_cekori'), 'fas fa-cogs', 'Процесни чекори', 'Процесни чекори', 'sb-sublink') }}
+        {% endcall %}
+
+        {% call sb_nav_dropdown('inventory', 'fas fa-warehouse', 'Залихи') %}
+            {{ sb_nav_link(url_for('zalihi.zalihi'), 'fas fa-warehouse', 'Залихи', 'Залихи', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('admin.email_recipients'), 'fas fa-envelope-open-text', 'Email примачи', 'Email примачи', 'sb-sublink') }}
+        {% endcall %}
+
+        {% call sb_nav_dropdown('maintenance', 'fas fa-screwdriver-wrench', 'Одржување') %}
+            {{ sb_nav_link(url_for('odrzuvanje.dashboard'), 'fas fa-screwdriver-wrench', 'Одржување', 'Одржување', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('odrzuvanje.machines'), 'fas fa-industry', 'Машини', 'Машини', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('odrzuvanje.orders'), 'fas fa-clipboard-list', 'Налози', 'Налози', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('odrzuvanje.plan'), 'fas fa-calendar-days', 'План', 'План', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('odrzuvanje.history'), 'fas fa-clock-rotate-left', 'Историја', 'Историја', 'sb-sublink') }}
+        {% endcall %}
+
+        {% call sb_nav_dropdown('quality', 'fas fa-star', 'Квалитет') %}
+            {{ sb_nav_link(url_for('kvalitet.kvalitet'), 'fas fa-check-circle', 'Квалитет', 'Квалитет', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('kvalitet.kvalitet_select_kamin'), 'fas fa-clipboard-check', 'Нова контрола', 'Нова контрола', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('kvalitet.kvalitet_vlezna'), 'fas fa-truck-ramp-box', 'Влезна контрола', 'Влезна контрола', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('kvalitet.kvalitet_arhiva'), 'fas fa-folder-open', 'Архива на контроли', 'Архива на контроли', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('kvalitet.kvalitet_greski_statistika'), 'fas fa-chart-column', 'Статистика на грешки', 'Статистика на грешки', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('kvalitet.kvalitet_template_manager'), 'fas fa-sliders', 'QC шаблони', 'QC шаблони', 'sb-sublink') }}
+        {% endcall %}
+
+        {% call sb_nav_dropdown('purchases', 'fas fa-cart-shopping', 'Набавки') %}
+            {{ sb_nav_link(url_for('nabavki.nabavki'), 'fas fa-shopping-cart', 'Набавки', 'Набавки', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('nabavki.arhiva'), 'fas fa-archive', 'Архива на набавки', 'Архива на набавки', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('ponudi.ponudi'), 'fas fa-file-invoice-dollar', 'Понуди', 'Понуди', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('ponudi.arhiva'), 'fas fa-box-archive', 'Архива на понуди', 'Архива на понуди', 'sb-sublink') }}
+        {% endcall %}
+
+        {% call sb_nav_dropdown('vacations', 'fas fa-sun', 'Одмори') %}
+            {{ sb_nav_link(url_for('main.odmori'), 'fas fa-umbrella-beach', 'Одмори', 'Одмори', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('main.baranje_odmor'), 'fas fa-file-signature', 'Барање за одмор', 'Барање за одмор', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('odmori.odmori_vraboteni'), 'fas fa-users', 'Вработени', 'Вработени', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('odmori.odmori_kalendar'), 'fas fa-calendar-alt', 'Календар', 'Календар', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('odmori.odmori_pregled_odmori'), 'fas fa-list-check', 'Преглед на одмори', 'Преглед на одмори', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('odmori.odmori_sekojdnevni_otsustva'), 'fas fa-user-clock', 'Секојдневни отсуства', 'Секојдневни отсуства', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('odmori.odmori_manager_emails'), 'fas fa-envelope-open-text', 'Email за менаџери', 'Email за менаџери', 'sb-sublink') }}
+        {% endcall %}
+
+    {% else %}
+        {% if 'dashboard' in allowed or 'system_logs' in allowed or 'pregled_greski' in allowed or 'admin_users' in allowed %}
+        {% call sb_nav_dropdown('admin', 'fas fa-shield-halved', 'Админ') %}
+            {% if 'dashboard' in allowed %}{{ sb_nav_link(url_for('admin.dashboard'), 'fas fa-chart-line', 'Dashboard', 'Dashboard', 'sb-sublink') }}{% endif %}
+            {% if 'admin_users' in allowed %}{{ sb_nav_link(url_for('admin.admin_users'), 'fas fa-users-cog', 'Корисници', 'Корисници', 'sb-sublink') }}{% endif %}
+            {% if 'pregled_greski' in allowed %}{{ sb_nav_link(url_for('admin.pregled_greski'), 'fas fa-triangle-exclamation', 'Грешки', 'Грешки', 'sb-sublink') }}{% endif %}
+            {% if 'system_logs' in allowed %}{{ sb_nav_link(url_for('admin.system_logs'), 'fas fa-wave-square', 'Системски логови', 'Системски логови', 'sb-sublink') }}{% endif %}
+        {% endcall %}
+        {% endif %}
+
+        {% if 'select_kamin' in allowed or 'add_part' in allowed or 'moj_zapisi' in allowed or 'artikli' in allowed or 'izvestaj' in allowed or 'procesni_cekori' in allowed %}
+        {% call sb_nav_dropdown('production', 'fas fa-industry', 'Производство') %}
+            {% if 'select_kamin' in allowed %}{{ sb_nav_link(url_for('main.select_kamin'), 'fas fa-plus-circle', 'Нов запис', 'Нов запис', 'sb-sublink') }}{% endif %}
+            {% if 'add_part' in allowed %}{{ sb_nav_link(url_for('artikli.add'), 'fas fa-box-open', 'Отвори нов артикл', 'Отвори нов артикл', 'sb-sublink') }}{% endif %}
+            {% if 'moj_zapisi' in allowed %}{{ sb_nav_link(url_for('main.moj_zapisi'), 'fas fa-list', 'Мои записи', 'Мои записи', 'sb-sublink') }}{% endif %}
+            {% if 'artikli' in allowed %}{{ sb_nav_link(url_for('artikli.artikli'), 'fas fa-boxes-stacked', 'Артикли', 'Артикли', 'sb-sublink') }}{% endif %}
+            {% if 'izvestaj' in allowed %}{{ sb_nav_link(url_for('main.izvestaj'), 'fas fa-file-alt', 'Извештај', 'Извештај', 'sb-sublink') }}{% endif %}
+            {% if 'procesni_cekori' in allowed %}{{ sb_nav_link(url_for('admin.procesni_cekori'), 'fas fa-cogs', 'Процесни чекори', 'Процесни чекори', 'sb-sublink') }}{% endif %}
+        {% endcall %}
+        {% endif %}
+
+        {% if 'zalihi' in allowed or 'email_recipients' in allowed %}
+        {% call sb_nav_dropdown('inventory', 'fas fa-warehouse', 'Залихи') %}
+            {% if 'zalihi' in allowed %}{{ sb_nav_link(url_for('zalihi.zalihi'), 'fas fa-warehouse', 'Залихи', 'Залихи', 'sb-sublink') }}{% endif %}
+            {% if 'email_recipients' in allowed %}{{ sb_nav_link(url_for('admin.email_recipients'), 'fas fa-envelope-open-text', 'Email примачи', 'Email примачи', 'sb-sublink') }}{% endif %}
+        {% endcall %}
+        {% endif %}
+
+        {% if 'odrzuvanje' in allowed or 'odrzuvanje_masini' in allowed or 'odrzuvanje_nalozi' in allowed or 'odrzuvanje_plan' in allowed or 'odrzuvanje_istorija' in allowed %}
+        {% call sb_nav_dropdown('maintenance', 'fas fa-screwdriver-wrench', 'Одржување') %}
+            {% if 'odrzuvanje' in allowed %}{{ sb_nav_link(url_for('odrzuvanje.dashboard'), 'fas fa-screwdriver-wrench', 'Одржување', 'Одржување', 'sb-sublink') }}{% endif %}
+            {% if 'odrzuvanje_masini' in allowed %}{{ sb_nav_link(url_for('odrzuvanje.machines'), 'fas fa-industry', 'Машини', 'Машини', 'sb-sublink') }}{% endif %}
+            {% if 'odrzuvanje_nalozi' in allowed %}{{ sb_nav_link(url_for('odrzuvanje.orders'), 'fas fa-clipboard-list', 'Налози', 'Налози', 'sb-sublink') }}{% endif %}
+            {% if 'odrzuvanje_plan' in allowed %}{{ sb_nav_link(url_for('odrzuvanje.plan'), 'fas fa-calendar-days', 'План', 'План', 'sb-sublink') }}{% endif %}
+            {% if 'odrzuvanje_istorija' in allowed %}{{ sb_nav_link(url_for('odrzuvanje.history'), 'fas fa-clock-rotate-left', 'Историја', 'Историја', 'sb-sublink') }}{% endif %}
+        {% endcall %}
+        {% endif %}
+
+        {% if 'kvalitet' in allowed or 'kvalitet_nova' in allowed or 'kvalitet_vlezna' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_greski_statistika' in allowed or 'kvalitet_template' in allowed %}
+        {% call sb_nav_dropdown('quality', 'fas fa-star', 'Квалитет') %}
+            {% if 'kvalitet' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet'), 'fas fa-check-circle', 'Квалитет', 'Квалитет', 'sb-sublink') }}{% endif %}
+            {% if 'kvalitet_nova' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet_select_kamin'), 'fas fa-clipboard-check', 'Нова контрола', 'Нова контрола', 'sb-sublink') }}{% endif %}
+            {% if 'kvalitet_vlezna' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet_vlezna'), 'fas fa-truck-ramp-box', 'Влезна контрола', 'Влезна контрола', 'sb-sublink') }}{% endif %}
+            {% if 'kvalitet_arhiva' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet_arhiva'), 'fas fa-folder-open', 'Архива на контроли', 'Архива на контроли', 'sb-sublink') }}{% endif %}
+            {% if 'kvalitet_greski_statistika' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet_greski_statistika'), 'fas fa-chart-column', 'Статистика на грешки', 'Статистика на грешки', 'sb-sublink') }}{% endif %}
+            {% if 'kvalitet_template' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet_template_manager'), 'fas fa-sliders', 'QC шаблони', 'QC шаблони', 'sb-sublink') }}{% endif %}
+        {% endcall %}
+        {% endif %}
+
+        {% if 'nabavki' in allowed or 'nabavki_arhiva' in allowed or 'ponudi' in allowed or 'ponudi_arhiva' in allowed %}
+        {% call sb_nav_dropdown('purchases', 'fas fa-cart-shopping', 'Набавки') %}
+            {% if 'nabavki' in allowed %}{{ sb_nav_link(url_for('nabavki.nabavki'), 'fas fa-shopping-cart', 'Набавки', 'Набавки', 'sb-sublink') }}{% endif %}
+            {% if 'nabavki_arhiva' in allowed %}{{ sb_nav_link(url_for('nabavki.arhiva'), 'fas fa-archive', 'Архива на набавки', 'Архива на набавки', 'sb-sublink') }}{% endif %}
+            {% if 'ponudi' in allowed %}{{ sb_nav_link(url_for('ponudi.ponudi'), 'fas fa-file-invoice-dollar', 'Понуди', 'Понуди', 'sb-sublink') }}{% endif %}
+            {% if 'ponudi_arhiva' in allowed %}{{ sb_nav_link(url_for('ponudi.arhiva'), 'fas fa-box-archive', 'Архива на понуди', 'Архива на понуди', 'sb-sublink') }}{% endif %}
+        {% endcall %}
+        {% endif %}
+
+        {% if 'odmori' in allowed or 'baranje_odmor' in allowed or 'odmori_vraboteni' in allowed or 'odmori_kalendar' in allowed or 'odmori_pregled_odmori' in allowed or 'odmori_sekojdnevni_otsustva' in allowed or 'odmori_manager_emails' in allowed %}
+        {% call sb_nav_dropdown('vacations', 'fas fa-sun', 'Одмори') %}
+            {% if 'odmori' in allowed %}{{ sb_nav_link(url_for('main.odmori'), 'fas fa-umbrella-beach', 'Одмори', 'Одмори', 'sb-sublink') }}{% endif %}
+            {% if 'baranje_odmor' in allowed %}{{ sb_nav_link(url_for('main.baranje_odmor'), 'fas fa-file-signature', 'Барање за одмор', 'Барање за одмор', 'sb-sublink') }}{% endif %}
+            {% if 'odmori_vraboteni' in allowed %}{{ sb_nav_link(url_for('odmori.odmori_vraboteni'), 'fas fa-users', 'Вработени', 'Вработени', 'sb-sublink') }}{% endif %}
+            {% if 'odmori_kalendar' in allowed %}{{ sb_nav_link(url_for('odmori.odmori_kalendar'), 'fas fa-calendar-alt', 'Календар', 'Календар', 'sb-sublink') }}{% endif %}
+            {% if 'odmori_pregled_odmori' in allowed %}{{ sb_nav_link(url_for('odmori.odmori_pregled_odmori'), 'fas fa-list-check', 'Преглед на одмори', 'Преглед на одмори', 'sb-sublink') }}{% endif %}
+            {% if 'odmori_sekojdnevni_otsustva' in allowed %}{{ sb_nav_link(url_for('odmori.odmori_sekojdnevni_otsustva'), 'fas fa-user-clock', 'Секојдневни отсуства', 'Секојдневни отсуства', 'sb-sublink') }}{% endif %}
+            {% if 'odmori_manager_emails' in allowed %}{{ sb_nav_link(url_for('odmori.odmori_manager_emails'), 'fas fa-envelope-open-text', 'Email за менаџери', 'Email за менаџери', 'sb-sublink') }}{% endif %}
+        {% endcall %}
+        {% endif %}
+    {% endif %}
+
+    <div style="height:1px; background:var(--sb-border); margin:0.85rem 0.75rem 0.7rem;"></div>
+
+    {% if session.is_admin or 'chat' in allowed %}
+    {{ sb_nav_link(url_for('chat.chat_page'), 'bi bi-chat-dots-fill', 'Чат', 'Чат', '', 'sbChatIcon', 'sbChatBadge') }}
+    {% endif %}
+    {{ sb_nav_link(url_for('auth.change_password'), 'fas fa-key', 'Промени лозинка', 'Промени лозинка') }}
+    <a class="sb-link sb-link-danger" href="{{ url_for('auth.logout') }}" data-tooltip="Одјави се">
+        <span class="sb-icon"><i class="fas fa-right-from-bracket"></i></span>
+        <span class="sb-label">Одјави се</span>
+    </a>
+
+    {% else %}
+    {{ sb_nav_link(url_for('auth.login'), 'fas fa-right-to-bracket', 'Најава', 'Најава') }}
+    {% endif %}
+</div>

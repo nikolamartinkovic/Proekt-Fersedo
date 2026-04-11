@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.DownloadManager
+import android.content.ClipData
 import android.content.BroadcastReceiver
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -67,6 +68,9 @@ class MainActivity : ComponentActivity() {
     private var cameraCaptureUri: Uri? = null
     private val pendingPdfDownloads = mutableSetOf<Long>()
     private var hasCheckedForAppUpdate = false
+    private var pendingUpdateVersionName: String? = null
+    private var pendingUpdateVersionKey: String? = null
+    private var pendingUpdateDownloadUrl: String? = null
 
     private val downloadCompleteReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -81,6 +85,17 @@ class MainActivity : ComponentActivity() {
         registerForActivityResult(RequestPermission()) { granted ->
             if (granted) {
                 MobileNotificationScheduler.schedule(this)
+            }
+        }
+
+    private val cameraPermissionLauncher =
+        registerForActivityResult(RequestPermission()) { granted ->
+            if (!granted) {
+                Toast.makeText(
+                    this,
+                    getString(R.string.camera_permission_required),
+                    Toast.LENGTH_SHORT,
+                ).show()
             }
         }
 
@@ -122,11 +137,15 @@ class MainActivity : ComponentActivity() {
 
         val webUrl = getString(R.string.web_base_url)
         ensureNotificationPermission()
+        ensureCameraRuntimePermission()
         MobileNotificationScheduler.schedule(this)
 
         binding.retryButton.setOnClickListener {
             hideErrorCard()
             binding.webView.reload()
+        }
+        binding.updateBellButton.setOnClickListener {
+            openPendingUpdateDialog()
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
@@ -540,7 +559,7 @@ class MainActivity : ComponentActivity() {
 
                 runOnUiThread {
                     if (isFinishing || isDestroyed) return@runOnUiThread
-                    showAppUpdateDialog(
+                    showUpdateBell(
                         remoteVersionName = remoteVersionName.ifBlank { remoteVersionCode.toString() },
                         remoteVersionKey = remoteVersionKey,
                         downloadUrl = remoteDownloadUrl,
@@ -575,6 +594,59 @@ class MainActivity : ComponentActivity() {
             }
             .setPositiveButton("Ажурирај") { dialog, _ ->
                 startApkUpdateDownload(downloadUrl, remoteVersionName)
+                dialog.dismiss()
+            }
+            .setCancelable(true)
+            .show()
+    }
+
+    private fun showUpdateBell(
+        remoteVersionName: String,
+        remoteVersionKey: String,
+        downloadUrl: String,
+    ) {
+        pendingUpdateVersionName = remoteVersionName
+        pendingUpdateVersionKey = remoteVersionKey
+        pendingUpdateDownloadUrl = downloadUrl
+        binding.updateBellButton.visibility = View.VISIBLE
+    }
+
+    private fun hideUpdateBell() {
+        pendingUpdateVersionName = null
+        pendingUpdateVersionKey = null
+        pendingUpdateDownloadUrl = null
+        binding.updateBellButton.visibility = View.GONE
+    }
+
+    private fun openPendingUpdateDialog() {
+        val downloadUrl = pendingUpdateDownloadUrl ?: return
+        val remoteVersionName = pendingUpdateVersionName.orEmpty()
+        val remoteVersionKey = pendingUpdateVersionKey.orEmpty()
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.update_dialog_title))
+            .setMessage(
+                getString(
+                    R.string.update_dialog_message,
+                    remoteVersionName.ifBlank { getString(R.string.update_unknown_version) },
+                )
+            )
+            .setNegativeButton(getString(R.string.update_later)) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setNeutralButton(getString(R.string.update_ignore_version)) { dialog, _ ->
+                if (remoteVersionKey.isNotBlank()) {
+                    getSharedPreferences("fersedo_updates", Context.MODE_PRIVATE)
+                        .edit()
+                        .putString(KEY_DISMISSED_UPDATE_VERSION, remoteVersionKey)
+                        .apply()
+                }
+                hideUpdateBell()
+                dialog.dismiss()
+            }
+            .setPositiveButton(getString(R.string.update_download_now)) { dialog, _ ->
+                startApkUpdateDownload(downloadUrl, remoteVersionName)
+                hideUpdateBell()
                 dialog.dismiss()
             }
             .setCancelable(true)
@@ -650,12 +722,28 @@ class MainActivity : ComponentActivity() {
 
     @Throws(IOException::class)
     private fun buildFileChooserIntent(fileChooserParams: WebChromeClient.FileChooserParams?): Intent {
-        val contentSelectionIntent = fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "*/*"
+        val acceptsImages = canAcceptImages(fileChooserParams)
+        val forceCameraOnly = acceptsImages && (fileChooserParams?.isCaptureEnabled == true)
+        if (forceCameraOnly) {
+            createImageCaptureIntent()?.let { return it }
         }
 
-        val acceptsImages = fileChooserParams?.acceptTypes?.any { it.contains("image") } == true
+        val contentSelectionIntent = if (acceptsImages) {
+            Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
+                putExtra(
+                    Intent.EXTRA_ALLOW_MULTIPLE,
+                    fileChooserParams?.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE,
+                )
+            }
+        } else {
+            fileChooserParams?.createIntent() ?: Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "*/*"
+            }
+        }
+
         val initialIntents = mutableListOf<Intent>()
         if (acceptsImages) {
             createImageCaptureIntent()?.let(initialIntents::add)
@@ -668,17 +756,36 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun canAcceptImages(fileChooserParams: WebChromeClient.FileChooserParams?): Boolean {
+        if (fileChooserParams == null) return true
+        if (fileChooserParams.isCaptureEnabled) return true
+
+        val acceptTypes = fileChooserParams.acceptTypes
+            ?.mapNotNull { it?.trim()?.lowercase(Locale.ROOT) }
+            ?.filter { it.isNotEmpty() }
+            .orEmpty()
+
+        if (acceptTypes.isEmpty()) return true
+
+        return acceptTypes.any {
+            it == "*/*" || it.startsWith("image/")
+        }
+    }
+
     @Throws(IOException::class)
     private fun createImageCaptureIntent(): Intent? {
         val photoFile = createImageFile()
         val authority = "${packageName}.fileprovider"
         cameraCaptureUri = FileProvider.getUriForFile(this, authority, photoFile)
+        val outputUri = cameraCaptureUri ?: return null
 
-        return Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE).apply {
-            putExtra(android.provider.MediaStore.EXTRA_OUTPUT, cameraCaptureUri)
+        val captureIntent = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(android.provider.MediaStore.EXTRA_OUTPUT, outputUri)
             addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            clipData = ClipData.newRawUri("FersedoCameraImage", outputUri)
         }
+        return captureIntent
     }
 
     @Throws(IOException::class)
@@ -721,6 +828,15 @@ class MainActivity : ComponentActivity() {
             return
         }
         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    private fun ensureCameraRuntimePermission() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
     }
 
     private fun handleLaunchIntent(intent: Intent?) {

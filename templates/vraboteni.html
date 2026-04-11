@@ -30,38 +30,44 @@
     }
     .vraboteni-table td:nth-child(1),
     .vraboteni-table th:nth-child(1) {
-        width: 12%;
+        width: 11%;
     }
     .vraboteni-table td:nth-child(2),
     .vraboteni-table th:nth-child(2) {
-        width: 11%;
+        width: 10%;
     }
     .vraboteni-table td:nth-child(3),
     .vraboteni-table th:nth-child(3) {
-        width: 15%;
+        width: 13%;
         white-space: normal;
         word-break: break-word;
     }
     .vraboteni-table td:nth-child(4),
     .vraboteni-table th:nth-child(4),
     .vraboteni-table td:nth-child(5),
-    .vraboteni-table th:nth-child(5),
+    .vraboteni-table th:nth-child(5) {
+        width: 9%;
+    }
     .vraboteni-table td:nth-child(6),
     .vraboteni-table th:nth-child(6) {
-        width: 10%;
+        width: 16%;
     }
     .vraboteni-table td:nth-child(7),
     .vraboteni-table th:nth-child(7) {
         width: 8%;
-        text-align: center;
     }
     .vraboteni-table td:nth-child(8),
     .vraboteni-table th:nth-child(8) {
-        width: 16% !important;
+        width: 8%;
+        text-align: center;
     }
     .vraboteni-table td:nth-child(9),
     .vraboteni-table th:nth-child(9) {
-        width: 8%;
+        width: 16% !important;
+    }
+    .vraboteni-table td:nth-child(10),
+    .vraboteni-table th:nth-child(10) {
+        width: 10%;
     }
     .vraboteni-table td:last-child {
         white-space: normal;
@@ -84,6 +90,53 @@
     }
     .vraboteni-table .progress {
         margin-bottom: 0.15rem;
+    }
+    .systematski-alert-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+    }
+    .systematski-alert-card {
+        border: 1px solid rgba(251, 191, 36, 0.28);
+        background: linear-gradient(180deg, #fffdf7 0%, #ffffff 100%);
+        border-radius: 1.2rem;
+        padding: 1rem 1.1rem;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+    .systematski-alert-card strong {
+        color: #172033;
+        font-size: 1.02rem;
+    }
+    .systematski-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-top: 0.85rem;
+    }
+    .systematski-meta small {
+        display: block;
+        color: #7b8798;
+        font-size: 0.76rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.15rem;
+    }
+    .systematski-cell {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+    .systematski-cell__row small {
+        display: block;
+        color: #7b8798;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .systematski-cell__row strong {
+        color: #172033;
+        font-size: 0.92rem;
+        font-weight: 700;
     }
     @media (max-width: 1200px) {
         .vraboteni-table thead th,
@@ -149,6 +202,55 @@
             <div class="card border-0 shadow text-center py-4 px-3" style="background: linear-gradient(135deg,#10b981,#059669); color:#fff; border-radius:16px;">
                 <div class="fs-1 fw-bold">{{ total_preos.val }}</div>
                 <div class="mt-1 opacity-90">Преостанати денови ({{ godina }})</div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if systematski_alerts %}
+    <div class="card shadow-xl border-0 rounded-4 overflow-hidden mb-5">
+        <div class="card-header text-white py-4 px-5 fw-bold d-flex align-items-center justify-content-between"
+             style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            <h4 class="mb-0 d-flex align-items-center">
+                <i class="fas fa-stethoscope me-3 fs-4"></i>
+                Систематски прегледи во наредни 14 дена
+            </h4>
+            <span class="badge bg-light text-dark fs-6 px-3 py-2">{{ systematski_alerts|length }}</span>
+        </div>
+        <div class="card-body p-4 p-md-5">
+            <div class="alert alert-warning border-0 shadow-sm mb-4" style="background:#fff7df; color:#8a5600;">
+                Известувањето се појавува 14 дена пред рокот и останува видливо до самиот ден за систематски преглед.
+            </div>
+            <div class="systematski-alert-grid">
+                {% for alert in systematski_alerts %}
+                <div class="systematski-alert-card">
+                    <div class="d-flex align-items-start justify-content-between gap-3">
+                        <div>
+                            <strong>{{ alert.ime_prezime }}</strong>
+                            <div class="text-muted small mt-1">{{ alert.description }}</div>
+                        </div>
+                        <span class="badge {{ alert.badge_class }} px-3 py-2">{{ alert.status_text }}</span>
+                    </div>
+                    <div class="systematski-meta">
+                        <div>
+                            <small>Последен</small>
+                            <div class="fw-semibold">{{ alert.last_date_fmt }}</div>
+                        </div>
+                        <div>
+                            <small>Следен</small>
+                            <div class="fw-semibold">{{ alert.next_date_fmt }}</div>
+                        </div>
+                        <div>
+                            <small>Оддел</small>
+                            <div class="fw-semibold">{{ alert.oddel }}</div>
+                        </div>
+                        <div>
+                            <small>Потсетник</small>
+                            <div class="fw-semibold">{{ alert.status_text }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
@@ -266,6 +368,11 @@
                         <input type="date" class="form-control form-control-lg" id="datum_vrabotuvanje" name="datum_vrabotuvanje">
                     </div>
                     <div class="col-md-6">
+                        <label for="datum_posleden_sistematski" class="form-label fw-bold fs-5">Последен систематски преглед</label>
+                        <input type="date" class="form-control form-control-lg" id="datum_posleden_sistematski" name="datum_posleden_sistematski">
+                        <div class="form-text">Следниот термин се пресметува автоматски 12 месеци подоцна.</div>
+                    </div>
+                    <div class="col-md-6">
                         <label for="oddel" class="form-label fw-bold fs-5">Оддел</label>
                         <input type="text" class="form-control form-control-lg" id="oddel" name="oddel">
                     </div>
@@ -308,6 +415,7 @@
                             <th>Email</th>
                             <th>Позиција</th>
                             <th>Датум на вработување</th>
+                            <th>Систематски</th>
                             <th>Оддел</th>
                             <th>Прекин стаж</th>
                             <th class="text-center" style="background:#1e3a5f; min-width:200px;">
@@ -327,6 +435,21 @@
                                 <td>{{ v.email or '—' }}</td>
                                 <td>{{ v.pozicija or '—' }}</td>
                                 <td>{{ v.datum_vrabotuvanje or '—' }}</td>
+                                <td>
+                                    <div class="systematski-cell">
+                                        <div class="systematski-cell__row">
+                                            <small>Последен</small>
+                                            <strong>{{ v.sistematski.last_date_fmt }}</strong>
+                                        </div>
+                                        <div class="systematski-cell__row">
+                                            <small>Следен</small>
+                                            <strong>{{ v.sistematski.next_date_fmt }}</strong>
+                                        </div>
+                                        <span class="badge {{ v.sistematski.badge_class }} align-self-start px-3 py-2">
+                                            {{ v.sistematski.status_text }}
+                                        </span>
+                                    </div>
+                                </td>
                                 <td>{{ v.oddel or '—' }}</td>
                                 <td class="text-center">
                                     {% if v.prekin_staz %}
@@ -424,6 +547,11 @@
                                                     <div class="col-md-6">
                                                         <label class="form-label fw-bold">Датум на вработување</label>
                                                         <input type="date" class="form-control form-control-lg" name="datum_vrabotuvanje_edit" value="{{ v.datum_vrabotuvanje or '' }}">
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Последен систематски преглед</label>
+                                                        <input type="date" class="form-control form-control-lg" name="datum_posleden_sistematski_edit" value="{{ v.datum_posleden_sistematski or '' }}">
+                                                        <div class="form-text">Следниот датум ќе се пресмета автоматски.</div>
                                                     </div>
                                                     <div class="col-md-6">
                                                         <label class="form-label fw-bold">Оддел</label>
@@ -569,13 +697,13 @@
 
     @media (max-width: 992px) {
         .table-responsive { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
-        table { min-width: 1100px !important; }
+        table { min-width: 1280px !important; }
         th, td { white-space: nowrap !important; padding: 0.7rem 0.6rem; font-size: 0.9rem; }
         .btn-sm { padding: 0.4rem 0.7rem; font-size: 0.82rem; }
     }
     @media (max-width: 576px) {
         .container { padding: 0 1rem; margin-top: 3rem; }
-        table { min-width: 900px !important; }
+        table { min-width: 1120px !important; }
         .btn-outline-secondary { width: 100%; padding: 0.8rem; }
     }
 </style>

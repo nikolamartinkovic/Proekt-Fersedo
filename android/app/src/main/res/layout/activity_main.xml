@@ -79,4 +79,17 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/updateBellButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="18dp"
+        android:layout_marginBottom="104dp"
+        android:contentDescription="@string/update_bell_content_description"
+        android:visibility="gone"
+        app:backgroundTint="@color/fersedo_primary"
+        app:srcCompat="@android:drawable/ic_popup_reminder"
+        app:tint="@android:color/white" />
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

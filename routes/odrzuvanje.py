@@ -1,9 +1,10 @@
 import io
 import os
 from datetime import date, datetime, timedelta
+from urllib.parse import urlparse
 
 import qrcode
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, send_file, session, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_file, session, url_for
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -195,6 +196,37 @@ def _fmt_datetime(value):
         except Exception:
             continue
     return str(value)
+
+
+def _machine_qr_open_url(machine_id, *, external=False):
+    return url_for("odrzuvanje.qr_open_machine", machine_id=machine_id, _external=external)
+
+
+def _extract_machine_id_from_scanned_value(value):
+    raw = (value or "").strip()
+    if not raw:
+        return None
+
+    upper = raw.upper()
+    if upper.startswith("FERS-MACHINE:"):
+        candidate = raw.split(":", 1)[1].strip()
+        return int(candidate) if candidate.isdigit() else None
+
+    if raw.isdigit():
+        return int(raw)
+
+    try:
+        parsed = urlparse(raw)
+        path = (parsed.path or "").strip("/")
+        parts = [part for part in path.split("/") if part]
+
+        if len(parts) >= 4 and parts[0] == "odrzuvanje" and parts[1] == "qr" and parts[2] == "open" and parts[3].isdigit():
+            return int(parts[3])
+        if len(parts) >= 3 and parts[0] == "odrzuvanje" and parts[1] == "masini" and parts[2].isdigit():
+            return int(parts[2])
+    except Exception:
+        return None
+    return None
 
 
 def _pdf_assets():
@@ -963,6 +995,16 @@ def dashboard():
         """,
         (*AKTIVNI_STATUSI, "РєСЂРёС‚РёС‡РµРЅ", "РёС‚РЅРѕ"),
     ).fetchone()["c"]
+    # Use canonical labels for critical/urgent orders so old mojibake literals do not break dashboard counts.
+    critical_open = cursor.execute(
+        """
+        SELECT COUNT(*) AS c
+        FROM odrzuvanje_nalozi
+        WHERE status IN (?, ?, ?, ?)
+          AND (prioritet = ? OR tip = ?)
+        """,
+        (*AKTIVNI_STATUSI, NALOG_PRIORITETI[3], NALOG_TIPOVI[2]),
+    ).fetchone()["c"]
     stats = {
         "machines": len(machines),
         "active_orders": len(active_orders),
@@ -982,6 +1024,79 @@ def dashboard():
         active_orders=active_orders,
         due_plans=due_plans,
     )
+
+
+@odrzuvanje_bp.route("/qr-scan")
+@login_required
+@admin_or_module_required("odrzuvanje_masini")
+def qr_scan():
+    return render_template("odrzuvanje_qr_scan.html")
+
+
+@odrzuvanje_bp.route("/qr/resolve", methods=["POST"])
+@login_required
+@admin_or_module_required("odrzuvanje_masini")
+def qr_resolve():
+    payload = {}
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+    raw_value = (payload.get("value") if isinstance(payload, dict) else None) or request.form.get("value", "")
+    raw_value = (raw_value or "").strip()
+    if not raw_value:
+        return jsonify({"ok": False, "message": "Внеси QR/Barcode вредност за отворање на машина."}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    machine = None
+
+    machine_id = _extract_machine_id_from_scanned_value(raw_value)
+    if machine_id:
+        machine = cursor.execute(
+            "SELECT id, kod, naziv FROM odrzuvanje_masini WHERE id = ?",
+            (machine_id,),
+        ).fetchone()
+
+    if not machine:
+        machine = cursor.execute(
+            """
+            SELECT id, kod, naziv
+            FROM odrzuvanje_masini
+            WHERE lower(COALESCE(kod, '')) = lower(?)
+               OR lower(COALESCE(seriski_broj, '')) = lower(?)
+            LIMIT 1
+            """,
+            (raw_value, raw_value),
+        ).fetchone()
+
+    conn.close()
+    if not machine:
+        return jsonify({"ok": False, "message": "Не е пронајдена машина за скенираната вредност."}), 404
+
+    return jsonify(
+        {
+            "ok": True,
+            "machine_id": machine["id"],
+            "machine_code": machine["kod"],
+            "machine_name": machine["naziv"],
+            "url": _machine_qr_open_url(machine["id"], external=False),
+        }
+    )
+
+
+@odrzuvanje_bp.route("/qr/open/<int:machine_id>")
+@login_required
+@admin_or_module_required("odrzuvanje_masini")
+def qr_open_machine(machine_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    machine_exists = cursor.execute(
+        "SELECT 1 FROM odrzuvanje_masini WHERE id = ?",
+        (machine_id,),
+    ).fetchone()
+    conn.close()
+    if not machine_exists:
+        abort(404)
+    return redirect(url_for("odrzuvanje.machine_detail", machine_id=machine_id))
 
 
 @odrzuvanje_bp.route("/priracnik/pdf")
@@ -1721,8 +1836,8 @@ def plan():
             """
             INSERT INTO odrzuvanje_planovi
             (masina_id, naziv, tip, interval_dena, interval_casovi, sledno_izvrsuvanje,
-             odgovoren, checklist_id, aktivno, created_by)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             odgovoren, checklist_id, aktivno, auto_kreiraj_nalog, created_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 masina_id,
@@ -1734,6 +1849,7 @@ def plan():
                 request.form.get("odgovoren", "").strip(),
                 _safe_int(request.form.get("checklist_id")) or None,
                 1 if request.form.get("aktivno") else 0,
+                1 if request.form.get("auto_kreiraj_nalog") else 0,
                 session.get("user", ""),
             ),
         )
@@ -1844,8 +1960,8 @@ def plan_complete(plan_id):
         """
         INSERT INTO odrzuvanje_nalozi
         (broj, masina_id, tip, prioritet, status, naslov, opis_defekt, simptom,
-         prijavil, dodeleno_na, created_by, created_at, updated_at, pocetok_at, kraj_at, resenie)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         prijavil, dodeleno_na, created_by, created_at, updated_at, pocetok_at, kraj_at, plan_id, auto_kreirano, resenie)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             broj,
@@ -1863,6 +1979,8 @@ def plan_complete(plan_id):
             _now(),
             _now(),
             _now(),
+            plan_id,
+            0,
             request.form.get("resenie", "").strip() or "Планот е завршен преку планерот за одржување.",
         ),
     )
@@ -1965,8 +2083,8 @@ def machine_qr(machine_id):
     if not machine:
         abort(404)
 
-    detail_url = url_for("odrzuvanje.machine_detail", machine_id=machine_id, _external=True)
-    qr_image = qrcode.make(detail_url)
+    qr_payload = _machine_qr_open_url(machine_id=machine_id, external=True)
+    qr_image = qrcode.make(qr_payload)
     buffer = io.BytesIO()
     qr_image.save(buffer, format="PNG")
     buffer.seek(0)

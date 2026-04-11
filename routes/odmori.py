@@ -1,8 +1,9 @@
+import calendar
 import io
 import json
 import sqlite3
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 import openpyxl
 from flask import (
@@ -32,6 +33,121 @@ from utils.odmori_notifications import (
 )
 
 odmori_bp = Blueprint("odmori", __name__, url_prefix="/odmori")
+
+
+def _parse_iso_date(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+
+    text = str(value).strip()
+    if not text:
+        return None
+
+    for fmt in ("%Y-%m-%d", "%d-%m-%Y"):
+        try:
+            return datetime.strptime(text[:10], fmt).date()
+        except ValueError:
+            continue
+
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00")).date()
+    except ValueError:
+        return None
+
+
+def _add_months(base_date, months=12):
+    month_index = base_date.month - 1 + months
+    year = base_date.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(base_date.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def _fmt_date(value):
+    return value.strftime("%d-%m-%Y") if value else "—"
+
+
+def _build_sistematski_info(last_value, today=None):
+    today = today or datetime.now().date()
+    last_date = _parse_iso_date(last_value)
+
+    info = {
+        "last_date": last_date,
+        "last_date_fmt": _fmt_date(last_date),
+        "next_date": None,
+        "next_date_fmt": "—",
+        "days_until": None,
+        "show_alert": False,
+        "status_key": "missing",
+        "status_text": "Нема евиденција",
+        "badge_class": "bg-secondary",
+        "description": "Внеси датум на последен систематски преглед.",
+    }
+
+    if not last_date:
+        return info
+
+    next_date = _add_months(last_date, 12)
+    days_until = (next_date - today).days
+    reminder_start = next_date - timedelta(days=14)
+    overdue_days = (today - next_date).days
+
+    info.update(
+        {
+            "next_date": next_date,
+            "next_date_fmt": _fmt_date(next_date),
+            "days_until": days_until,
+        }
+    )
+
+    if overdue_days > 0:
+        info.update(
+            {
+                "status_key": "overdue",
+                "status_text": f"Доцни {overdue_days} д.",
+                "badge_class": "bg-danger",
+                "description": f"Рокот бил на {info['next_date_fmt']}.",
+            }
+        )
+        return info
+
+    if days_until == 0:
+        info.update(
+            {
+                "status_key": "today",
+                "status_text": "Денес",
+                "badge_class": "bg-danger",
+                "show_alert": True,
+                "description": "Систематскиот преглед треба да се реализира денес.",
+            }
+        )
+        return info
+
+    if reminder_start <= today <= next_date:
+        info.update(
+            {
+                "status_key": "upcoming",
+                "status_text": f"За {days_until} д.",
+                "badge_class": "bg-warning text-dark",
+                "show_alert": True,
+                "description": f"Потребен е нов систематски најдоцна до {info['next_date_fmt']}.",
+            }
+        )
+        return info
+
+    info.update(
+        {
+            "status_key": "ok",
+            "status_text": "Во ред",
+            "badge_class": "bg-success",
+            "description": f"Следниот систематски е на {info['next_date_fmt']}.",
+        }
+    )
+    return info
 
 # ─────────────────────────────────────────────────────────────
 # EMAIL КОНФИГУРАЦИЈА
@@ -224,6 +340,7 @@ def odmori_vraboteni():
     conn   = get_db()
     cursor = conn.cursor()
     godina = datetime.now().year
+    today = datetime.now().date()
 
     if request.method == "POST":
         action = request.form.get("action")
@@ -231,8 +348,8 @@ def odmori_vraboteni():
             try:
                 cursor.execute("""
                     INSERT INTO vraboteni
-                        (ime, prezime, maticen_broj, email, pozicija, datum_vrabotuvanje, oddel, prekin_staz)
-                    VALUES (?,?,?,?,?,?,?,?)
+                        (ime, prezime, maticen_broj, email, pozicija, datum_vrabotuvanje, datum_posleden_sistematski, oddel, prekin_staz)
+                    VALUES (?,?,?,?,?,?,?,?,?)
                 """, (
                     request.form.get("ime", "").strip(),
                     request.form.get("prezime", "").strip(),
@@ -240,6 +357,7 @@ def odmori_vraboteni():
                     request.form.get("email", "").strip(),
                     request.form.get("pozicija", "").strip(),
                     request.form.get("datum_vrabotuvanje"),
+                    (request.form.get("datum_posleden_sistematski") or "").strip() or None,
                     request.form.get("oddel", "").strip(),
                     1 if request.form.get("prekin_staz") else 0,
                 ))
@@ -267,7 +385,7 @@ def odmori_vraboteni():
                     cursor.execute("""
                         UPDATE vraboteni
                         SET ime=?, prezime=?, maticen_broj=?, email=?,
-                            pozicija=?, datum_vrabotuvanje=?, oddel=?, prekin_staz=?
+                            pozicija=?, datum_vrabotuvanje=?, datum_posleden_sistematski=?, oddel=?, prekin_staz=?
                         WHERE id=?
                     """, (
                         request.form.get("ime_edit", "").strip(),
@@ -276,6 +394,7 @@ def odmori_vraboteni():
                         request.form.get("email_edit", "").strip(),
                         request.form.get("pozicija_edit", "").strip(),
                         request.form.get("datum_vrabotuvanje_edit"),
+                        (request.form.get("datum_posleden_sistematski_edit") or "").strip() or None,
                         request.form.get("oddel_edit", "").strip(),
                         1 if request.form.get("prekin_staz_edit") else 0,
                         vraboten_id,
@@ -305,11 +424,42 @@ def odmori_vraboteni():
                     flash(f"Грешка при ажурирање на салдо: {e}", "danger")
 
     ensure_odmor_salda_table(cursor)
-    vraboteni = cursor.execute("SELECT * FROM vraboteni ORDER BY prezime, ime").fetchall()
+    vraboteni_rows = cursor.execute("SELECT * FROM vraboteni ORDER BY prezime, ime").fetchall()
+    vraboteni = []
+    systematski_alerts = []
+
+    for row in vraboteni_rows:
+        vraboten = dict(row)
+        sistematski = _build_sistematski_info(vraboten.get("datum_posleden_sistematski"), today)
+        vraboten["sistematski"] = sistematski
+        vraboteni.append(vraboten)
+
+        if sistematski["show_alert"]:
+            systematski_alerts.append(
+                {
+                    "id": vraboten["id"],
+                    "ime_prezime": f"{vraboten['prezime']} {vraboten['ime']}",
+                    "oddel": vraboten.get("oddel") or "—",
+                    "last_date_fmt": sistematski["last_date_fmt"],
+                    "next_date_fmt": sistematski["next_date_fmt"],
+                    "status_text": sistematski["status_text"],
+                    "badge_class": sistematski["badge_class"],
+                    "description": sistematski["description"],
+                    "days_until": sistematski["days_until"] if sistematski["days_until"] is not None else 9999,
+                }
+            )
+
+    systematski_alerts.sort(key=lambda item: (item["days_until"], item["ime_prezime"]))
     saldo_map = get_saldo_all(cursor, godina)
     conn.commit()
     conn.close()
-    return render_template("vraboteni.html", vraboteni=vraboteni, saldo_map=saldo_map, godina=godina)
+    return render_template(
+        "vraboteni.html",
+        vraboteni=vraboteni,
+        saldo_map=saldo_map,
+        godina=godina,
+        systematski_alerts=systematski_alerts,
+    )
 
 
 # ─────────────────────────────────────────────────────────────

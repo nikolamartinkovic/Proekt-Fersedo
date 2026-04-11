@@ -136,6 +136,38 @@
     margin-bottom: 0;
     line-height: 1.55;
   }
+  .odr-hero a[href*="qr-scan"].btn {
+    font-size: 0;
+  }
+  .odr-hero a[href*="qr-scan"].btn i {
+    font-size: 1rem;
+  }
+  .odr-hero a[href*="qr-scan"].btn::after {
+    content: "QR скенер";
+    font-size: 1rem;
+    line-height: 1;
+  }
+  .odr-grid-card[href*="qr-scan"] .odr-grid-title,
+  .odr-grid-card[href*="qr-scan"] .odr-grid-subtitle {
+    font-size: 0 !important;
+    line-height: 0 !important;
+    color: transparent !important;
+  }
+  .odr-grid-card[href*="qr-scan"] .odr-grid-title::after {
+    content: "QR скенер";
+    display: block;
+    font-size: 1.25rem;
+    line-height: 1.2;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .odr-grid-card[href*="qr-scan"] .odr-grid-subtitle::after {
+    content: "Скенирај QR или barcode и отвори ја точната машина веднаш од телефон или камера.";
+    display: block;
+    font-size: 1rem;
+    line-height: 1.55;
+    color: #64748b;
+  }
   .odr-table {
     width: 100%;
     table-layout: fixed;

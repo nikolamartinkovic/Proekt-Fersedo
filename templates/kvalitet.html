@@ -56,6 +56,9 @@
   .kvalitet-action-icon.warning {
     background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
   }
+  .kvalitet-action-icon.teal {
+    background: linear-gradient(135deg, #0f766e 0%, #0f9f93 100%);
+  }
   .kvalitet-action-title {
     font-size: 1.2rem;
     font-weight: 800;
@@ -135,6 +138,34 @@
         <div>
           <div class="kvalitet-action-title">Архива на контроли</div>
           <p class="kvalitet-action-subtitle">Пребарување, преглед и преземање на постоечки контроли и PDF верзии.</p>
+        </div>
+        <div class="kvalitet-arrow"><i class="fas fa-arrow-right"></i></div>
+      </a>
+    </div>
+
+    <div class="col-lg-4 col-md-6">
+      <a href="{{ url_for('kvalitet.kvalitet_greski_statistika') }}" class="kvalitet-action-card">
+        <div class="kvalitet-action-icon success">
+          <i class="fas fa-chart-column"></i>
+        </div>
+        <div>
+          <div class="kvalitet-action-title">Статистика на грешки</div>
+          <p class="kvalitet-action-subtitle">Види кои грешки најчесто се појавуваат, на кои камини и во кои чекори од контролата.</p>
+        </div>
+        <div class="kvalitet-arrow"><i class="fas fa-arrow-right"></i></div>
+      </a>
+    </div>
+    {% endif %}
+
+    {% if session.get('is_admin') or 'kvalitet_vlezna' in allowed %}
+    <div class="col-lg-4 col-md-6">
+      <a href="{{ url_for('kvalitet.kvalitet_vlezna') }}" class="kvalitet-action-card">
+        <div class="kvalitet-action-icon teal">
+          <i class="fas fa-truck-ramp-box"></i>
+        </div>
+        <div>
+          <div class="kvalitet-action-title">Влезна контрола</div>
+          <p class="kvalitet-action-subtitle">Евиденција и приемна проверка на материјали по испратница или фактура со PDF запис.</p>
         </div>
         <div class="kvalitet-arrow"><i class="fas fa-arrow-right"></i></div>
       </a>
