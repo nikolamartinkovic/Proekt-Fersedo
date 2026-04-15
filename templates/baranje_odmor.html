@@ -37,15 +37,16 @@
 
         <div class="card-body p-4 p-md-5">
             <form method="POST" id="odmorForm" class="needs-validation" novalidate>
+                <input type="hidden" name="action" id="odmorAction" value="single">
                 <div class="mb-4">
                     <label for="vraboten_id" class="form-label fw-bold fs-5">Вработен</label>
-                    <select class="form-select form-select-lg" id="vraboten_id" name="vraboten_id" required>
+                    <select class="form-select form-select-lg" id="vraboten_id" name="vraboten_id">
                         <option value="" disabled selected>-- Избери вработен --</option>
                         {% for v in vraboteni %}
                             <option value="{{ v.id }}">{{ v.prezime }} {{ v.ime }}</option>
                         {% endfor %}
                     </select>
-                    <div class="invalid-feedback mt-2">Изберете вработен</div>
+                    <div class="form-text mt-2">За колективен одмор не избираш вработен.</div>
                 </div>
 
                 <div class="row g-4 mb-4">
@@ -89,6 +90,11 @@
                 </div>
 
                 <div class="d-grid gap-3 d-md-flex justify-content-md-center mt-5">
+                    {% if session.get('is_admin') %}
+                    <button type="button" id="collectiveBtn" class="btn btn-success btn-lg px-5 py-3 fw-bold shadow">
+                        <i class="fas fa-users me-2"></i> Колективен одмор
+                    </button>
+                    {% endif %}
                     <button type="submit" id="submitBtn" class="btn btn-primary btn-lg px-5 py-3 fw-bold shadow">
                         <span id="btnText"><i class="fas fa-paper-plane me-2"></i> Поднеси барање</span>
                         <span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
@@ -108,19 +114,28 @@ document.getElementById('odmorForm')?.addEventListener('submit', function (e) {
     const od = document.getElementById('datum_od').value;
     const do_ = document.getElementById('datum_do').value;
     const today = "{{ today }}";
+    const actionField = document.getElementById('odmorAction');
+    const action = (actionField?.value || 'single').toLowerCase();
+    const vraboten = document.getElementById('vraboten_id');
     const btn = document.getElementById('submitBtn');
     const text = document.getElementById('btnText');
     const spinner = document.getElementById('loadingSpinner');
 
     if (od && new Date(od) < new Date(today)) {
         e.preventDefault();
-        alert('Не можете да барате одмор во минатото!');
+        alert('Не може да барате одмор во минатото!');
         return;
     }
 
     if (od && do_ && new Date(od) > new Date(do_)) {
         e.preventDefault();
         alert('Датумот "Од" не може да биде после "До"!');
+        return;
+    }
+
+    if (action !== 'collective' && vraboten && !vraboten.value) {
+        e.preventDefault();
+        alert('Мора да изберете вработен!');
         return;
     }
 
@@ -138,6 +153,16 @@ document.getElementById('odmorForm')?.addEventListener('submit', function (e) {
 (function () {
     'use strict';
     const form = document.getElementById('odmorForm');
+    const actionField = document.getElementById('odmorAction');
+    const collectiveBtn = document.getElementById('collectiveBtn');
+    const submitBtn = document.getElementById('submitBtn');
+
+    if (submitBtn && actionField) {
+        submitBtn.addEventListener('click', () => {
+            actionField.value = 'single';
+        });
+    }
+
     if (form) {
         form.addEventListener('submit', (event) => {
             if (!form.checkValidity()) {
@@ -146,6 +171,15 @@ document.getElementById('odmorForm')?.addEventListener('submit', function (e) {
             }
             form.classList.add('was-validated');
         }, false);
+    }
+
+    if (collectiveBtn && actionField && form) {
+        collectiveBtn.addEventListener('click', () => {
+            const ok = confirm('Да се поднесе колективен одмор за сите вработени?');
+            if (!ok) return;
+            actionField.value = 'collective';
+            form.requestSubmit();
+        });
     }
 })();
 </script>

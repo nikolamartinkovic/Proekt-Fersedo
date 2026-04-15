@@ -299,7 +299,7 @@
                                     </div>
                                 </div>
 
-                                <div class="col-lg-6 d-none" id="nok_{{ pod.id }}">
+                                <div class="col-lg-6" id="nok_{{ pod.id }}">
                                     <label class="form-label fw-bold">Забелешка (ако не поминал)</label>
                                     <textarea name="zabeleska_{{ pod.id }}" class="form-control qc-form-textarea mb-3" rows="3" placeholder="Внеси забелешка..."></textarea>
 
@@ -386,6 +386,11 @@ document.querySelectorAll('input[type="file"]').forEach(input => {
 });
 
 updateSerialRequirement();
+
+document.querySelectorAll(".qc-form-check").forEach((checkbox) => {
+    const podId = checkbox.id.replace("ok_", "");
+    toggleNok(podId, checkbox);
+});
 </script>
 
 {% endblock %}

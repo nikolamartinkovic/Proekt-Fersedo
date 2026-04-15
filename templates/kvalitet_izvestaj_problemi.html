@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+{% block title %}Извештај за проблеми{% endblock %}
+
+{% block content %}
+<style>
+  .problem-shell {
+    max-width: 1220px;
+  }
+  .problem-hero {
+    border-radius: 32px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top right, rgba(248, 113, 113, 0.18), transparent 28%),
+      linear-gradient(135deg, #0f172a 0%, #1f2a44 48%, #1d4f91 100%);
+    box-shadow: 0 24px 58px rgba(15, 23, 42, 0.16);
+  }
+  .problem-hero p {
+    max-width: 760px;
+    color: rgba(255, 255, 255, 0.78);
+  }
+  .problem-hero h1 {
+    color: #f8fafc;
+    text-shadow: 0 2px 12px rgba(15, 23, 42, 0.28);
+  }
+  .problem-chip {
+    border-radius: 18px;
+    padding: 1rem 1.1rem;
+    background: rgba(255,255,255,.08);
+    min-width: 180px;
+  }
+  .problem-chip .small {
+    color: rgba(255,255,255,.72);
+    letter-spacing: .06em;
+  }
+  .problem-choice {
+    display: block;
+    text-decoration: none;
+    background: #fff;
+    border: 1px solid rgba(148, 163, 184, .18);
+    border-radius: 26px;
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.08);
+    padding: 1.6rem;
+    height: 100%;
+    transition: transform .28s ease, box-shadow .28s ease, border-color .28s ease;
+  }
+  .problem-choice:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 26px 48px rgba(15, 23, 42, 0.12);
+    border-color: rgba(96, 165, 250, .42);
+  }
+  .problem-choice.is-active {
+    border-color: rgba(59, 130, 246, .5);
+    box-shadow: 0 26px 52px rgba(37, 99, 235, 0.14);
+    background: linear-gradient(135deg, rgba(239, 246, 255, .96), rgba(255, 255, 255, .98));
+  }
+  .problem-choice__icon {
+    width: 74px;
+    height: 74px;
+    border-radius: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.9rem;
+    margin-bottom: 1rem;
+  }
+  .problem-choice__icon.is-internal {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  }
+  .problem-choice__icon.is-external {
+    background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+  }
+  .problem-choice__title {
+    font-size: 1.28rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: .35rem;
+  }
+  .problem-choice__text {
+    color: #64748b;
+    font-size: .97rem;
+    line-height: 1.65;
+    margin-bottom: 1rem;
+  }
+  .problem-choice__pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .52rem .88rem;
+    border-radius: 999px;
+    font-size: .82rem;
+    font-weight: 700;
+    background: #eef2ff;
+    color: #1e3a8a;
+  }
+  .problem-detail {
+    border-radius: 30px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid rgba(226, 232, 240, .95);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  }
+  .problem-detail__header {
+    padding: 1.4rem 1.5rem;
+    background: linear-gradient(135deg, rgba(15, 23, 42, .98) 0%, rgba(30, 64, 175, .92) 100%);
+    color: #fff;
+  }
+  .problem-detail__header p {
+    color: rgba(255,255,255,.78);
+    margin-bottom: 0;
+  }
+  .problem-detail__body {
+    padding: 1.5rem;
+  }
+  .problem-stat {
+    height: 100%;
+    border-radius: 22px;
+    border: 1px solid rgba(226, 232, 240, .92);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    padding: 1.2rem 1.25rem;
+  }
+  .problem-stat .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-size: .76rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: .7rem;
+  }
+  .problem-stat h3 {
+    font-size: 1.16rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: .45rem;
+  }
+  .problem-stat p {
+    margin-bottom: 0;
+    color: #64748b;
+    line-height: 1.65;
+  }
+  .problem-placeholder {
+    margin-top: 1.2rem;
+    padding: 1.2rem 1.25rem;
+    border-radius: 22px;
+    border: 1px dashed rgba(148, 163, 184, .45);
+    background: linear-gradient(180deg, rgba(248, 250, 252, .98), rgba(241, 245, 249, .92));
+    color: #475569;
+  }
+  @media (max-width: 767.98px) {
+    .problem-choice {
+      padding: 1.35rem;
+    }
+    .problem-choice__icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      font-size: 1.55rem;
+    }
+  }
+</style>
+
+<div class="container py-4 py-lg-5 problem-shell">
+  <div class="problem-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Квалитет</div>
+          <h1 class="display-6 fw-bold mb-3">Извештај за проблеми</h1>
+          <p class="mb-0 fs-5">
+            Избери дали проблемот е внатрешен или надворешен и отвори соодветен тек за евиденција, следење и понатамошна обработка.
+          </p>
+        </div>
+        <div class="problem-chip">
+          <div class="small text-uppercase mb-1">Активен тек</div>
+          <div class="fs-4 fw-bold">{{ tip_meta[active_tip].title }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <a href="{{ url_for('kvalitet.kvalitet_izvestaj_problemi', tip='vnatresen') }}"
+         class="problem-choice{% if active_tip == 'vnatresen' %} is-active{% endif %}">
+        <div class="problem-choice__icon is-internal">
+          <i class="fas fa-industry"></i>
+        </div>
+        <div class="problem-choice__title">Внатрешен</div>
+        <p class="problem-choice__text">
+          За проблеми откриени во производство, QC, монтажа, финална проверка или било која интерна фаза пред испорака.
+        </p>
+        <span class="problem-choice__pill">
+          <i class="fas fa-arrow-right"></i>
+          Отвори внатрешен тек
+        </span>
+      </a>
+    </div>
+
+    <div class="col-lg-6">
+      <a href="{{ url_for('kvalitet.kvalitet_izvestaj_problemi', tip='nadvoresen') }}"
+         class="problem-choice{% if active_tip == 'nadvoresen' %} is-active{% endif %}">
+        <div class="problem-choice__icon is-external">
+          <i class="fas fa-globe"></i>
+        </div>
+        <div class="problem-choice__title">Надворешен</div>
+        <p class="problem-choice__text">
+          За проблеми пријавени од клиент, сервис, терен, транспорт, добавувач или друг надворешен извор.
+        </p>
+        <span class="problem-choice__pill">
+          <i class="fas fa-arrow-right"></i>
+          Отвори надворешен тек
+        </span>
+      </a>
+    </div>
+  </div>
+
+  <section class="problem-detail">
+    <div class="problem-detail__header">
+      <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-2" style="background: rgba(255,255,255,.12);">
+            {{ tip_meta[active_tip].badge }}
+          </div>
+          <h2 class="h3 fw-bold mb-2">{{ tip_meta[active_tip].title }}</h2>
+          <p>{{ tip_meta[active_tip].subtitle }}</p>
+        </div>
+        <div class="rounded-4 px-4 py-3" style="background: rgba(255,255,255,.08); min-width: 170px;">
+          <div class="small text-uppercase opacity-75 mb-1">Тип</div>
+          <div class="fs-4 fw-bold">
+            <i class="fas {{ tip_meta[active_tip].icon }} me-2"></i>{{ "Внатрешен" if active_tip == "vnatresen" else "Надворешен" }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="problem-detail__body">
+      <div class="row g-4">
+        <div class="col-lg-4">
+          <div class="problem-stat">
+            <div class="eyebrow"><i class="fas fa-diagram-project"></i>Каде се користи</div>
+            <h3>{{ "Производство и QC" if active_tip == "vnatresen" else "Клиент, сервис и терен" }}</h3>
+            <p>
+              {{ "За интерни отстапувања, повторливи дефекти, процесни проблеми и внатрешни забелешки." if active_tip == "vnatresen" else "За рекламации, повратни информации, сервисни забелешки и надворешни несогласувања." }}
+            </p>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="problem-stat">
+            <div class="eyebrow"><i class="fas fa-clipboard-list"></i>Што ќе следи</div>
+            <h3>Подготвен екран за следен чекор</h3>
+            <p>
+              Овој подмодул сега има јасна поделба на два тека, па лесно можеме веднаш потоа да ја врземе формата, листата и PDF логиката за секој тип.
+            </p>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="problem-stat">
+            <div class="eyebrow"><i class="fas fa-layer-group"></i>Активен режим</div>
+            <h3>{{ "Внатрешна евиденција" if active_tip == "vnatresen" else "Надворешна евиденција" }}</h3>
+            <p>
+              {{ "Фокусирано на откриени проблеми пред излез од фабрика или во интерен тек." if active_tip == "vnatresen" else "Фокусирано на проблеми што доаѓаат после испорака или од надворешна страна." }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="problem-placeholder">
+        <strong>Следен чекор:</strong> избраниот тип веќе е активен. Во овој простор понатаму можеме да ја сместиме формата за внес, листата на извештаи и архивата само за соодветниот тек.
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

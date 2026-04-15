@@ -12,7 +12,7 @@ from utils.db import get_db
 from utils.decorators import login_required, admin_required, module_required
 from utils.config import STATIC_FOLDER, POZICII_FOLDER
 from utils.nabavki_images import save_compressed_image
-from utils.odmori_helpers import isprati_izvestuvanje_za_novo_baranje
+from utils.odmori_helpers import calc_working_days, isprati_izvestuvanje_za_novo_baranje
 
 main_bp = Blueprint('main', __name__)
 
@@ -384,7 +384,7 @@ def _save_polugotov_error_images(cursor, performance_id, greski_count, username)
         field_name = f"error_image_{error_index}"
         slika = request.files.get(field_name)
         if not slika or not (slika.filename or "").strip():
-            continue
+            raise ValueError(f"Сликата за грешка #{error_index} е задолжителна.")
 
         filename_base = f"pg_{performance_id}_{error_index}_{uuid.uuid4().hex[:10]}"
         saved_name = save_compressed_image(slika, POLUGOTOV_ERRORS_FOLDER, filename_base)
@@ -402,6 +402,21 @@ def _save_polugotov_error_images(cursor, performance_id, greski_count, username)
         saved_paths.append(os.path.join(POLUGOTOV_ERRORS_FOLDER, saved_name))
 
     return saved_paths
+
+
+def _validate_polugotov_error_images(greski_count):
+    if greski_count <= 0:
+        return
+
+    missing = []
+    for error_index in range(1, greski_count + 1):
+        slika = request.files.get(f"error_image_{error_index}")
+        if not slika or not (slika.filename or "").strip():
+            missing.append(error_index)
+
+    if missing:
+        missing_str = ", ".join(f"#{idx}" for idx in missing)
+        raise ValueError(f"Сликата за грешка е задолжителна за: {missing_str}.")
 
 
 def _collect_polugotov_error_types(greski_count):
@@ -489,6 +504,8 @@ def add_polugotov(kamin):
             if greski > 50:
                 raise ValueError("Максимално дозволени се 50 грешки во еден запис.")
             vid_greska_value = _collect_polugotov_error_types(greski)
+            if greski > 0:
+                _validate_polugotov_error_images(greski)
             cursor.execute("""
                 INSERT INTO performance
                 (datum, oddel, proizvod, proizvedeni, greski, vid_greska, zabeleska,
@@ -785,11 +802,209 @@ def izvestaj():
 @module_required("baranje_odmor")
 def baranje_odmor():
     from datetime import date as dt_date
-    conn   = get_db()
+    conn = get_db()
     cursor = conn.cursor()
-    vraboteni = cursor.execute("SELECT id, ime, prezime FROM vraboteni ORDER BY prezime, ime").fetchall()
+    vraboteni = cursor.execute(
+        """
+        SELECT id, ime, prezime, COALESCE(email, '') AS email
+        FROM vraboteni
+        ORDER BY prezime, ime
+        """
+    ).fetchall()
     if request.method == "POST":
-        _email_data = None
+        request_action = (request.form.get("action") or "single").strip().lower()
+        single_notify_payload = None
+        collective_notify_payload = None
+
+        try:
+            datum_od = request.form.get("datum_od")
+            datum_do = request.form.get("datum_do")
+            zabeleska = request.form.get("zabeleska", "").strip()
+
+            if not datum_od or not datum_do:
+                flash("Мора да ги внесете двата датуми!", "danger")
+                raise ValueError()
+
+            od_date = datetime.strptime(datum_od, "%Y-%m-%d").date()
+            do_date = datetime.strptime(datum_do, "%Y-%m-%d").date()
+            today = dt_date.today()
+
+            if od_date < today:
+                flash("Не можете да барате одмор во минатото!", "danger")
+                raise ValueError()
+            if od_date > do_date:
+                flash('Датумот "Од" не може да биде после "До"!', "danger")
+                raise ValueError()
+
+            praznici = {
+                row["datum"]
+                for row in cursor.execute("SELECT datum FROM nerabotni_deni").fetchall()
+            }
+            working_days = calc_working_days(datum_od, datum_do, praznici)
+
+            if request_action == "collective":
+                if not session.get("is_admin"):
+                    flash("Само администратор може да креира колективен одмор!", "danger")
+                    raise ValueError()
+
+                employees = cursor.execute(
+                    """
+                    SELECT id, ime, prezime
+                    FROM vraboteni
+                    ORDER BY prezime, ime
+                    """
+                ).fetchall()
+                if not employees:
+                    flash("Нема вработени за колективен одмор.", "warning")
+                    raise ValueError()
+
+                collective_group = f"COL-{uuid.uuid4().hex[:12].upper()}"
+                for employee in employees:
+                    cursor.execute(
+                        """
+                        INSERT INTO baranja_odmor
+                            (vraboten_id, datum_od, datum_do, status, zabeleska, podneseno_od, podneseno_na, kolektiven_grupa)
+                        VALUES (?, ?, ?, 'pending', ?, ?, CURRENT_TIMESTAMP, ?)
+                        """,
+                        (
+                            employee["id"],
+                            datum_od,
+                            datum_do,
+                            zabeleska,
+                            session["user"],
+                            collective_group,
+                        ),
+                    )
+
+                conn.commit()
+                flash(
+                    f"Колективниот одмор е успешно поднесен за {len(employees)} вработени!",
+                    "success",
+                )
+                collective_notify_payload = {
+                    "ime_prezime": f"Колективен одмор ({len(employees)} вработени)",
+                    "datum_od": datum_od,
+                    "datum_do": datum_do,
+                    "working_days": working_days,
+                    "zabeleska": zabeleska,
+                    "podneseno_od": session["user"],
+                    "podneseno_na": datetime.now().strftime("%d-%m-%Y %H:%M"),
+                }
+            else:
+                vraboten_id = request.form.get("vraboten_id")
+                if not vraboten_id:
+                    flash("Мора да изберете вработен!", "danger")
+                    raise ValueError()
+
+                conflict = cursor.execute(
+                    """
+                    SELECT id FROM baranja_odmor
+                    WHERE vraboten_id=? AND status='approved'
+                      AND (datum_od <= ? AND datum_do >= ?)
+                    """,
+                    (vraboten_id, datum_do, datum_od),
+                ).fetchone()
+                if conflict:
+                    flash(
+                        "Вработениот веќе има одобрен одмор во избраниот период!",
+                        "danger",
+                    )
+                    raise ValueError()
+
+                cursor.execute(
+                    """
+                    INSERT INTO baranja_odmor
+                        (vraboten_id, datum_od, datum_do, status, zabeleska, podneseno_od, podneseno_na, kolektiven_grupa)
+                    VALUES (?,?,?,'pending',?,?,CURRENT_TIMESTAMP,'')
+                    """,
+                    (vraboten_id, datum_od, datum_do, zabeleska, session["user"]),
+                )
+                conn.commit()
+                flash("Барањето е успешно поднесено и чека одобрување!", "success")
+
+                v_row = cursor.execute(
+                    "SELECT ime, prezime, email FROM vraboteni WHERE id=?",
+                    (vraboten_id,),
+                ).fetchone()
+
+                godina = od_date.year
+                saldo_row = cursor.execute(
+                    "SELECT vkupno_dena FROM odmor_salda WHERE vraboten_id=? AND godina=?",
+                    (vraboten_id, godina),
+                ).fetchone()
+                vkupno_dena = saldo_row["vkupno_dena"] if saldo_row else 20
+
+                iskoristeni_rows = cursor.execute(
+                    """
+                    SELECT datum_od, datum_do FROM baranja_odmor
+                    WHERE vraboten_id=? AND status='approved'
+                      AND strftime('%Y', datum_od)=?
+                    """,
+                    (vraboten_id, str(godina)),
+                ).fetchall()
+                iskoristeni = 0
+                for row in iskoristeni_rows:
+                    iskoristeni += calc_working_days(
+                        row["datum_od"], row["datum_do"], praznici
+                    )
+                preostanati_po_baranje = max(
+                    0, vkupno_dena - iskoristeni - working_days
+                )
+
+                single_notify_payload = {
+                    "vraboten_email": (v_row["email"] or "").strip() if v_row else "",
+                    "ime_prezime": f"{v_row['ime']} {v_row['prezime']}" if v_row else "",
+                    "datum_od": datum_od,
+                    "datum_do": datum_do,
+                    "working_days": working_days,
+                    "zabeleska": zabeleska,
+                    "podneseno_od": session["user"],
+                    "podneseno_na": datetime.now().strftime("%d-%m-%Y %H:%M"),
+                    "vkupno_dena": vkupno_dena,
+                    "iskoristeni": iskoristeni,
+                    "preostanati": preostanati_po_baranje,
+                    "godina": godina,
+                }
+
+        except ValueError:
+            pass
+        except Exception as e:
+            flash(f"Грешка: {e}", "danger")
+            conn.rollback()
+        finally:
+            conn.close()
+
+        if collective_notify_payload:
+            notify_result = isprati_izvestuvanje_za_novo_baranje(
+                ime_prezime=collective_notify_payload["ime_prezime"],
+                datum_od=collective_notify_payload["datum_od"],
+                datum_do=collective_notify_payload["datum_do"],
+                working_days=collective_notify_payload["working_days"],
+                zabeleska=collective_notify_payload["zabeleska"],
+                podneseno_od=collective_notify_payload["podneseno_od"],
+                podneseno_na=collective_notify_payload["podneseno_na"],
+            )
+            if notify_result.get("success"):
+                print(f"[ODMOR BARANJE] {notify_result['message']}")
+        elif single_notify_payload:
+            _isprati_odmor_email(**single_notify_payload)
+            notify_result = isprati_izvestuvanje_za_novo_baranje(
+                ime_prezime=single_notify_payload["ime_prezime"],
+                datum_od=single_notify_payload["datum_od"],
+                datum_do=single_notify_payload["datum_do"],
+                working_days=single_notify_payload["working_days"],
+                zabeleska=single_notify_payload["zabeleska"],
+                podneseno_od=single_notify_payload["podneseno_od"],
+                podneseno_na=single_notify_payload["podneseno_na"],
+            )
+            if notify_result.get("success"):
+                print(f"[ODMOR BARANJE] {notify_result['message']}")
+
+        return redirect(url_for("main.baranje_odmor"))
+
+        email_payloads = []
+        collective_notify_payload = None
+        request_action = (request.form.get("action") or "single").strip().lower()
 
         try:
             vraboten_id = request.form.get("vraboten_id")

@@ -698,6 +698,36 @@ def kvalitet():
     return render_template("kvalitet.html")
 
 
+@kvalitet_bp.route("/izvestaj-problemi", methods=["GET"])
+@login_required
+@module_required("kvalitet_izvestaj_problemi")
+def kvalitet_izvestaj_problemi():
+    active_tip = (request.args.get("tip") or "vnatresen").strip().lower()
+    if active_tip not in {"vnatresen", "nadvoresen"}:
+        active_tip = "vnatresen"
+
+    tip_meta = {
+        "vnatresen": {
+            "title": "Внатрешен извештај",
+            "subtitle": "Евиденција за проблеми откриени внатре во производството, контролата или интерната проверка.",
+            "badge": "Внатрешен тек",
+            "icon": "fa-industry",
+        },
+        "nadvoresen": {
+            "title": "Надворешен извештај",
+            "subtitle": "Евиденција за проблеми пријавени од клиент, терен, сервис или надворешен партнер.",
+            "badge": "Надворешен тек",
+            "icon": "fa-globe",
+        },
+    }
+
+    return render_template(
+        "kvalitet_izvestaj_problemi.html",
+        active_tip=active_tip,
+        tip_meta=tip_meta,
+    )
+
+
 @kvalitet_bp.route("/vlezna", methods=["GET"])
 @login_required
 @module_required("kvalitet_vlezna")

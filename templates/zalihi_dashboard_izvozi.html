@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}Внес на извози - Fersedo{% endblock %}
+
+{% block content %}
+<div class="container exports-entry-page">
+    <div class="exports-hero card border-0 shadow-xl rounded-4 overflow-hidden mb-4">
+        <div class="card-body p-4 p-md-5">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-4">
+                <div class="hero-copy-wrap">
+                    <div class="hero-pill mb-3">
+                        <i class="fas fa-chart-column me-2"></i>
+                        Залихи · Внес
+                    </div>
+                    <h1 class="hero-title mb-3">Внес на извози</h1>
+                    <p class="hero-text mb-4">
+                        Овде се внесуваат извозните бројки што го полнат графикот на главниот dashboard.
+                        Оваа страна е само за внес, преглед и бришење на записи, а не за dashboard приказ.
+                    </p>
+                    <div class="hero-badges d-flex flex-wrap gap-2">
+                        <span class="badge hero-badge">
+                            <i class="fas fa-calendar me-2"></i>Година {{ year }}
+                        </span>
+                        <span class="badge hero-badge">
+                            <i class="fas fa-layer-group me-2"></i>{{ entry_count }} записи
+                        </span>
+                        <span class="badge hero-badge">
+                            <i class="fas fa-box me-2"></i>{{ total_year | int }} pcs внесени
+                        </span>
+                        <span class="badge hero-badge">
+                            <i class="fas fa-bullseye me-2"></i>Target {{ target_total | int }} pcs
+                        </span>
+                        <span class="badge hero-badge">
+                            <i class="fas fa-hourglass-half me-2"></i>Преостануваат {{ remaining_to_target | int }} pcs
+                        </span>
+                    </div>
+                </div>
+
+                <div class="hero-tools card border-0 shadow-sm p-3 p-md-4">
+                    <form method="get">
+                        <label for="year" class="form-label fw-bold mb-2">Година</label>
+                        <div class="d-flex gap-2">
+                            <input
+                                type="number"
+                                name="year"
+                                id="year"
+                                value="{{ year }}"
+                                min="2020"
+                                max="2100"
+                                class="form-control form-control-lg"
+                            >
+                            <button type="submit" class="btn btn-dark px-4 fw-bold">
+                                <i class="fas fa-filter me-2"></i>Прикажи
+                            </button>
+                        </div>
+                        <div class="text-muted small mt-2">
+                            Филтерот важи само за записите на оваа страна. Графикот се прикажува на главниот dashboard.
+                        </div>
+                    </form>
+
+                    {% if session.get('is_admin') %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-primary fw-bold mt-3">
+                        <i class="fas fa-chart-line me-2"></i>Отвори главен dashboard
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if session.get('is_admin') %}
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body p-4 p-md-5">
+            <form method="post" action="{{ url_for('zalihi.dashboard_izvozi_target') }}">
+                <input type="hidden" name="year" value="{{ year }}">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-5">
+                        <label for="target_total" class="form-label fw-bold mb-2">Target за {{ year }}</label>
+                        <input
+                            type="number"
+                            name="target_total"
+                            id="target_total"
+                            min="1"
+                            step="1"
+                            value="{{ target_total | int }}"
+                            class="form-control form-control-lg"
+                            required
+                        >
+                    </div>
+                    <div class="col-lg-3">
+                        <button type="submit" class="btn btn-dark btn-lg w-100 fw-bold py-3">
+                            <i class="fas fa-save me-2"></i>Зачувај target
+                        </button>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="small text-muted">
+                            Овој target се користи за годишниот извозен график на главниот dashboard и се чува по година.
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body p-4 p-md-5">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+                <div>
+                    <h4 class="fw-bold mb-2 d-flex align-items-center">
+                        <i class="fas fa-file-excel me-3 text-success"></i>
+                        Импорт од Excel
+                    </h4>
+                    <p class="text-muted mb-0">
+                        Excel датотеката треба да има две колони: <strong>datum</strong> и <strong>kolicina</strong>.
+                        Поддржан е формат <strong>.xlsx</strong>.
+                    </p>
+                </div>
+                <a href="{{ url_for('zalihi.dashboard_izvozi_template') }}" class="btn btn-outline-secondary fw-bold">
+                    <i class="fas fa-download me-2"></i>Симни template
+                </a>
+            </div>
+
+            <form
+                method="post"
+                action="{{ url_for('zalihi.dashboard_izvozi_import') }}"
+                enctype="multipart/form-data"
+            >
+                <input type="hidden" name="year" value="{{ year }}">
+                <div class="row g-3 align-items-end">
+                    <div class="col-lg-7">
+                        <label for="excel_file" class="form-label fw-bold">Excel датотека</label>
+                        <input
+                            type="file"
+                            id="excel_file"
+                            name="excel_file"
+                            accept=".xlsx"
+                            class="form-control form-control-lg"
+                            required
+                        >
+                    </div>
+                    <div class="col-lg-3">
+                        <button type="submit" class="btn btn-success btn-lg w-100 fw-bold py-3">
+                            <i class="fas fa-file-import me-2"></i>Импортирај
+                        </button>
+                    </div>
+                    <div class="col-lg-2">
+                        <div class="small text-muted">
+                            Ако го import-ираш истиот Excel повторно, ќе се внесат нови записи повторно.
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-4">
+            <div class="panel-card card shadow-xl border-0 rounded-4 overflow-hidden h-100">
+                <div class="card-header panel-header text-white py-4 px-4 fw-bold d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <h4 class="mb-0 d-flex align-items-center">
+                        <i class="fas fa-plus-circle me-3 fs-4"></i>
+                        Нов извозен запис
+                    </h4>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <form method="post" class="exports-form">
+                        <div class="mb-4">
+                            <label for="datum" class="form-label fw-bold">Датум</label>
+                            <input
+                                type="date"
+                                id="datum"
+                                name="datum"
+                                value="{{ today }}"
+                                class="form-control form-control-lg"
+                                required
+                            >
+                        </div>
+                        <div class="mb-4">
+                            <label for="kolicina" class="form-label fw-bold">Количина (pcs)</label>
+                            <input
+                                type="number"
+                                id="kolicina"
+                                name="kolicina"
+                                min="1"
+                                step="1"
+                                placeholder="Внеси pcs"
+                                class="form-control form-control-lg"
+                                required
+                            >
+                        </div>
+                        <div class="mb-4">
+                            <label for="zabeleska" class="form-label fw-bold">Забелешка</label>
+                            <textarea
+                                id="zabeleska"
+                                name="zabeleska"
+                                rows="4"
+                                class="form-control"
+                                placeholder="Опционална забелешка..."
+                            ></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold py-3">
+                            <i class="fas fa-save me-2"></i>Зачувај извоз
+                        </button>
+                    </form>
+
+                    <div class="note-box mt-4">
+                        <i class="fas fa-circle-info me-2"></i>
+                        Овие внесови не ја менуваат залихата. Служат само како податоци за графикот на главниот dashboard.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-8">
+            <div class="panel-card card shadow-xl border-0 rounded-4 overflow-hidden">
+                <div class="card-header panel-header text-white py-4 px-4 fw-bold d-flex flex-wrap justify-content-between align-items-center gap-3">
+                    <h4 class="mb-0 d-flex align-items-center">
+                        <i class="fas fa-list-ul me-3 fs-4"></i>
+                        Внесени извозни записи
+                    </h4>
+                    {% if session.get('is_admin') %}
+                    <form
+                        method="post"
+                        action="{{ url_for('zalihi.dashboard_izvozi_delete_all') }}"
+                        class="mb-0"
+                        onsubmit="return confirm('Дали си сигурен дека сакаш да ги избришеш сите извозни записи за избраната година?');"
+                    >
+                        <input type="hidden" name="year" value="{{ year }}">
+                        <button type="submit" class="btn btn-outline-light rounded-pill px-4 fw-semibold">
+                            <i class="fas fa-trash-can me-2"></i>Избриши ги сите
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive exports-table-wrap">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Датум</th>
+                                    <th class="text-end">Количина</th>
+                                    <th>Забелешка</th>
+                                    <th>Внесено од</th>
+                                    <th>Време</th>
+                                    {% if session.get('is_admin') %}
+                                    <th class="text-end">Акција</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if entries %}
+                                    {% for entry in entries %}
+                                    <tr>
+                                        <td class="fw-semibold">{{ entry.datum[8:10] }}-{{ entry.datum[5:7] }}-{{ entry.datum[:4] }}</td>
+                                        <td class="text-end fw-bold text-primary">{{ entry.kolicina }}</td>
+                                        <td>{{ entry.zabeleska or "—" }}</td>
+                                        <td>{{ entry.username }}</td>
+                                        <td class="text-muted small">{{ entry.created_at }}</td>
+                                        {% if session.get('is_admin') %}
+                                        <td class="text-end">
+                                            <form
+                                                method="post"
+                                                action="{{ url_for('zalihi.dashboard_izvozi_delete', entry_id=entry.id) }}"
+                                                onsubmit="return confirm('Дали си сигурен дека сакаш да го избришеш овој извозен запис?');"
+                                            >
+                                                <input type="hidden" name="year" value="{{ year }}">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                                    <i class="fas fa-trash me-1"></i>Бриши
+                                                </button>
+                                            </form>
+                                        </td>
+                                        {% endif %}
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="{{ 6 if session.get('is_admin') else 5 }}" class="text-center py-5 text-muted">
+                                            <div class="empty-state">
+                                                <i class="fas fa-chart-column fa-3x mb-3"></i>
+                                                <div class="fw-bold">Нема внесени извозни записи за оваа година.</div>
+                                                <div class="small">Додај прв запис со формата одлево.</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .exports-entry-page {
+        max-width: 1460px;
+        margin: 4rem auto;
+        padding: 0 1rem;
+    }
+    .exports-hero {
+        background:
+            radial-gradient(circle at top right, rgba(255,255,255,0.16), transparent 28%),
+            linear-gradient(135deg, #0f172a 0%, #17324f 50%, #0f766e 100%);
+        color: #fff;
+    }
+    .hero-copy-wrap {
+        flex: 1 1 720px;
+    }
+    .hero-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.45rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.12);
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+    .hero-title {
+        color: #fff;
+        font-weight: 800;
+        font-size: clamp(2.1rem, 6vw, 3.3rem);
+    }
+    .hero-text {
+        color: rgba(255,255,255,0.92);
+        font-size: 1.06rem;
+        max-width: 760px;
+    }
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.72rem 1rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.14);
+        color: #fff;
+        font-weight: 700;
+        border: 1px solid rgba(255,255,255,0.14);
+    }
+    .hero-tools {
+        min-width: min(100%, 360px);
+        background: rgba(255,255,255,0.94);
+        border-radius: 22px;
+    }
+    .panel-card {
+        border-radius: 22px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(248,250,255,0.97));
+    }
+    .panel-header {
+        background: linear-gradient(135deg, #172554 0%, #1d3557 100%);
+        border-bottom: 0;
+    }
+    .note-box {
+        padding: 1rem 1.15rem;
+        border-radius: 16px;
+        background: rgba(37, 99, 235, 0.06);
+        color: #1e3a8a;
+        border: 1px solid rgba(37, 99, 235, 0.12);
+        font-weight: 600;
+    }
+    .form-control-lg {
+        min-height: 54px;
+    }
+    .exports-form textarea {
+        min-height: 130px;
+    }
+    .exports-table-wrap {
+        max-height: 620px;
+        overflow: auto;
+    }
+    .exports-table-wrap table {
+        min-width: 900px;
+    }
+    .exports-table-wrap thead th {
+        position: sticky;
+        top: 0;
+        background: #172554;
+        color: #fff;
+        font-weight: 700;
+        padding: 1rem 1.1rem;
+        white-space: nowrap;
+        border-bottom: 0;
+    }
+    .exports-table-wrap tbody td {
+        padding: 1rem 1.1rem;
+        vertical-align: middle;
+    }
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+    @media (max-width: 992px) {
+        .hero-tools {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}

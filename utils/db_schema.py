@@ -157,6 +157,13 @@ def apply_standard_migrations(cursor):
         "podneseno_na TEXT DEFAULT CURRENT_TIMESTAMP",
         "podneseno_na во baranja_odmor",
     )
+    ensure_column(
+        cursor,
+        "baranja_odmor",
+        "kolektiven_grupa",
+        "kolektiven_grupa TEXT DEFAULT ''",
+        "kolektiven_grupa во baranja_odmor",
+    )
     ensure_column(cursor, "users", "email", "email TEXT DEFAULT ''", "email во users")
     ensure_column(
         cursor,
@@ -241,7 +248,11 @@ def ensure_common_indexes(cursor):
     ensure_index(cursor, "idx_zaliha_dodadi_artikl_plateno", "zaliha_dodadi", "artikl_id, plateno, datum")
     ensure_index(cursor, "idx_zaliha_izvoz_pending_status", "zaliha_izvoz_pending", "status, datum_izvoz")
     ensure_index(cursor, "idx_zaliha_izvoz_log_datum", "zaliha_izvoz_log", "datum")
+    ensure_index(cursor, "idx_dashboard_izvozi_datum", "dashboard_izvozi", "datum")
+    if table_exists(cursor, "dashboard_izvozi_targets"):
+        ensure_index(cursor, "idx_dashboard_izvozi_targets_year", "dashboard_izvozi_targets", "year", unique=True)
     ensure_index(cursor, "idx_baranja_odmor_vraboten", "baranja_odmor", "vraboten_id, status")
+    ensure_index(cursor, "idx_baranja_odmor_kolektivna_grupa", "baranja_odmor", "kolektiven_grupa")
     ensure_index(cursor, "idx_odmor_salda_vraboten_godina", "odmor_salda", "vraboten_id, godina", unique=True)
     if table_exists(cursor, "kvalitet_kontrola"):
         ensure_index(

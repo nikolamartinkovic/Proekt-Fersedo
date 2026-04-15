@@ -69,6 +69,7 @@
             {{ sb_nav_link(url_for('kvalitet.kvalitet'), 'fas fa-check-circle', 'Квалитет', 'Квалитет', 'sb-sublink') }}
             {{ sb_nav_link(url_for('kvalitet.kvalitet_select_kamin'), 'fas fa-clipboard-check', 'Нова контрола', 'Нова контрола', 'sb-sublink') }}
             {{ sb_nav_link(url_for('kvalitet.kvalitet_vlezna'), 'fas fa-truck-ramp-box', 'Влезна контрола', 'Влезна контрола', 'sb-sublink') }}
+            {{ sb_nav_link(url_for('kvalitet.kvalitet_izvestaj_problemi'), 'fas fa-bug', 'Извештај за проблеми', 'Извештај за проблеми', 'sb-sublink') }}
             {{ sb_nav_link(url_for('kvalitet.kvalitet_arhiva'), 'fas fa-folder-open', 'Архива на контроли', 'Архива на контроли', 'sb-sublink') }}
             {{ sb_nav_link(url_for('kvalitet.kvalitet_greski_statistika'), 'fas fa-chart-column', 'Статистика на грешки', 'Статистика на грешки', 'sb-sublink') }}
             {{ sb_nav_link(url_for('kvalitet.kvalitet_template_manager'), 'fas fa-sliders', 'QC шаблони', 'QC шаблони', 'sb-sublink') }}
@@ -129,11 +130,12 @@
         {% endcall %}
         {% endif %}
 
-        {% if 'kvalitet' in allowed or 'kvalitet_nova' in allowed or 'kvalitet_vlezna' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_greski_statistika' in allowed or 'kvalitet_template' in allowed %}
+        {% if 'kvalitet' in allowed or 'kvalitet_nova' in allowed or 'kvalitet_vlezna' in allowed or 'kvalitet_izvestaj_problemi' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_greski_statistika' in allowed or 'kvalitet_template' in allowed %}
         {% call sb_nav_dropdown('quality', 'fas fa-star', 'Квалитет') %}
             {% if 'kvalitet' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet'), 'fas fa-check-circle', 'Квалитет', 'Квалитет', 'sb-sublink') }}{% endif %}
             {% if 'kvalitet_nova' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet_select_kamin'), 'fas fa-clipboard-check', 'Нова контрола', 'Нова контрола', 'sb-sublink') }}{% endif %}
             {% if 'kvalitet_vlezna' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet_vlezna'), 'fas fa-truck-ramp-box', 'Влезна контрола', 'Влезна контрола', 'sb-sublink') }}{% endif %}
+            {% if 'kvalitet_izvestaj_problemi' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet_izvestaj_problemi'), 'fas fa-bug', 'Извештај за проблеми', 'Извештај за проблеми', 'sb-sublink') }}{% endif %}
             {% if 'kvalitet_arhiva' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet_arhiva'), 'fas fa-folder-open', 'Архива на контроли', 'Архива на контроли', 'sb-sublink') }}{% endif %}
             {% if 'kvalitet_greski_statistika' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet_greski_statistika'), 'fas fa-chart-column', 'Статистика на грешки', 'Статистика на грешки', 'sb-sublink') }}{% endif %}
             {% if 'kvalitet_template' in allowed %}{{ sb_nav_link(url_for('kvalitet.kvalitet_template_manager'), 'fas fa-sliders', 'QC шаблони', 'QC шаблони', 'sb-sublink') }}{% endif %}

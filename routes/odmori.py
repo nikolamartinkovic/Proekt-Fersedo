@@ -657,6 +657,92 @@ def odmori_pregled_odmori():
         if baranje_id and action in ("approve", "reject"):
             new_status = "approved" if action == "approve" else "rejected"
             try:
+                selected = cursor.execute(
+                    "SELECT vraboten_id, kolektiven_grupa FROM baranja_odmor WHERE id=?",
+                    (baranje_id,),
+                ).fetchone()
+                if not selected:
+                    raise ValueError("???????? ?? ? ??????????.")
+
+                kolektiven_grupa = (selected["kolektiven_grupa"] or "").strip()
+                if kolektiven_grupa:
+                    cursor.execute(
+                        "UPDATE baranja_odmor SET status=? WHERE kolektiven_grupa=?",
+                        (new_status, kolektiven_grupa),
+                    )
+                    target_rows = cursor.execute(
+                        """
+                        SELECT b.datum_od,b.datum_do,b.zabeleska,b.vraboten_id,
+                               v.ime,v.prezime,v.email
+                        FROM baranja_odmor b
+                        JOIN vraboteni v ON b.vraboten_id=v.id
+                        WHERE b.kolektiven_grupa=?
+                        ORDER BY v.prezime, v.ime
+                        """,
+                        (kolektiven_grupa,),
+                    ).fetchall()
+                    flash(
+                        f"???????????? ?????? ? {('????????' if new_status == 'approved' else '???????')} ?? {len(target_rows)} ?????????!",
+                        "success",
+                    )
+                else:
+                    cursor.execute("UPDATE baranja_odmor SET status=? WHERE id=?", (new_status, baranje_id))
+                    target_rows = cursor.execute(
+                        """
+                        SELECT b.datum_od,b.datum_do,b.zabeleska,b.vraboten_id,
+                               v.ime,v.prezime,v.email
+                        FROM baranja_odmor b
+                        JOIN vraboteni v ON b.vraboten_id=v.id
+                        WHERE b.id=?
+                        """,
+                        (baranje_id,),
+                    ).fetchall()
+                    flash(f"???????? ? {new_status.upper()}!", "success")
+
+                conn.commit()
+                if new_status == "approved":
+                    try:
+                        from routes.main import _isprati_odobruvanje_email
+                        praznici_set = {r["datum"] for r in cursor.execute("SELECT datum FROM nerabotni_deni").fetchall()}
+                        for b in target_rows:
+                            if not (b["email"] or "").strip():
+                                continue
+                            try:
+                                s = datetime.strptime(b["datum_od"], "%Y-%m-%d").date()
+                                working_days = calc_working_days(b["datum_od"], b["datum_do"], praznici_set)
+                                godina_b = s.year
+                            except Exception:
+                                godina_b = datetime.now().year
+                                working_days = 0
+                            saldo_r = cursor.execute(
+                                "SELECT vkupno_dena FROM odmor_salda WHERE vraboten_id=? AND godina=?",
+                                (b["vraboten_id"], godina_b),
+                            ).fetchone()
+                            vkupno = saldo_r["vkupno_dena"] if saldo_r else 20
+                            saldo_map_now = get_saldo_all(cursor, godina_b)
+                            preostanati = saldo_map_now.get(b["vraboten_id"], {}).get("preostanati", 0)
+                            _isprati_odobruvanje_email(
+                                vraboten_email=b["email"].strip(),
+                                ime_prezime=f"{b['ime']} {b['prezime']}",
+                                datum_od=b["datum_od"],
+                                datum_do=b["datum_do"],
+                                working_days=working_days,
+                                zabeleska=b["zabeleska"] or "",
+                                odobren_od="?????????",
+                                vkupno_dena=vkupno,
+                                preostanati=preostanati,
+                                godina=godina_b,
+                            )
+                    except Exception as mail_err:
+                        print(f"[EMAIL ODOBR] ??????: {mail_err}")
+                return redirect(url_for("odmori.odmori_pregled_odmori"))
+            except Exception as e:
+                flash(f"??????: {e}", "danger")
+                conn.rollback()
+
+        if baranje_id and action in ("approve", "reject"):
+            new_status = "approved" if action == "approve" else "rejected"
+            try:
                 cursor.execute("UPDATE baranja_odmor SET status=? WHERE id=?", (new_status, baranje_id))
                 conn.commit(); flash(f"Барањето е {new_status.upper()}!", "success")
                 if new_status == "approved":
@@ -708,7 +794,7 @@ def odmori_pregled_odmori():
             except Exception as e: flash(f"Грешка: {e}", "danger")
 
     praznici = {r["datum"] for r in cursor.execute("SELECT datum FROM nerabotni_deni").fetchall()}
-    baranja_raw = cursor.execute("""SELECT b.id,b.vraboten_id,b.datum_od,b.datum_do,b.status,b.zabeleska,
+    baranja_raw = cursor.execute("""SELECT b.id,b.vraboten_id,b.datum_od,b.datum_do,b.status,b.zabeleska,b.kolektiven_grupa,
         b.podneseno_od,b.podneseno_na,v.ime,v.prezime FROM baranja_odmor b
         JOIN vraboteni v ON b.vraboten_id=v.id ORDER BY b.podneseno_na DESC""").fetchall()
     baranja = []
@@ -727,7 +813,7 @@ def odmori_pregled_odmori():
             "datum_do_formatted":end.strftime("%d-%m-%Y") if end else "—",
             "datum_od_year":start.year if start else godina,"status":b["status"],
             "zabeleska":b["zabeleska"] or "—","podneseno_od":b["podneseno_od"] or "—",
-            "podneseno_na":b["podneseno_na"] or "—","total_days":total_days,"working_days":working_days})
+            "podneseno_na":b["podneseno_na"] or "???","total_days":total_days,"working_days":working_days,"kolektiven_grupa":b["kolektiven_grupa"] or ""})
     saldo_map = get_saldo_all(cursor, godina)
     conn.commit(); conn.close()
     return render_template("pregled_odmori.html", baranja=baranja, saldo_map=saldo_map, godina=godina)

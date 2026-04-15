@@ -300,6 +300,26 @@ def init_db():
     """)
 
     cursor.execute("""
+        CREATE TABLE IF NOT EXISTS dashboard_izvozi (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            datum TEXT NOT NULL,
+            kolicina INTEGER NOT NULL,
+            zabeleska TEXT DEFAULT '',
+            username TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS dashboard_izvozi_targets (
+            year INTEGER PRIMARY KEY,
+            target_total INTEGER NOT NULL DEFAULT 4000,
+            updated_by TEXT DEFAULT '',
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS zaliha_izvoz_pending (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             artikl_id INTEGER NOT NULL,
@@ -349,6 +369,7 @@ def init_db():
             datum_od DATE NOT NULL,
             datum_do DATE NOT NULL,
             status TEXT DEFAULT 'pending',
+            kolektiven_grupa TEXT DEFAULT '',
             zabeleska TEXT,
             podneseno_od TEXT,
             podneseno_na TEXT DEFAULT CURRENT_TIMESTAMP,

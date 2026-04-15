@@ -1444,6 +1444,10 @@
                 <span class="sb-icon"><i class="fas fa-truck-ramp-box"></i></span>
                 <span class="sb-label">Влезна контрола</span>
             </a>
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_izvestaj_problemi') }}" data-tooltip="Извештај за проблеми">
+                <span class="sb-icon"><i class="fas fa-bug"></i></span>
+                <span class="sb-label">Извештај за проблеми</span>
+            </a>
             <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_arhiva') }}" data-tooltip="Архива на контроли">
                 <span class="sb-icon"><i class="fas fa-folder-open"></i></span>
                 <span class="sb-label">Архива на контроли</span>
@@ -1592,6 +1596,10 @@
                 <span class="sb-icon"><i class="fas fa-warehouse"></i></span>
                 <span class="sb-label">Залихи</span>
             </a>
+            <a class="sb-link" href="{{ url_for('zalihi.dashboard_izvozi') }}" data-tooltip="Внес на извози">
+                <span class="sb-icon"><i class="fas fa-chart-column"></i></span>
+                <span class="sb-label">Внес на извози</span>
+            </a>
             {% endif %}
             {% if 'email_recipients' in allowed %}
             <a class="sb-link" href="{{ url_for('admin.email_recipients') }}" data-tooltip="Email примачи">
@@ -1634,7 +1642,7 @@
             </a>
             {% endif %}
 
-            {% if 'kvalitet' in allowed or 'kvalitet_nova' in allowed or 'kvalitet_vlezna' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_greski_statistika' in allowed or 'kvalitet_template' in allowed %}
+            {% if 'kvalitet' in allowed or 'kvalitet_nova' in allowed or 'kvalitet_vlezna' in allowed or 'kvalitet_izvestaj_problemi' in allowed or 'kvalitet_arhiva' in allowed or 'kvalitet_greski_statistika' in allowed or 'kvalitet_template' in allowed %}
             <div class="sb-group"><i class="fas fa-star" style="font-size:0.7rem;"></i> Квалитет</div>
             {% endif %}
             {% if 'kvalitet' in allowed %}
@@ -1653,6 +1661,12 @@
             <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_vlezna') }}" data-tooltip="Влезна контрола">
                 <span class="sb-icon"><i class="fas fa-truck-ramp-box"></i></span>
                 <span class="sb-label">Влезна контрола</span>
+            </a>
+            {% endif %}
+            {% if 'kvalitet_izvestaj_problemi' in allowed %}
+            <a class="sb-link" href="{{ url_for('kvalitet.kvalitet_izvestaj_problemi') }}" data-tooltip="Извештај за проблеми">
+                <span class="sb-icon"><i class="fas fa-bug"></i></span>
+                <span class="sb-label">Извештај за проблеми</span>
             </a>
             {% endif %}
             {% if 'kvalitet_arhiva' in allowed %}

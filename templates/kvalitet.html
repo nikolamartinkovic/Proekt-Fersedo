@@ -56,6 +56,9 @@
   .kvalitet-action-icon.warning {
     background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
   }
+  .kvalitet-action-icon.alert {
+    background: linear-gradient(135deg, #f97316 0%, #dc2626 100%);
+  }
   .kvalitet-action-icon.teal {
     background: linear-gradient(135deg, #0f766e 0%, #0f9f93 100%);
   }
@@ -166,6 +169,21 @@
         <div>
           <div class="kvalitet-action-title">Влезна контрола</div>
           <p class="kvalitet-action-subtitle">Евиденција и приемна проверка на материјали по испратница или фактура со PDF запис.</p>
+        </div>
+        <div class="kvalitet-arrow"><i class="fas fa-arrow-right"></i></div>
+      </a>
+    </div>
+    {% endif %}
+
+    {% if session.get('is_admin') or 'kvalitet_izvestaj_problemi' in allowed %}
+    <div class="col-lg-4 col-md-6">
+      <a href="{{ url_for('kvalitet.kvalitet_izvestaj_problemi') }}" class="kvalitet-action-card">
+        <div class="kvalitet-action-icon alert">
+          <i class="fas fa-bug"></i>
+        </div>
+        <div>
+          <div class="kvalitet-action-title">Извештај за проблеми</div>
+          <p class="kvalitet-action-subtitle">Одвој внатрешни и надворешни проблеми уште на старт и отвори го точниот тек за евиденција.</p>
         </div>
         <div class="kvalitet-arrow"><i class="fas fa-arrow-right"></i></div>
       </a>

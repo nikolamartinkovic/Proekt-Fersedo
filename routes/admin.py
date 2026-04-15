@@ -61,7 +61,7 @@ ALL_MODULES = (
     "odmori,baranje_odmor,odmori_vraboteni,odmori_kalendar,odmori_pregled_odmori,"
     "odmori_sekojdnevni_otsustva,odmori_manager_emails,zalihi,"
     "odrzuvanje,odrzuvanje_masini,odrzuvanje_nalozi,odrzuvanje_plan,odrzuvanje_istorija,"
-    "kvalitet,kvalitet_nova,kvalitet_vlezna,kvalitet_arhiva,kvalitet_greski_statistika,kvalitet_template,"
+    "kvalitet,kvalitet_nova,kvalitet_vlezna,kvalitet_arhiva,kvalitet_greski_statistika,kvalitet_izvestaj_problemi,kvalitet_template,"
     "ponudi,ponudi_arhiva,chat"
 )
 
@@ -93,6 +93,7 @@ MODULE_LABELS = {
     "kvalitet_vlezna":            "Квалитет — Влезна контрола",
     "kvalitet_arhiva":            "Квалитет — Архива",
     "kvalitet_greski_statistika": "Квалитет — Статистика на грешки",
+    "kvalitet_izvestaj_problemi": "Квалитет — Извештај за проблеми",
     "kvalitet_template":          "Квалитет — QC Шаблони",
     "ponudi":                     "Понуди",
     "ponudi_arhiva":              "Архива на понуди",
@@ -249,6 +250,7 @@ def admin_users():
             {"value": "kvalitet_vlezna",   "label": "Влезна контрола"},
             {"value": "kvalitet_arhiva",   "label": "Архива на контроли"},
             {"value": "kvalitet_greski_statistika", "label": "Статистика на грешки"},
+            {"value": "kvalitet_izvestaj_problemi", "label": "Извештај за проблеми"},
             {"value": "kvalitet_template", "label": "QC Шаблони"},
         ],
     }
@@ -261,11 +263,129 @@ def admin_users():
 # ─────────────────────────────────────────────────────────────
 # DASHBOARD
 # ─────────────────────────────────────────────────────────────
+EXPORT_TARGET_PCS = 4000
+EXPORT_MONTH_LABELS = ["Јан", "Фев", "Мар", "Апр", "Мај", "Јун", "Јул", "Авг", "Сеп", "Окт", "Нов", "Дек"]
+
+
+def _get_dashboard_export_target(year):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        row = cursor.execute(
+            "SELECT target_total FROM dashboard_izvozi_targets WHERE year = ? LIMIT 1",
+            (int(year),),
+        ).fetchone()
+        if row and row.get("target_total") is not None:
+            try:
+                return max(1, int(row["target_total"]))
+            except (TypeError, ValueError):
+                return EXPORT_TARGET_PCS
+        return EXPORT_TARGET_PCS
+    finally:
+        conn.close()
+
+
+def _weeks_in_iso_year(year):
+    return date(int(year), 12, 28).isocalendar().week
+
+
+def _build_export_dashboard_payload(year=None):
+    selected_year = int(year or date.today().year)
+    target_total = _get_dashboard_export_target(selected_year)
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        rows = cursor.execute(
+            """
+            SELECT datum, kolicina
+            FROM dashboard_izvozi
+            WHERE substr(datum, 1, 4) = ?
+            ORDER BY datum ASC
+            """,
+            (str(selected_year),),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    monthly_exports = [0] * 12
+    weeks_in_year = _weeks_in_iso_year(selected_year)
+    weekly_exports = [0] * weeks_in_year
+
+    for row in rows:
+        raw_date = row["datum"] if hasattr(row, "keys") else row[0]
+        if not raw_date:
+            continue
+        try:
+            export_date = date.fromisoformat(str(raw_date)[:10])
+        except (TypeError, ValueError):
+            continue
+        if export_date.year != selected_year:
+            continue
+
+        try:
+            quantity = int(row["kolicina"] or 0)
+        except (TypeError, ValueError):
+            quantity = 0
+
+        month_index = export_date.month - 1
+        if 0 <= month_index < 12:
+            monthly_exports[month_index] += quantity
+
+        iso_year, iso_week, _ = export_date.isocalendar()
+        if iso_year == selected_year and 1 <= iso_week <= weeks_in_year:
+            weekly_exports[iso_week - 1] += quantity
+
+    cumulative_exports = []
+    running_total = 0
+    for value in monthly_exports:
+        running_total += int(value or 0)
+        cumulative_exports.append(running_total)
+
+    cumulative_weekly_exports = []
+    running_week_total = 0
+    for value in weekly_exports:
+        running_week_total += int(value or 0)
+        cumulative_weekly_exports.append(running_week_total)
+
+    target_line = [round(target_total * ((idx + 1) / 12), 1) for idx in range(12)]
+    weekly_target_line = [
+        round(target_total * ((idx + 1) / weeks_in_year), 1) for idx in range(weeks_in_year)
+    ]
+    remaining = max(target_total - running_total, 0)
+    progress = round((running_total / target_total) * 100, 1) if target_total else 0
+
+    return {
+        "year": selected_year,
+        "labels": EXPORT_MONTH_LABELS,
+        "monthly_exports": monthly_exports,
+        "cumulative_exports": cumulative_exports,
+        "target_line": target_line,
+        "total_exported": running_total,
+        "target_total": target_total,
+        "remaining_to_target": remaining,
+        "progress": progress,
+        "average_monthly": round(running_total / 12, 1) if running_total else 0,
+        "weekly": {
+            "labels": [f"Н{week:02d}" for week in range(1, weeks_in_year + 1)],
+            "weekly_exports": weekly_exports,
+            "cumulative_exports": cumulative_weekly_exports,
+            "target_line": weekly_target_line,
+            "weeks_in_year": weeks_in_year,
+            "weekly_target_value": round(target_total / weeks_in_year, 1) if weeks_in_year else 0,
+            "average_weekly": round(running_total / weeks_in_year, 1) if running_total and weeks_in_year else 0,
+        },
+    }
+
+
 @admin_bp.route("/dashboard")
 @login_required
 @admin_or_module_required("dashboard")
 def dashboard():
-    return render_template("dashboard.html", today=date.today().isoformat())
+    return render_template(
+        "dashboard.html",
+        today=date.today().isoformat(),
+        current_year=date.today().year,
+    )
 
 
 @admin_bp.route("/backup")
@@ -428,6 +548,70 @@ def api_greski():
         return jsonify({"error": f"Невалиден формат на датум: {e}"}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/api/izvozi")
+@login_required
+@admin_or_module_required("dashboard")
+def api_izvozi():
+    year = request.args.get("year") or date.today().year
+    try:
+        payload = _build_export_dashboard_payload(year)
+        return jsonify(payload)
+    except ValueError as e:
+        return jsonify({"error": f"Невалидна година: {e}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@admin_bp.route("/api/izvozi/target", methods=["POST"])
+@login_required
+@admin_required
+def api_izvozi_target():
+    try:
+        year = int(request.form.get("year") or date.today().year)
+        target_total = int(request.form.get("target_total") or EXPORT_TARGET_PCS)
+    except (TypeError, ValueError):
+        return jsonify({"error": "Невалидни податоци за target."}), 400
+
+    if target_total <= 0:
+        return jsonify({"error": "Target мора да биде поголем од 0."}), 400
+
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        existing = cursor.execute(
+            "SELECT year FROM dashboard_izvozi_targets WHERE year = ?",
+            (year,),
+        ).fetchone()
+        if existing:
+            cursor.execute(
+                """
+                UPDATE dashboard_izvozi_targets
+                SET target_total = ?, updated_by = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE year = ?
+                """,
+                (target_total, session.get("user", ""), year),
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO dashboard_izvozi_targets (year, target_total, updated_by)
+                VALUES (?, ?, ?)
+                """,
+                (year, target_total, session.get("user", "")),
+            )
+        conn.commit()
+        return jsonify({
+            "success": True,
+            "year": year,
+            "target_total": target_total,
+        })
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        conn.close()
 
 
 # ─────────────────────────────────────────────────────────────

@@ -1,382 +1,1657 @@
 {% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-
-<div class="container" style="max-width: 1400px; margin: 4rem auto; padding: 0 1rem;">
-    {% if session.is_admin %}
-    <div class="card shadow-sm border-0 rounded-4 mb-4">
-        <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-3">
-            <div>
-                <h5 class="mb-1">Backup i restore (samo admin)</h5>
-                <small class="text-muted">Avtomatski dneven backup + racno restore od backup datoteka.</small>
-            </div>
-            <a href="{{ url_for('admin.admin_backup') }}" class="btn btn-outline-primary">
-                <i class="fas fa-database me-2"></i>Otvori backup panel
-            </a>
-        </div>
-    </div>
-    {% endif %}
-    <!-- Филтер -->
-    <div class="filter-card card shadow-xl border-0 rounded-4 overflow-hidden mb-5">
-        <div class="card-header text-white py-4 px-5 fw-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
-            <h4 class="mb-0 d-flex align-items-center">
-                <i class="fas fa-filter me-3 fs-4"></i>
-                Филтер по период
-            </h4>
-        </div>
-
-        <div class="card-body p-4 p-md-5">
-            <div class="row g-4 justify-content-center">
-                <div class="col-md-5 col-12">
-                    <label for="datum_od" class="form-label fw-bold fs-5">Од датум</label>
-                    <input type="date" id="datum_od" value="{{ today }}" class="form-control form-control-lg">
-                </div>
-                <div class="col-md-5 col-12">
-                    <label for="datum_do" class="form-label fw-bold fs-5">До датум</label>
-                    <input type="date" id="datum_do" value="{{ today }}" class="form-control form-control-lg">
-                </div>
-                <div class="col-md-2 col-12 d-flex align-items-end">
-                    <button onclick="updateDashboard()" id="updateBtn" class="btn btn-primary btn-lg w-100 py-3 fw-bold shadow-lg">
-                        <span id="updateText"><i class="fas fa-sync-alt me-2"></i> Ажурирај</span>
-                        <span id="updateSpinner" class="spinner-border spinner-border-sm d-none ms-2" role="status"></span>
-                    </button>
-                </div>
-            </div>
-        </div>
+<div class="dashboard-shell">
+  <section class="dash-hero">
+    <div class="dash-hero__copy">
+      <span class="dash-chip">
+        <i class="fas fa-chart-line"></i>
+        Централен преглед
+      </span>
+      <h1>Оперативен dashboard</h1>
+      <p>
+        Следи производство, грешки, ефективност и годишен извоз на едно место.
+        Распоредот е компактен за да ги гледаш клучните бројки веднаш, без празен простор.
+      </p>
     </div>
 
-    <!-- KPI статистики -->
-    <div class="stats-grid row g-4 mb-5">
-        <div class="col-lg-4 col-md-6 col-12">
-            <div class="stat-card card shadow-xl border-0 rounded-4 text-center p-4" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0);">
-                <div class="stat-icon mb-3" style="font-size: clamp(3.5rem, 10vw, 4.5rem); color: #065f46;">
-                    <i class="fas fa-boxes-stacked"></i>
-                </div>
-                <p class="mb-2 fw-bold fs-5" style="color: #065f46;">Произведени</p>
-                <span id="totalProizvedeni" class="fs-1 fw-black" style="color: #065f46;">0</span>
-            </div>
-        </div>
-        
-        <div class="col-lg-4 col-md-6 col-12">
-            <div class="stat-card card shadow-xl border-0 rounded-4 text-center p-4" style="background: linear-gradient(135deg, #fee2e2, #fecaca);">
-                <div class="stat-icon mb-3" style="font-size: clamp(3.5rem, 10vw, 4.5rem); color: #991b1b;">
-                    <i class="fas fa-exclamation-triangle"></i>
-                </div>
-                <p class="mb-2 fw-bold fs-5" style="color: #991b1b;">Грешки</p>
-                <span id="totalGreski" class="fs-1 fw-black" style="color: #991b1b;">0</span>
-            </div>
-        </div>
+    <div class="dash-hero__meta">
+      <div class="dash-year-pill">{{ current_year }}</div>
+      <div class="dash-meta-note">
+        <strong>Освежување:</strong> рачно или автоматски на секои 5 минути
+      </div>
+    </div>
+  </section>
 
-        <div class="col-lg-4 col-md-12 col-12">
-            <div class="stat-card card shadow-xl border-0 rounded-4 text-center p-4" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe);">
-                <div class="stat-icon mb-3" style="font-size: clamp(3.5rem, 10vw, 4.5rem); color: #1e40af;">
-                    <i class="fas fa-percentage"></i>
-                </div>
-                <p class="mb-2 fw-bold fs-5" style="color: #1e40af;">Ефективност</p>
-                <span id="totalEfektivnost" class="fs-1 fw-black" style="color: #1e40af;">0 %</span>
-            </div>
-        </div>
+  <section class="dash-toolbar-card">
+    <div class="dash-toolbar-head">
+      <div>
+        <h2>Филтер по период</h2>
+        <p>Избери период за преглед на производството и грешките.</p>
+      </div>
     </div>
 
-    <!-- Графикони -->
-    <div class="charts-grid row g-4 mb-5">
-        <div class="col-lg-6 col-12">
-            <div class="chart-card card shadow-xl border-0 rounded-4 p-4 p-md-5">
-                <h3 class="text-center mb-4 fw-bold" style="font-size: clamp(1.4rem, 5vw, 1.6rem);">Ефективност</h3>
-                <div style="height: clamp(280px, 55vw, 420px); position: relative;">
-                    <canvas id="totalGaugeChart"></canvas>
-                    <div id="gaugeCenterValue" style="position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); font-size: clamp(2.5rem, 8vw, 3.8rem); font-weight: 900; color: #334155; pointer-events: none;"></div>
-                </div>
-            </div>
+    <form id="dashboardFilterForm" class="dash-filter-grid">
+      <label class="dash-field">
+        <span>Од датум</span>
+        <input type="date" id="datum_od" value="{{ today }}">
+      </label>
+
+      <label class="dash-field">
+        <span>До датум</span>
+        <input type="date" id="datum_do" value="{{ today }}">
+      </label>
+
+      <button type="submit" id="updateBtn" class="dash-filter-btn">
+        <span id="updateSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+        <span id="updateText">
+          <i class="fas fa-rotate-right"></i>
+          Ажурирај
+        </span>
+      </button>
+    </form>
+  </section>
+
+  <section class="dash-kpi-grid">
+    <article class="dash-kpi dash-kpi--produced">
+      <div class="dash-kpi__icon">
+        <i class="fas fa-cubes"></i>
+      </div>
+      <div class="dash-kpi__body">
+        <span class="dash-kpi__label">Произведени</span>
+        <strong id="totalProizvedeni">0</strong>
+        <small id="kpiPeriodLabel">Избран период</small>
+      </div>
+    </article>
+
+    <article class="dash-kpi dash-kpi--errors">
+      <div class="dash-kpi__icon">
+        <i class="fas fa-triangle-exclamation"></i>
+      </div>
+      <div class="dash-kpi__body">
+        <span class="dash-kpi__label">Грешки</span>
+        <strong id="totalGreski">0</strong>
+        <small id="kpiErrorNote">Евидентирани дефекти</small>
+      </div>
+    </article>
+
+    <article class="dash-kpi dash-kpi--efficiency">
+      <div class="dash-kpi__icon">
+        <i class="fas fa-percent"></i>
+      </div>
+      <div class="dash-kpi__body">
+        <span class="dash-kpi__label">Ефективност</span>
+        <strong id="totalEfektivnost">0%</strong>
+        <small id="kpiEfficiencyNote">Процент на успешно производство</small>
+      </div>
+    </article>
+  </section>
+
+  <section class="dash-main-grid">
+    <article class="dash-panel dash-panel--gauge">
+      <div class="dash-panel__head">
+        <div>
+          <span class="dash-panel__eyebrow">Квалитет</span>
+          <h3>Вкупна ефективност</h3>
+        </div>
+      </div>
+
+      <div class="dash-gauge-wrap">
+        <div class="dash-gauge-ring">
+          <canvas id="totalGaugeChart"></canvas>
+          <div class="dash-gauge-center">
+            <span id="gaugeCenterValue">0%</span>
+            <small>ефективност</small>
+          </div>
         </div>
 
-        <div class="col-lg-6 col-12">
-            <div class="chart-card card shadow-xl border-0 rounded-4 p-4 p-md-5">
-                <h3 class="text-center mb-4 fw-bold" style="font-size: clamp(1.4rem, 5vw, 1.6rem);">По оддели</h3>
-                <div style="height: clamp(280px, 55vw, 400px);">
-                    <canvas id="perOdelBarChart"></canvas>
-                </div>
-            </div>
+        <div class="dash-gauge-meta">
+          <div class="dash-mini-stat">
+            <span>Произведени</span>
+            <strong id="gaugeProducedValue">0</strong>
+          </div>
+          <div class="dash-mini-stat">
+            <span>Грешки</span>
+            <strong id="gaugeErrorsValue">0</strong>
+          </div>
+          <div class="dash-mini-stat">
+            <span>Период</span>
+            <strong id="gaugePeriodValue">Денес</strong>
+          </div>
         </div>
+      </div>
+    </article>
+
+    <article class="dash-panel dash-panel--departments">
+      <div class="dash-panel__head">
+        <div>
+          <span class="dash-panel__eyebrow">Производство</span>
+          <h3>Преглед по оддели</h3>
+        </div>
+      </div>
+
+      <div class="dash-chart-frame">
+        <canvas id="perOdelBarChart"></canvas>
+      </div>
+
+      <div id="departmentList" class="dash-department-list">
+        <div class="dash-empty-state">Нема податоци за избраниот период.</div>
+      </div>
+    </article>
+  </section>
+
+  <section class="dash-panel dash-panel--exports">
+    <div class="dash-panel__head dash-panel__head--spread">
+      <div>
+        <span class="dash-panel__eyebrow">Извоз</span>
+        <h3>Годишен извоз</h3>
+        <p class="dash-panel__subtext">
+          Месечниот извоз и кумулативниот извоз се одвоени по оски за да се гледа јасно дали
+          сме под месечниот план и колку сме блиску до годишниот target.
+        </p>
+      </div>
+      <div id="exportsYearBadge" class="dash-year-pill dash-year-pill--sm">{{ current_year }}</div>
     </div>
 
-    <!-- Детали по оддели (табела) -->
-    <div class="table-card card shadow-xl border-0 rounded-4 overflow-hidden">
-        <div class="card-header text-white py-4 px-5 fw-bold" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark));">
-            <h4 class="mb-0 d-flex align-items-center">
-                <i class="fas fa-table-list me-3 fs-4"></i>
-                Детали по оддели
-            </h4>
-        </div>
-
-        <div class="card-body p-0">
-            <div class="table-container" style="overflow-x: auto; -webkit-overflow-scrolling: touch; max-height: 600px; overflow-y: auto;">
-                <table id="dashboardTable" class="table table-hover table-striped mb-0 align-middle" style="width: 100%; min-width: 800px;">
-                    <thead class="table-dark">
-                        <tr>
-                            <th style="text-align: center; padding: 1.4rem;">Оддел</th>
-                            <th style="text-align: center; padding: 1.4rem;">Грешки</th>
-                            <th style="text-align: center; padding: 1.4rem;">Произведени</th>
-                            <th style="text-align: center; padding: 1.4rem;">Ефективност</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dashboardBody"></tbody>
-                </table>
-            </div>
-        </div>
+    <div class="dash-export-stats">
+      <article class="dash-export-stat">
+        <span>Извезено досега</span>
+        <strong id="exportsTotal">0 pcs</strong>
+        <small id="exportsProgress">0% од годишниот target</small>
+      </article>
+      <article class="dash-export-stat">
+        <span>Годишен target</span>
+        <strong id="exportsTarget">0 pcs</strong>
+        <small id="exportsMonthlyTarget">0 pcs месечен план</small>
+      </article>
+      <article class="dash-export-stat">
+        <span>Кумулативен target до денес</span>
+        <strong id="exportsTargetToDate">0 pcs</strong>
+        <small id="exportsCurrentMonth">Тековен месец: 0 pcs</small>
+      </article>
+      <article class="dash-export-stat dash-export-stat--accent">
+        <span>Разлика до денес</span>
+        <strong id="exportsVariance">0 pcs</strong>
+        <small id="exportsActualToDate">Реално до сега: 0 pcs</small>
+      </article>
+      <article class="dash-export-stat dash-export-stat--soft">
+        <span>Остануваат</span>
+        <strong id="exportsRemaining">0 pcs</strong>
+        <small id="exportsAverageMonthly">Просек месечно: 0 pcs</small>
+      </article>
     </div>
+
+    <div class="dash-export-legend" aria-hidden="true">
+      <span class="dash-legend-pill dash-legend-pill--bar"><i></i>Месечен извоз</span>
+      <span class="dash-legend-pill dash-legend-pill--line-blue"><i></i>Месечен план</span>
+      <span class="dash-legend-pill dash-legend-pill--line-red"><i></i>Кумулативен извоз</span>
+      <span class="dash-legend-pill dash-legend-pill--line-gray"><i></i>Кумулативен target</span>
+    </div>
+
+    <div class="dash-chart-frame dash-chart-frame--exports">
+      <canvas id="exportsChart"></canvas>
+    </div>
+
+    <div id="exportsMessage" class="dash-export-note">
+      Ако нема внесови, ќе се прикаже target линијата за да не остане празен преглед.
+    </div>
+
+    <div class="dash-export-divider"></div>
+
+    <div class="dash-panel__head dash-panel__head--spread dash-panel__head--subsection">
+      <div>
+        <span class="dash-panel__eyebrow">Извоз</span>
+        <h3>Неделен извоз</h3>
+        <p class="dash-panel__subtext">
+          Неделен преглед на извозите за истата година, со неделен план и кумулативна споредба со годишниот target.
+        </p>
+      </div>
+      <div id="exportsWeeklyYearBadge" class="dash-year-pill dash-year-pill--sm">{{ current_year }}</div>
+    </div>
+
+    <div class="dash-export-stats dash-export-stats--weekly">
+      <article class="dash-export-stat">
+        <span>Извезено досега</span>
+        <strong id="exportsWeeklyTotal">0 pcs</strong>
+        <small id="exportsWeeklyProgress">0% од годишниот target</small>
+      </article>
+      <article class="dash-export-stat">
+        <span>Неделен план</span>
+        <strong id="exportsWeeklyTarget">0 pcs</strong>
+        <small id="exportsWeeklyCount">0 недели во година</small>
+      </article>
+      <article class="dash-export-stat">
+        <span>Кумулативен target до недела</span>
+        <strong id="exportsWeeklyTargetToDate">0 pcs</strong>
+        <small id="exportsWeeklyCurrentWeek">Тековна недела: Н01 • 0 pcs</small>
+      </article>
+      <article class="dash-export-stat dash-export-stat--accent">
+        <span>Разлика до недела</span>
+        <strong id="exportsWeeklyVariance">0 pcs</strong>
+        <small id="exportsWeeklyActualToDate">Реално до сега: 0 pcs</small>
+      </article>
+      <article class="dash-export-stat dash-export-stat--soft">
+        <span>Просек неделно</span>
+        <strong id="exportsWeeklyAverage">0 pcs</strong>
+        <small id="exportsWeeklyRemaining">Остануваат: 0 pcs</small>
+      </article>
+    </div>
+
+    <div class="dash-export-legend" aria-hidden="true">
+      <span class="dash-legend-pill dash-legend-pill--bar"><i></i>Неделен извоз</span>
+      <span class="dash-legend-pill dash-legend-pill--line-blue"><i></i>Неделен план</span>
+      <span class="dash-legend-pill dash-legend-pill--line-red"><i></i>Кумулативен извоз</span>
+      <span class="dash-legend-pill dash-legend-pill--line-gray"><i></i>Кумулативен target</span>
+    </div>
+
+    <div class="dash-chart-frame dash-chart-frame--exports dash-chart-frame--exports-weekly">
+      <canvas id="exportsWeeklyChart"></canvas>
+    </div>
+
+    <div id="exportsWeeklyMessage" class="dash-export-note">
+      Ако нема внесови, ќе се прикаже неделниот план и target линијата за да не остане празен преглед.
+    </div>
+  </section>
 </div>
 
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script>
-    let totalGaugeChart = null;
-    let perOdelBarChart = null;
+  (() => {
+    const currentYear = {{ current_year | int }};
+    const numberFormatter = new Intl.NumberFormat('mk-MK');
+    const percentFormatter = new Intl.NumberFormat('mk-MK', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    });
 
-    function updateDashboard() {
-        const datum_od = document.getElementById('datum_od').value;
-        const datum_do = document.getElementById('datum_do').value;
-        const updateBtn = document.getElementById('updateBtn');
-        const updateText = document.getElementById('updateText');
-        const updateSpinner = document.getElementById('updateSpinner');
+    const refs = {
+      form: document.getElementById('dashboardFilterForm'),
+      from: document.getElementById('datum_od'),
+      to: document.getElementById('datum_do'),
+      button: document.getElementById('updateBtn'),
+      buttonText: document.getElementById('updateText'),
+      buttonSpinner: document.getElementById('updateSpinner'),
+      produced: document.getElementById('totalProizvedeni'),
+      errors: document.getElementById('totalGreski'),
+      efficiency: document.getElementById('totalEfektivnost'),
+      kpiPeriodLabel: document.getElementById('kpiPeriodLabel'),
+      gaugeCenterValue: document.getElementById('gaugeCenterValue'),
+      gaugeProducedValue: document.getElementById('gaugeProducedValue'),
+      gaugeErrorsValue: document.getElementById('gaugeErrorsValue'),
+      gaugePeriodValue: document.getElementById('gaugePeriodValue'),
+      departmentList: document.getElementById('departmentList'),
+      exportsYearBadge: document.getElementById('exportsYearBadge'),
+      exportsTotal: document.getElementById('exportsTotal'),
+      exportsTarget: document.getElementById('exportsTarget'),
+      exportsTargetToDate: document.getElementById('exportsTargetToDate'),
+      exportsVariance: document.getElementById('exportsVariance'),
+      exportsRemaining: document.getElementById('exportsRemaining'),
+      exportsProgress: document.getElementById('exportsProgress'),
+      exportsMonthlyTarget: document.getElementById('exportsMonthlyTarget'),
+      exportsCurrentMonth: document.getElementById('exportsCurrentMonth'),
+      exportsActualToDate: document.getElementById('exportsActualToDate'),
+      exportsAverageMonthly: document.getElementById('exportsAverageMonthly'),
+      exportsMessage: document.getElementById('exportsMessage'),
+      exportsWeeklyYearBadge: document.getElementById('exportsWeeklyYearBadge'),
+      exportsWeeklyTotal: document.getElementById('exportsWeeklyTotal'),
+      exportsWeeklyTarget: document.getElementById('exportsWeeklyTarget'),
+      exportsWeeklyTargetToDate: document.getElementById('exportsWeeklyTargetToDate'),
+      exportsWeeklyVariance: document.getElementById('exportsWeeklyVariance'),
+      exportsWeeklyAverage: document.getElementById('exportsWeeklyAverage'),
+      exportsWeeklyProgress: document.getElementById('exportsWeeklyProgress'),
+      exportsWeeklyCount: document.getElementById('exportsWeeklyCount'),
+      exportsWeeklyCurrentWeek: document.getElementById('exportsWeeklyCurrentWeek'),
+      exportsWeeklyActualToDate: document.getElementById('exportsWeeklyActualToDate'),
+      exportsWeeklyRemaining: document.getElementById('exportsWeeklyRemaining'),
+      exportsWeeklyMessage: document.getElementById('exportsWeeklyMessage'),
+    };
 
-        if (!datum_od || !datum_do) return alert('Внеси датум од и до!');
+    let gaugeChart = null;
+    let departmentChart = null;
+    let exportsChart = null;
+    let exportsWeeklyChart = null;
+    let autoRefreshHandle = null;
 
-        updateText.classList.add('d-none');
-        updateSpinner.classList.remove('d-none');
-        updateBtn.disabled = true;
-
-        fetch(`/admin/api/greski?datum_od=${datum_od}&datum_do=${datum_do}`)
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('dashboardBody');
-                tbody.innerHTML = '';
-
-                if (totalGaugeChart) totalGaugeChart.destroy();
-                if (perOdelBarChart) perOdelBarChart.destroy();
-
-                if (data.error) {
-                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-danger fw-bold">${data.error}</td></tr>`;
-                    document.getElementById('totalProizvedeni').textContent = '0';
-                    document.getElementById('totalGreski').textContent = '0';
-                    document.getElementById('totalEfektivnost').textContent = '0 %';
-                    document.getElementById('gaugeCenterValue').textContent = '0%';
-                    updateText.classList.remove('d-none');
-                    updateSpinner.classList.add('d-none');
-                    updateBtn.disabled = false;
-                    return;
-                }
-
-                let totalGreski = data.total?.greski || 0;
-                let totalProizvedeni = data.total?.proizvedeni || 0;
-                let efektivnost = data.total?.efektivnost || 0;
-
-                document.getElementById('totalProizvedeni').textContent = totalProizvedeni;
-                document.getElementById('totalGreski').textContent = totalGreski;
-                document.getElementById('totalEfektivnost').textContent = efektivnost + ' %';
-                document.getElementById('gaugeCenterValue').textContent = efektivnost + '%';
-
-                // Gauge Chart
-                const ctx = document.getElementById('totalGaugeChart').getContext('2d');
-
-                const needlePlugin = {
-                    id: 'needle',
-                    afterDatasetsDraw(chart) {
-                        const { ctx, chartArea: { width, height }, data } = chart;
-                        const value = efektivnost;
-                        const angle = (value / 100) * Math.PI - Math.PI / 2;
-
-                        ctx.save();
-                        ctx.translate(width / 2, height);
-                        ctx.rotate(angle);
-
-                        ctx.beginPath();
-                        ctx.moveTo(0, -12);
-                        ctx.lineTo(0, 12);
-                        ctx.lineTo(width * 0.42, 0);
-                        ctx.closePath();
-                        ctx.fillStyle = '#1e293b';
-                        ctx.fill();
-                        ctx.shadowColor = 'rgba(0,0,0,0.4)';
-                        ctx.shadowBlur = 8;
-                        ctx.shadowOffsetX = 4;
-                        ctx.shadowOffsetY = 4;
-
-                        ctx.beginPath();
-                        ctx.arc(0, 0, 14, 0, Math.PI * 2);
-                        ctx.fillStyle = '#1e293b';
-                        ctx.fill();
-
-                        ctx.restore();
-                    }
-                };
-
-                totalGaugeChart = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        datasets: [{
-                            data: [efektivnost, 100 - efektivnost],
-                            backgroundColor: [
-                                efektivnost >= 95 ? '#10b981' :
-                                efektivnost >= 80 ? '#f59e0b' :
-                                efektivnost >= 60 ? '#f97316' : '#ef4444',
-                                '#e2e8f0'
-                            ],
-                            borderWidth: 0,
-                            borderColor: 'transparent',
-                            cutout: '75%'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        circumference: 180,
-                        rotation: -90,
-                        animation: { duration: 1800, easing: 'easeOutBounce' },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: { enabled: false }
-                        }
-                    },
-                    plugins: [needlePlugin]
-                });
-
-                // Бар чарт по оддели
-                if (data.per_oddel && data.per_oddel.length > 0) {
-                    data.per_oddel.forEach(item => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td class="text-center py-3">${item.oddel}</td>
-                            <td class="text-center fw-bold" style="color:${item.greski>=5?'#dc2626':item.greski>=2?'#ca8a04':'#16a34a'};">${item.greski}</td>
-                            <td class="text-center py-3">${item.proizvedeni}</td>
-                            <td class="text-center fw-bold" style="color:${item.efektivnost>=95?'#16a34a':item.efektivnost>=80?'#eab308':'#dc2626'};">${item.efektivnost}%</td>
-                        `;
-                        tbody.appendChild(tr);
-                    });
-
-                    const barCtx = document.getElementById('perOdelBarChart').getContext('2d');
-                    perOdelBarChart = new Chart(barCtx, {
-                        type: 'bar',
-                        data: {
-                            labels: data.per_oddel.map(i => i.oddel),
-                            datasets: [
-                                { label: 'Произведени', data: data.per_oddel.map(i => i.proizvedeni), backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 8 },
-                                { label: 'Грешки', data: data.per_oddel.map(i => i.greski), backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 8 }
-                            ]
-                        },
-                        options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-                    });
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center py-5 text-muted fw-bold">Нема податоци за периодот</td></tr>';
-                }
-
-                updateBtn.disabled = false;
-                updateText.classList.remove('d-none');
-                updateSpinner.classList.add('d-none');
-            })
-            .catch(err => {
-                console.error(err);
-                document.getElementById('dashboardBody').innerHTML = '<tr><td colspan="4" class="text-center py-5 text-danger fw-bold">Грешка при вчитување</td></tr>';
-                updateBtn.disabled = false;
-                updateText.classList.remove('d-none');
-                updateSpinner.classList.add('d-none');
-            });
+    function formatDateLabel(value) {
+      if (!value) return '';
+      const [year, month, day] = value.split('-');
+      if (!year || !month || !day) return value;
+      return `${day}-${month}-${year}`;
     }
 
-    // Автоматско ажурирање секои 60 секунди
-    setInterval(updateDashboard, 60000);
-    window.onload = updateDashboard;
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function getIsoWeekNumber(value) {
+      const targetDate = new Date(value.getFullYear(), value.getMonth(), value.getDate());
+      const dayNr = (targetDate.getDay() + 6) % 7;
+      targetDate.setDate(targetDate.getDate() - dayNr + 3);
+      const firstThursday = new Date(targetDate.getFullYear(), 0, 4);
+      const firstDayNr = (firstThursday.getDay() + 6) % 7;
+      firstThursday.setDate(firstThursday.getDate() - firstDayNr + 3);
+      return 1 + Math.round((targetDate - firstThursday) / 604800000);
+    }
+
+    function setLoading(isLoading) {
+      refs.button.disabled = isLoading;
+      refs.buttonSpinner.classList.toggle('d-none', !isLoading);
+      refs.buttonText.innerHTML = isLoading
+        ? 'Се освежува...'
+        : '<i class="fas fa-rotate-right"></i> Ажурирај';
+    }
+
+    function ensureValidRange() {
+      if (!refs.from.value && refs.to.value) refs.from.value = refs.to.value;
+      if (!refs.to.value && refs.from.value) refs.to.value = refs.from.value;
+      if (refs.from.value && refs.to.value && refs.from.value > refs.to.value) {
+        refs.to.value = refs.from.value;
+      }
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || 'Неуспешно преземање податоци.');
+      }
+      return payload;
+    }
+
+    function updateKpis(total, rangeLabel) {
+      const produced = Number(total.proizvedeni || 0);
+      const errors = Number(total.greski || 0);
+      const efficiency = Number(total.efektivnost || 0);
+
+      refs.produced.textContent = numberFormatter.format(produced);
+      refs.errors.textContent = numberFormatter.format(errors);
+      refs.efficiency.textContent = `${percentFormatter.format(efficiency)}%`;
+      refs.kpiPeriodLabel.textContent = rangeLabel;
+
+      refs.gaugeCenterValue.textContent = `${percentFormatter.format(efficiency)}%`;
+      refs.gaugeProducedValue.textContent = numberFormatter.format(produced);
+      refs.gaugeErrorsValue.textContent = numberFormatter.format(errors);
+      refs.gaugePeriodValue.textContent = rangeLabel;
+    }
+
+    function renderGauge(total) {
+      const chartElement = document.getElementById('totalGaugeChart');
+      if (!chartElement) return;
+
+      const effectiveness = Math.max(0, Math.min(Number(total.efektivnost || 0), 100));
+
+      if (gaugeChart) {
+        gaugeChart.destroy();
+      }
+
+      gaugeChart = new Chart(chartElement, {
+        type: 'doughnut',
+        data: {
+          labels: ['Ефективност', 'Остаток'],
+          datasets: [{
+            data: [effectiveness, Math.max(0, 100 - effectiveness)],
+            backgroundColor: ['#4f7cff', 'rgba(79, 124, 255, 0.12)'],
+            borderWidth: 0,
+            hoverOffset: 0,
+            spacing: 0,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '76%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  return `${context.label}: ${percentFormatter.format(context.parsed)}%`;
+                },
+              },
+            },
+          },
+        },
+      });
+    }
+
+    function renderDepartmentBreakdown(items) {
+      const chartElement = document.getElementById('perOdelBarChart');
+      if (!chartElement) return;
+
+      const rows = Array.isArray(items) ? items : [];
+      const labels = rows.map((item) => item.oddel || 'Непознат оддел');
+      const produced = rows.map((item) => Number(item.proizvedeni || 0));
+      const errors = rows.map((item) => Number(item.greski || 0));
+
+      if (departmentChart) {
+        departmentChart.destroy();
+      }
+
+      departmentChart = new Chart(chartElement, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Произведени',
+              data: produced,
+              backgroundColor: 'rgba(34, 197, 94, 0.82)',
+              borderRadius: 12,
+              maxBarThickness: 28,
+            },
+            {
+              label: 'Грешки',
+              data: errors,
+              backgroundColor: 'rgba(239, 68, 68, 0.78)',
+              borderRadius: 12,
+              maxBarThickness: 28,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'top',
+              labels: {
+                usePointStyle: true,
+                boxWidth: 10,
+                color: '#32405f',
+                font: { weight: '600' },
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#4a5d82' },
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: 'rgba(148, 163, 184, 0.18)' },
+              ticks: {
+                color: '#4a5d82',
+                callback(value) {
+                  return numberFormatter.format(value);
+                },
+              },
+            },
+          },
+        },
+      });
+
+      if (!rows.length) {
+        refs.departmentList.innerHTML = '<div class="dash-empty-state">Нема податоци за избраниот период.</div>';
+        return;
+      }
+
+      refs.departmentList.innerHTML = rows.map((item) => `
+        <article class="dash-department-row">
+          <div class="dash-department-row__title">
+            <strong>${escapeHtml(item.oddel || 'Непознат оддел')}</strong>
+            <span>${percentFormatter.format(Number(item.efektivnost || 0))}% ефективност</span>
+          </div>
+          <div class="dash-department-row__stats">
+            <span class="tag tag--success">Произведени: ${numberFormatter.format(Number(item.proizvedeni || 0))}</span>
+            <span class="tag tag--danger">Грешки: ${numberFormatter.format(Number(item.greski || 0))}</span>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    function renderExports(payload) {
+      const chartElement = document.getElementById('exportsChart');
+      if (!chartElement) return;
+
+      const payloadYear = Number(payload.year || currentYear);
+      const now = new Date();
+      const monthlyExports = Array.isArray(payload.monthly_exports) ? payload.monthly_exports : new Array(12).fill(0);
+      const cumulativeExports = Array.isArray(payload.cumulative_exports) ? payload.cumulative_exports : new Array(12).fill(0);
+      const targetLine = Array.isArray(payload.target_line) ? payload.target_line : new Array(12).fill(0);
+      const targetTotal = Number(payload.target_total || 0);
+      const totalExported = Number(payload.total_exported || 0);
+      const remainingToTarget = Number(payload.remaining_to_target || 0);
+      const monthlyTargetValue = targetTotal > 0 ? Number((targetTotal / 12).toFixed(1)) : 0;
+      const monthlyTargetLine = new Array(12).fill(monthlyTargetValue);
+      const labels = Array.isArray(payload.labels) ? payload.labels : ['Јан', 'Фев', 'Мар', 'Апр', 'Мај', 'Јун', 'Јул', 'Авг', 'Сеп', 'Окт', 'Ное', 'Дек'];
+      const latestMonthWithData = monthlyExports.reduce(
+        (lastIndex, value, index) => (Number(value || 0) > 0 ? index : lastIndex),
+        -1
+      );
+
+      let activeMonthIndex = -1;
+      if (payloadYear < now.getFullYear()) {
+        activeMonthIndex = 11;
+      } else if (payloadYear === now.getFullYear()) {
+        activeMonthIndex = now.getMonth();
+      }
+      if (latestMonthWithData > activeMonthIndex) {
+        activeMonthIndex = latestMonthWithData;
+      }
+
+      const visibleCumulativeExports = cumulativeExports.map((value, index) =>
+        activeMonthIndex >= 0 && index <= activeMonthIndex ? value : null
+      );
+      const cumulativeTargetToDate =
+        activeMonthIndex >= 0 && activeMonthIndex < targetLine.length ? Number(targetLine[activeMonthIndex] || 0) : 0;
+      const actualToDate =
+        activeMonthIndex >= 0 && activeMonthIndex < cumulativeExports.length ? Number(cumulativeExports[activeMonthIndex] || 0) : 0;
+      const elapsedMonths = activeMonthIndex >= 0 ? activeMonthIndex + 1 : 0;
+      const averageMonthly = elapsedMonths > 0 ? Number((actualToDate / elapsedMonths).toFixed(1)) : 0;
+      const currentMonthActual =
+        activeMonthIndex >= 0 && activeMonthIndex < monthlyExports.length ? Number(monthlyExports[activeMonthIndex] || 0) : 0;
+      const varianceToDate = Number((actualToDate - cumulativeTargetToDate).toFixed(1));
+      const varianceAbs = Math.abs(varianceToDate);
+      const hasMonthlyData = monthlyExports.some((value) => Number(value || 0) > 0);
+      const isAheadOfPlan = varianceToDate >= 0;
+      const leftAxisMax = Math.max(...monthlyExports, monthlyTargetValue, 10);
+      const rightAxisMax = Math.max(targetTotal, ...cumulativeExports, 10);
+      const activeMonthLabel = activeMonthIndex >= 0 ? labels[activeMonthIndex] : labels[0];
+
+      refs.exportsYearBadge.textContent = payloadYear;
+      refs.exportsTotal.textContent = `${numberFormatter.format(totalExported)} pcs`;
+      refs.exportsTarget.textContent = `${numberFormatter.format(targetTotal)} pcs`;
+      refs.exportsTargetToDate.textContent = `${numberFormatter.format(cumulativeTargetToDate)} pcs`;
+      refs.exportsVariance.textContent = `${varianceToDate > 0 ? '+' : ''}${numberFormatter.format(varianceToDate)} pcs`;
+      refs.exportsRemaining.textContent = `${numberFormatter.format(remainingToTarget)} pcs`;
+      refs.exportsProgress.textContent = `${percentFormatter.format(Number(payload.progress || 0))}% од годишниот target`;
+      refs.exportsMonthlyTarget.textContent = `${numberFormatter.format(monthlyTargetValue)} pcs месечен план`;
+      refs.exportsCurrentMonth.textContent = `Тековен месец: ${activeMonthLabel} • ${numberFormatter.format(currentMonthActual)} pcs`;
+      refs.exportsActualToDate.textContent = `Реално до сега: ${numberFormatter.format(actualToDate)} pcs`;
+      refs.exportsAverageMonthly.textContent = `Просек месечно: ${numberFormatter.format(averageMonthly)} pcs`;
+      refs.exportsVariance.dataset.state = isAheadOfPlan ? 'positive' : 'negative';
+      refs.exportsMessage.dataset.state = hasMonthlyData ? (isAheadOfPlan ? 'positive' : 'negative') : 'neutral';
+      refs.exportsMessage.textContent = !hasMonthlyData
+        ? 'Сѐ уште нема внесови за извоз. Прикажани се месечниот и кумулативниот план за да не остане празен преглед.'
+        : isAheadOfPlan
+          ? `До денес си пред кумулативниот план за ${numberFormatter.format(varianceAbs)} pcs.`
+          : `До денес заостануваш ${numberFormatter.format(varianceAbs)} pcs зад кумулативниот план.`;
+
+      if (exportsChart) {
+        exportsChart.destroy();
+      }
+
+      exportsChart = new Chart(chartElement, {
+        data: {
+          labels,
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Месечен извоз',
+              data: monthlyExports,
+              backgroundColor: 'rgba(79, 124, 255, 0.82)',
+              borderRadius: 12,
+              maxBarThickness: 42,
+              yAxisID: 'y',
+            },
+            {
+              type: 'line',
+              label: `Месечен план ${numberFormatter.format(monthlyTargetValue)} pcs`,
+              data: monthlyTargetLine,
+              borderColor: 'rgba(59, 130, 246, 0.94)',
+              backgroundColor: 'rgba(59, 130, 246, 0.94)',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              pointHoverRadius: 0,
+              borderDash: [10, 6],
+              tension: 0,
+              fill: false,
+              yAxisID: 'y',
+            },
+            {
+              type: 'line',
+              label: 'Кумулативен извоз',
+              data: visibleCumulativeExports,
+              borderColor: '#ef4444',
+              backgroundColor: '#ef4444',
+              borderWidth: 4,
+              pointRadius: 5,
+              pointHoverRadius: 6,
+              tension: 0.28,
+              spanGaps: true,
+              fill: false,
+              yAxisID: 'y1',
+            },
+            {
+              type: 'line',
+              label: `Кумулативен target ${numberFormatter.format(targetTotal)} pcs`,
+              data: targetLine,
+              borderColor: 'rgba(71, 85, 105, 0.92)',
+              backgroundColor: 'rgba(71, 85, 105, 0.92)',
+              borderWidth: 2,
+              pointRadius: 0,
+              borderDash: [6, 6],
+              tension: 0,
+              fill: false,
+              yAxisID: 'y1',
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  const label = context.dataset.label || '';
+                  const value = Number(context.parsed.y ?? context.parsed);
+                  return `${label}: ${numberFormatter.format(value)} pcs`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: '#4a5d82' },
+            },
+            y: {
+              beginAtZero: true,
+              position: 'left',
+              suggestedMax: leftAxisMax * 1.18,
+              title: {
+                display: true,
+                text: 'Месечен извоз / месечен план',
+                color: '#4a5d82',
+              },
+              ticks: {
+                color: '#4a5d82',
+                callback(value) {
+                  return numberFormatter.format(value);
+                },
+              },
+              grid: { color: 'rgba(148, 163, 184, 0.14)' },
+            },
+            y1: {
+              beginAtZero: true,
+              position: 'right',
+              suggestedMax: rightAxisMax * 1.08,
+              title: {
+                display: true,
+                text: 'Кумулативен извоз / кумулативен target',
+                color: '#4a5d82',
+              },
+              ticks: {
+                color: '#4a5d82',
+                callback(value) {
+                  return numberFormatter.format(value);
+                },
+              },
+              grid: { drawOnChartArea: false },
+            },
+          },
+        },
+      });
+    }
+
+    function renderWeeklyExports(payload) {
+      const chartElement = document.getElementById('exportsWeeklyChart');
+      if (!chartElement) return;
+
+      const weeklyPayload = payload.weekly || {};
+      const payloadYear = Number(payload.year || currentYear);
+      const now = new Date();
+      const labels = Array.isArray(weeklyPayload.labels) ? weeklyPayload.labels : [];
+      const weeklyExports = Array.isArray(weeklyPayload.weekly_exports)
+        ? weeklyPayload.weekly_exports
+        : new Array(labels.length || 52).fill(0);
+      const cumulativeExports = Array.isArray(weeklyPayload.cumulative_exports)
+        ? weeklyPayload.cumulative_exports
+        : new Array(weeklyExports.length).fill(0);
+      const targetLine = Array.isArray(weeklyPayload.target_line)
+        ? weeklyPayload.target_line
+        : new Array(weeklyExports.length).fill(0);
+      const weeksInYear = Number(weeklyPayload.weeks_in_year || labels.length || 52);
+      const weeklyTargetValue = Number(weeklyPayload.weekly_target_value || 0);
+      const totalExported = Number(payload.total_exported || 0);
+      const targetTotal = Number(payload.target_total || 0);
+      const remainingToTarget = Number(payload.remaining_to_target || 0);
+      const weeklyTargetLine = new Array(weeklyExports.length).fill(weeklyTargetValue);
+      const latestWeekWithData = weeklyExports.reduce(
+        (lastIndex, value, index) => (Number(value || 0) > 0 ? index : lastIndex),
+        -1
+      );
+
+      let activeWeekIndex = -1;
+      if (payloadYear < now.getFullYear()) {
+        activeWeekIndex = weeklyExports.length - 1;
+      } else if (payloadYear === now.getFullYear()) {
+        activeWeekIndex = Math.min(getIsoWeekNumber(now) - 1, weeklyExports.length - 1);
+      }
+      if (latestWeekWithData > activeWeekIndex) {
+        activeWeekIndex = latestWeekWithData;
+      }
+
+      const visibleCumulativeExports = cumulativeExports.map((value, index) =>
+        activeWeekIndex >= 0 && index <= activeWeekIndex ? value : null
+      );
+      const cumulativeTargetToDate =
+        activeWeekIndex >= 0 && activeWeekIndex < targetLine.length ? Number(targetLine[activeWeekIndex] || 0) : 0;
+      const actualToDate =
+        activeWeekIndex >= 0 && activeWeekIndex < cumulativeExports.length ? Number(cumulativeExports[activeWeekIndex] || 0) : 0;
+      const elapsedWeeks = activeWeekIndex >= 0 ? activeWeekIndex + 1 : 0;
+      const currentWeekActual =
+        activeWeekIndex >= 0 && activeWeekIndex < weeklyExports.length ? Number(weeklyExports[activeWeekIndex] || 0) : 0;
+      const averageWeekly =
+        elapsedWeeks > 0 ? Number((actualToDate / elapsedWeeks).toFixed(1)) : Number(weeklyPayload.average_weekly || 0);
+      const varianceToDate = Number((actualToDate - cumulativeTargetToDate).toFixed(1));
+      const varianceAbs = Math.abs(varianceToDate);
+      const hasWeeklyData = weeklyExports.some((value) => Number(value || 0) > 0);
+      const isAheadOfPlan = varianceToDate >= 0;
+      const leftAxisMax = Math.max(...weeklyExports, weeklyTargetValue, 10);
+      const rightAxisMax = Math.max(targetTotal, ...cumulativeExports, 10);
+      const activeWeekLabel = activeWeekIndex >= 0 && labels[activeWeekIndex] ? labels[activeWeekIndex] : (labels[0] || 'Н01');
+
+      refs.exportsWeeklyYearBadge.textContent = payloadYear;
+      refs.exportsWeeklyTotal.textContent = `${numberFormatter.format(totalExported)} pcs`;
+      refs.exportsWeeklyTarget.textContent = `${numberFormatter.format(weeklyTargetValue)} pcs`;
+      refs.exportsWeeklyTargetToDate.textContent = `${numberFormatter.format(cumulativeTargetToDate)} pcs`;
+      refs.exportsWeeklyVariance.textContent = `${varianceToDate > 0 ? '+' : ''}${numberFormatter.format(varianceToDate)} pcs`;
+      refs.exportsWeeklyAverage.textContent = `${numberFormatter.format(averageWeekly)} pcs`;
+      refs.exportsWeeklyProgress.textContent = `${percentFormatter.format(Number(payload.progress || 0))}% од годишниот target`;
+      refs.exportsWeeklyCount.textContent = `${numberFormatter.format(weeksInYear)} недели во година`;
+      refs.exportsWeeklyCurrentWeek.textContent = `Тековна недела: ${activeWeekLabel} • ${numberFormatter.format(currentWeekActual)} pcs`;
+      refs.exportsWeeklyActualToDate.textContent = `Реално до сега: ${numberFormatter.format(actualToDate)} pcs`;
+      refs.exportsWeeklyRemaining.textContent = `Остануваат: ${numberFormatter.format(remainingToTarget)} pcs`;
+      refs.exportsWeeklyVariance.dataset.state = isAheadOfPlan ? 'positive' : 'negative';
+      refs.exportsWeeklyMessage.dataset.state = hasWeeklyData ? (isAheadOfPlan ? 'positive' : 'negative') : 'neutral';
+      refs.exportsWeeklyMessage.textContent = !hasWeeklyData
+        ? 'Сѐ уште нема неделни внесови за извоз. Прикажани се неделниот и кумулативниот план за да не остане празен преглед.'
+        : isAheadOfPlan
+          ? `До ${activeWeekLabel} си пред неделниот кумулативен план за ${numberFormatter.format(varianceAbs)} pcs.`
+          : `До ${activeWeekLabel} заостануваш ${numberFormatter.format(varianceAbs)} pcs зад неделниот кумулативен план.`;
+
+      if (exportsWeeklyChart) {
+        exportsWeeklyChart.destroy();
+      }
+
+      exportsWeeklyChart = new Chart(chartElement, {
+        data: {
+          labels,
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Неделен извоз',
+              data: weeklyExports,
+              backgroundColor: 'rgba(79, 124, 255, 0.82)',
+              borderRadius: 10,
+              maxBarThickness: 18,
+              yAxisID: 'y',
+            },
+            {
+              type: 'line',
+              label: `Неделен план ${numberFormatter.format(weeklyTargetValue)} pcs`,
+              data: weeklyTargetLine,
+              borderColor: 'rgba(59, 130, 246, 0.94)',
+              backgroundColor: 'rgba(59, 130, 246, 0.94)',
+              borderWidth: 2.5,
+              pointRadius: 0,
+              pointHoverRadius: 0,
+              borderDash: [10, 6],
+              tension: 0,
+              fill: false,
+              yAxisID: 'y',
+            },
+            {
+              type: 'line',
+              label: 'Кумулативен извоз',
+              data: visibleCumulativeExports,
+              borderColor: '#ef4444',
+              backgroundColor: '#ef4444',
+              borderWidth: 3.5,
+              pointRadius: 3,
+              pointHoverRadius: 5,
+              tension: 0.22,
+              spanGaps: true,
+              fill: false,
+              yAxisID: 'y1',
+            },
+            {
+              type: 'line',
+              label: `Кумулативен target ${numberFormatter.format(targetTotal)} pcs`,
+              data: targetLine,
+              borderColor: 'rgba(71, 85, 105, 0.92)',
+              backgroundColor: 'rgba(71, 85, 105, 0.92)',
+              borderWidth: 2,
+              pointRadius: 0,
+              borderDash: [6, 6],
+              tension: 0,
+              fill: false,
+              yAxisID: 'y1',
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: {
+            mode: 'index',
+            intersect: false,
+          },
+          plugins: {
+            legend: {
+              display: false,
+            },
+            tooltip: {
+              callbacks: {
+                label(context) {
+                  const label = context.dataset.label || '';
+                  const value = Number(context.parsed.y ?? context.parsed);
+                  return `${label}: ${numberFormatter.format(value)} pcs`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: {
+                color: '#4a5d82',
+                autoSkip: true,
+                maxTicksLimit: 18,
+                maxRotation: 0,
+                minRotation: 0,
+              },
+            },
+            y: {
+              beginAtZero: true,
+              position: 'left',
+              suggestedMax: leftAxisMax * 1.2,
+              title: {
+                display: true,
+                text: 'Неделен извоз / неделен план',
+                color: '#4a5d82',
+              },
+              ticks: {
+                color: '#4a5d82',
+                callback(value) {
+                  return numberFormatter.format(value);
+                },
+              },
+              grid: { color: 'rgba(148, 163, 184, 0.14)' },
+            },
+            y1: {
+              beginAtZero: true,
+              position: 'right',
+              suggestedMax: rightAxisMax * 1.08,
+              title: {
+                display: true,
+                text: 'Кумулативен извоз / кумулативен target',
+                color: '#4a5d82',
+              },
+              ticks: {
+                color: '#4a5d82',
+                callback(value) {
+                  return numberFormatter.format(value);
+                },
+              },
+              grid: { drawOnChartArea: false },
+            },
+          },
+        },
+      });
+    }
+    async function updateDashboard() {
+      ensureValidRange();
+
+      const fromValue = refs.from.value;
+      const toValue = refs.to.value;
+      const rangeLabel = `${formatDateLabel(fromValue)} - ${formatDateLabel(toValue)}`;
+
+      setLoading(true);
+
+      try {
+        const [greskiPayload, exportPayload] = await Promise.all([
+          fetchJson(`/admin/api/greski?datum_od=${encodeURIComponent(fromValue)}&datum_do=${encodeURIComponent(toValue)}`),
+          fetchJson(`/admin/api/izvozi?year=${currentYear}`),
+        ]);
+
+        updateKpis(greskiPayload.total || {}, rangeLabel);
+        renderGauge(greskiPayload.total || {});
+        renderDepartmentBreakdown(greskiPayload.per_oddel || []);
+        renderExports(exportPayload || {});
+        renderWeeklyExports(exportPayload || {});
+      } catch (error) {
+        console.error('Dashboard refresh failed:', error);
+        refs.departmentList.innerHTML = `<div class="dash-empty-state">${escapeHtml(error.message || 'Грешка при освежување на dashboard.')}</div>`;
+        refs.exportsMessage.textContent = error.message || 'Грешка при освежување на dashboard.';
+        if (refs.exportsWeeklyMessage) {
+          refs.exportsWeeklyMessage.textContent = error.message || 'Грешка при освежување на dashboard.';
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    refs.form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      updateDashboard();
+    });
+
+    refs.from?.addEventListener('change', ensureValidRange);
+    refs.to?.addEventListener('change', ensureValidRange);
+
+    updateDashboard();
+
+    if (autoRefreshHandle) {
+      clearInterval(autoRefreshHandle);
+    }
+    autoRefreshHandle = setInterval(updateDashboard, 300000);
+  })();
 </script>
 
 <style>
-    .filter-card, .stat-card, .chart-card, .table-card {
-        border-radius: 20px;
-        transition: transform 0.3s ease;
+  .dashboard-shell {
+    width: min(1500px, calc(100% - 2rem));
+    margin: 2rem auto 3rem;
+    display: grid;
+    gap: 1.4rem;
+  }
+
+  .dash-hero,
+  .dash-toolbar-card,
+  .dash-panel {
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(188, 203, 229, 0.78);
+    border-radius: 28px;
+    box-shadow: 0 22px 55px rgba(37, 64, 116, 0.10);
+  }
+
+  .dash-hero {
+    background:
+      radial-gradient(circle at top right, rgba(135, 164, 255, 0.24), transparent 24%),
+      linear-gradient(135deg, #172645 0%, #223767 48%, #2f57a7 100%);
+    color: #f8fbff;
+    padding: 2rem 2.1rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .dash-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(120deg, transparent 0%, transparent 58%, rgba(255, 255, 255, 0.05) 100%);
+    pointer-events: none;
+  }
+
+  .dash-hero__copy,
+  .dash-hero__meta {
+    position: relative;
+    z-index: 1;
+  }
+
+  .dash-hero__copy {
+    max-width: 760px;
+  }
+
+  .dash-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem 0.95rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1rem;
+  }
+
+  .dash-hero h1 {
+    margin: 0 0 0.75rem;
+    color: #ffffff;
+    font-size: clamp(2rem, 3vw, 3.2rem);
+    line-height: 1.02;
+    font-weight: 800;
+  }
+
+  .dash-hero p {
+    margin: 0;
+    max-width: 700px;
+    color: rgba(239, 245, 255, 0.88);
+    font-size: 1.02rem;
+    line-height: 1.7;
+  }
+
+  .dash-hero__meta {
+    display: grid;
+    gap: 0.85rem;
+    min-width: 180px;
+    justify-items: end;
+  }
+
+  .dash-year-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88px;
+    padding: 0.65rem 1rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+  }
+
+  .dash-year-pill--sm {
+    min-width: 74px;
+    padding: 0.55rem 0.95rem;
+    background: rgba(79, 124, 255, 0.10);
+    color: #2a4c93;
+  }
+
+  .dash-meta-note {
+    max-width: 240px;
+    padding: 0.9rem 1rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.92);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    text-align: right;
+  }
+
+  .dash-toolbar-card {
+    padding: 1.35rem 1.45rem 1.5rem;
+  }
+
+  .dash-toolbar-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .dash-toolbar-head h2,
+  .dash-panel__head h3 {
+    margin: 0;
+    font-size: 1.18rem;
+    color: #13284f;
+    font-weight: 800;
+  }
+
+  .dash-toolbar-head p,
+  .dash-panel__subtext {
+    margin: 0.35rem 0 0;
+    color: #6f83a6;
+    font-size: 0.94rem;
+  }
+
+  .dash-filter-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 1rem;
+    align-items: end;
+  }
+
+  .dash-field {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .dash-field span {
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #33486e;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .dash-field input {
+    width: 100%;
+    min-height: 52px;
+    padding: 0.9rem 1rem;
+    border-radius: 16px;
+    border: 1px solid rgba(160, 179, 214, 0.92);
+    background: #fdfefe;
+    color: #173054;
+    font-weight: 600;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  .dash-filter-btn {
+    min-height: 52px;
+    padding: 0.95rem 1.25rem;
+    border: 0;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #1f3362 0%, #2f5398 100%);
+    color: #ffffff;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    box-shadow: 0 12px 26px rgba(47, 83, 152, 0.22);
+  }
+
+  .dash-filter-btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .dash-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .dash-kpi {
+    min-width: 0;
+    padding: 1.25rem 1.35rem;
+    border-radius: 24px;
+    border: 1px solid rgba(187, 204, 231, 0.72);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 18px 42px rgba(37, 64, 116, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-height: 132px;
+  }
+
+  .dash-kpi__icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    flex-shrink: 0;
+  }
+
+  .dash-kpi__body {
+    min-width: 0;
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .dash-kpi__label {
+    color: #687da3;
+    font-size: 0.92rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .dash-kpi__body strong {
+    font-size: clamp(1.8rem, 2.4vw, 2.6rem);
+    line-height: 1;
+    color: #112746;
+    font-weight: 800;
+  }
+
+  .dash-kpi__body small {
+    color: #6a80a5;
+    font-size: 0.92rem;
+  }
+
+  .dash-kpi--produced .dash-kpi__icon {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.18), rgba(134, 239, 172, 0.28));
+    color: #17864d;
+  }
+
+  .dash-kpi--errors .dash-kpi__icon {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(252, 165, 165, 0.24));
+    color: #cc2f2f;
+  }
+
+  .dash-kpi--efficiency .dash-kpi__icon {
+    background: linear-gradient(135deg, rgba(79, 124, 255, 0.15), rgba(165, 180, 252, 0.3));
+    color: #315fcb;
+  }
+
+  .dash-main-grid {
+    display: grid;
+    grid-template-columns: minmax(320px, 0.88fr) minmax(0, 1.12fr);
+    gap: 1rem;
+    align-items: stretch;
+  }
+
+  .dash-panel {
+    padding: 1.35rem 1.45rem 1.5rem;
+  }
+
+  .dash-panel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .dash-panel__head--spread {
+    align-items: flex-start;
+  }
+
+  .dash-panel__eyebrow {
+    display: inline-block;
+    margin-bottom: 0.45rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(79, 124, 255, 0.10);
+    color: #3a5fa9;
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .dash-gauge-wrap {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .dash-gauge-ring {
+    position: relative;
+    width: min(280px, 100%);
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+  }
+
+  .dash-gauge-ring canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .dash-gauge-center {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .dash-gauge-center span {
+    font-size: clamp(2rem, 3vw, 2.8rem);
+    font-weight: 800;
+    color: #15305e;
+    line-height: 1;
+  }
+
+  .dash-gauge-center small {
+    margin-top: 0.35rem;
+    color: #7083a6;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .dash-gauge-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .dash-mini-stat {
+    padding: 0.95rem 1rem;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+    border: 1px solid rgba(203, 217, 238, 0.84);
+  }
+
+  .dash-mini-stat span {
+    display: block;
+    color: #6b81a6;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.4rem;
+  }
+
+  .dash-mini-stat strong {
+    display: block;
+    color: #163057;
+    font-size: 1.08rem;
+    font-weight: 800;
+  }
+
+  .dash-chart-frame {
+    height: 300px;
+    margin-bottom: 1rem;
+  }
+
+  .dash-chart-frame canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .dash-chart-frame--exports {
+    height: 420px;
+  }
+
+  .dash-chart-frame--exports-weekly {
+    height: 380px;
+  }
+
+  .dash-department-list {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .dash-department-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(246, 249, 255, 0.95), rgba(239, 245, 255, 0.95));
+    border: 1px solid rgba(199, 213, 236, 0.8);
+  }
+
+  .dash-department-row__title {
+    display: grid;
+    gap: 0.18rem;
+  }
+
+  .dash-department-row__title strong {
+    color: #173258;
+    font-size: 0.98rem;
+    font-weight: 800;
+  }
+
+  .dash-department-row__title span {
+    color: #6d82a8;
+    font-size: 0.88rem;
+  }
+
+  .dash-department-row__stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.45rem;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .tag--success {
+    background: rgba(34, 197, 94, 0.14);
+    color: #19834d;
+  }
+
+  .tag--danger {
+    background: rgba(239, 68, 68, 0.14);
+    color: #c62f2f;
+  }
+
+  .dash-empty-state {
+    padding: 1.1rem 1rem;
+    border-radius: 18px;
+    border: 1px dashed rgba(176, 194, 224, 0.9);
+    background: rgba(247, 250, 255, 0.92);
+    color: #6e83a8;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .dash-export-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  .dash-export-stat {
+    padding: 1rem 1.1rem;
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(248, 251, 255, 0.96), rgba(238, 244, 255, 0.96));
+    border: 1px solid rgba(199, 214, 238, 0.85);
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .dash-export-stat span {
+    display: block;
+    color: #7085a7;
+    font-size: 0.84rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.42rem;
+  }
+
+  .dash-export-stat strong {
+    display: block;
+    font-size: 2rem;
+    line-height: 1.05;
+    font-weight: 800;
+    color: #163058;
+  }
+
+  .dash-export-stat small {
+    color: #6f83a7;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    font-weight: 700;
+  }
+
+  .dash-export-stat--accent {
+    background: linear-gradient(180deg, rgba(255, 247, 247, 0.98), rgba(255, 239, 239, 0.96));
+    border-color: rgba(248, 189, 189, 0.9);
+  }
+
+  .dash-export-stat--soft {
+    background: linear-gradient(180deg, rgba(245, 250, 255, 0.98), rgba(236, 245, 255, 0.96));
+  }
+
+  .dash-export-stat--accent strong[data-state="positive"] {
+    color: #17864d;
+  }
+
+  .dash-export-stat--accent strong[data-state="negative"] {
+    color: #c62f2f;
+  }
+
+  .dash-export-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin: 0.15rem 0 1rem;
+  }
+
+  .dash-legend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(244, 248, 255, 0.95);
+    border: 1px solid rgba(199, 214, 238, 0.85);
+    color: #2f466f;
+    font-size: 0.84rem;
+    font-weight: 800;
+  }
+
+  .dash-legend-pill i {
+    display: inline-block;
+    width: 18px;
+    height: 10px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+
+  .dash-legend-pill--bar i {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    background: rgba(79, 124, 255, 0.86);
+  }
+
+  .dash-legend-pill--line-blue i {
+    height: 0;
+    border-top: 3px dashed rgba(59, 130, 246, 0.94);
+  }
+
+  .dash-legend-pill--line-red i {
+    height: 0;
+    border-top: 3px solid #ef4444;
+  }
+
+  .dash-legend-pill--line-gray i {
+    height: 0;
+    border-top: 3px dashed rgba(71, 85, 105, 0.92);
+  }
+
+  .dash-export-note {
+    margin: 0.6rem 0 0;
+    padding: 0.9rem 1rem;
+    border-radius: 18px;
+    border: 1px solid rgba(199, 214, 238, 0.85);
+    background: rgba(248, 251, 255, 0.95);
+    color: #6f83a7;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1.55;
+  }
+
+  .dash-export-note[data-state="positive"] {
+    background: rgba(237, 252, 244, 0.96);
+    border-color: rgba(164, 230, 189, 0.95);
+    color: #18764a;
+  }
+
+  .dash-export-note[data-state="negative"] {
+    background: rgba(255, 242, 242, 0.97);
+    border-color: rgba(247, 195, 195, 0.95);
+    color: #b93131;
+  }
+
+  .dash-export-divider {
+    height: 1px;
+    margin: 1.35rem 0 1.15rem;
+    background: linear-gradient(90deg, rgba(199, 214, 238, 0), rgba(199, 214, 238, 0.92), rgba(199, 214, 238, 0));
+  }
+
+  .dash-panel__head--subsection {
+    margin-top: 0.2rem;
+  }
+
+  @media (max-width: 1200px) {
+    .dash-main-grid {
+      grid-template-columns: 1fr;
     }
 
-    .filter-card:hover, .stat-card:hover, .chart-card:hover, .table-card:hover {
-        transform: translateY(-6px);
+    .dash-export-stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 980px) {
+    .dashboard-shell {
+      width: min(100%, calc(100% - 1rem));
+      margin-top: 1.25rem;
     }
 
-    .table-container {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+    .dash-filter-grid,
+    .dash-kpi-grid,
+    .dash-gauge-meta {
+      grid-template-columns: 1fr;
     }
 
-    table {
-        min-width: 800px;
+    .dash-export-stats {
+      grid-template-columns: 1fr;
     }
 
-    th, td {
-        white-space: nowrap;
-        padding: clamp(0.8rem, 2vw, 1.4rem);
+    .dash-filter-btn {
+      width: 100%;
+    }
+  }
+
+  @media (max-width: 820px) {
+    .dash-hero {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 1.55rem 1.25rem;
     }
 
-    /* Mobile responsive – графиконите и KPI еден под друг */
-    @media (max-width: 991px) {
-        .stats-grid {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-        }
-        .charts-grid {
-            grid-template-columns: 1fr;
-            gap: 2rem;
-        }
-        .filter-row {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 1rem;
-        }
-        .date-group {
-            width: 100%;
-            max-width: none;
-        }
-        .btn-update {
-            min-width: 100% !important;
-            padding: 1rem !important;
-            font-size: clamp(1rem, 4vw, 1.1rem) !important;
-        }
-        .filter-card {
-            padding: 1.2rem;
-        }
-        .stat-card, .chart-card, .table-card {
-            padding: clamp(1.5rem, 5vw, 2.5rem);
-        }
-        #totalGaugeChart, #perOdelBarChart {
-            max-height: 320px;
-        }
-        #gaugeCenterValue {
-            font-size: clamp(2rem, 7vw, 3rem);
-        }
-        table {
-            min-width: 800px;
-        }
-        th, td {
-            font-size: 0.92rem;
-            padding: 0.75rem 0.6rem;
-        }
+    .dash-hero__meta {
+      justify-items: start;
     }
 
-    @media (max-width: 576px) {
-        .container {
-            padding: 0 0.8rem;
-            margin-top: 3rem;
-        }
-        .filter-card, .stat-card, .chart-card, .table-card {
-            padding: 1.5rem;
-        }
-        .btn-update {
-            font-size: 1rem;
-        }
-        table {
-            min-width: 700px;
-        }
-        th, td {
-            font-size: 0.85rem;
-            padding: 0.6rem 0.5rem;
-        }
+    .dash-meta-note {
+      text-align: left;
     }
+
+    .dash-kpi {
+      min-height: 118px;
+    }
+
+    .dash-department-row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .dash-department-row__stats {
+      justify-content: flex-start;
+    }
+
+    .dash-chart-frame,
+    .dash-chart-frame--exports {
+      height: 280px;
+    }
+
+    .dash-chart-frame--exports-weekly {
+      height: 300px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .dash-toolbar-card,
+    .dash-panel {
+      padding: 1rem;
+      border-radius: 22px;
+    }
+
+    .dash-kpi {
+      padding: 1rem;
+      border-radius: 20px;
+    }
+
+    .dash-kpi__icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      font-size: 1.4rem;
+    }
+
+    .dash-export-stat strong,
+    .dash-kpi__body strong {
+      font-size: 1.6rem;
+    }
+  }
 </style>
-
 {% endblock %}

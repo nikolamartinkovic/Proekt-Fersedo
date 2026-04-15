@@ -98,6 +98,8 @@
                     <div id="errorImageFields" class="d-grid" style="gap: 0.75rem;"></div>
                 </div>
 
+                <div id="polugotovErrorAlert" class="alert alert-danger d-none" role="alert"></div>
+
                 <!-- Part Number + Preview -->
                 <div class="mb-4">
                     <label for="part_number" class="form-label fw-bold fs-5">Part Number</label>
@@ -136,11 +138,25 @@
 // ================================================
 const proizvedeniInput = document.getElementById('proizvedeni');
 const greskiInput = document.getElementById('greski');
+const polugotovErrorAlert = document.getElementById('polugotovErrorAlert');
+
+function showImageValidationMessage(message) {
+    if (!polugotovErrorAlert) return;
+    polugotovErrorAlert.textContent = message;
+    polugotovErrorAlert.classList.remove('d-none');
+}
+
+function clearImageValidationMessage() {
+    if (!polugotovErrorAlert) return;
+    polugotovErrorAlert.textContent = '';
+    polugotovErrorAlert.classList.add('d-none');
+}
 
 proizvedeniInput?.addEventListener('input', updateEfektivnost);
 greskiInput?.addEventListener('input', () => {
     updateEfektivnost();
     renderErrorDetailFields();
+    clearImageValidationMessage();
 });
 
 function renderErrorDetailFields() {
@@ -202,13 +218,14 @@ function renderErrorDetailFields() {
         const imageLabel = document.createElement('label');
         imageLabel.className = 'form-label fw-semibold mb-1';
         imageLabel.setAttribute('for', `error_image_${i}`);
-        imageLabel.textContent = `Слика за грешка #${i}`;
+        imageLabel.textContent = `Слика за грешка #${i} *`;
 
         const imageInput = document.createElement('input');
         imageInput.type = 'file';
         imageInput.id = `error_image_${i}`;
         imageInput.name = `error_image_${i}`;
         imageInput.accept = 'image/*';
+        imageInput.required = true;
         imageInput.className = 'd-none';
 
         const buttonRow = document.createElement('div');
@@ -239,11 +256,12 @@ function renderErrorDetailFields() {
         imageInput.addEventListener('change', () => {
             imageName.textContent = imageInput.files?.[0]?.name || 'Нема избрана слика';
             imageInput.removeAttribute('capture');
+            clearImageValidationMessage();
         });
 
         const imageHelp = document.createElement('div');
-        imageHelp.className = 'form-text';
-        imageHelp.textContent = 'Дозволено: JPG, PNG, WEBP. Може и од галерија и директно од камера.';
+        imageHelp.className = 'form-text text-danger fw-semibold';
+        imageHelp.textContent = 'Задолжително: JPG, PNG, WEBP. Може и од галерија и директно од камера.';
 
         imageWrapper.appendChild(imageLabel);
         imageWrapper.appendChild(imageInput);
@@ -318,6 +336,18 @@ document.getElementById('polugotovForm')?.addEventListener('submit', function(e)
     const btn = document.getElementById('submitBtn');
     const text = document.getElementById('btnText');
     const spinner = document.getElementById('loadingSpinner');
+
+    const missingErrorImages = Array.from(
+        form.querySelectorAll('#errorImageFields input[type="file"][required]')
+    ).filter((input) => !(input.files && input.files.length));
+
+    if (missingErrorImages.length > 0) {
+        e.preventDefault();
+        form.classList.add('was-validated');
+        showImageValidationMessage('За секоја грешка е задолжителна по една слика. Прикачи ги сите слики пред зачувување.');
+        document.getElementById('errorImageFields')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+    }
 
     if (!form.checkValidity()) {
         e.preventDefault();

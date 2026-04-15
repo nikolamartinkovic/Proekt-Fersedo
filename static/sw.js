@@ -1,10 +1,11 @@
-const CACHE_NAME = "fersedo-v16";
+const CACHE_NAME = "fersedo-v17";
 
 const STATIC_ASSETS = [
   "/static/manifest.json",
   "/static/icons/icon-192.png",
   "/static/icons/icon-512.png",
   "/static/offline.html",
+  "/static/vendor/chart.umd.min.js",
 ];
 
 self.addEventListener("install", (event) => {

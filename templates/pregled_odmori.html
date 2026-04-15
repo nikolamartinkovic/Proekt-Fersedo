@@ -121,7 +121,12 @@
                             <tr class="pregled-odmori-row"
                                 data-status="{{ b.status }}"
                                 {% if b.status == 'otkazano' %}style="opacity:0.55;"{% endif %}>
-                                <td class="fw-medium">{{ b.prezime }} {{ b.ime }}</td>
+                                <td class="fw-medium">
+                                    {{ b.prezime }} {{ b.ime }}
+                                    {% if b.kolektiven_grupa %}
+                                        <div class="mt-1"><span class="badge bg-info text-dark">Колективен</span></div>
+                                    {% endif %}
+                                </td>
                                 <td>{{ b.datum_od_formatted }}</td>
                                 <td>{{ b.datum_do_formatted }}</td>
                                 <td class="text-center fw-bold">{{ b.total_days }}</td>
