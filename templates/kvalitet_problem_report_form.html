@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% block title %}{{ tip_meta.title }}{% endblock %}
+
+{% macro text_input(name, label, value='', placeholder='', type='text') -%}
+<div>
+  <label class="report-label" for="{{ name }}">{{ label }}</label>
+  <input id="{{ name }}" name="{{ name }}" type="{{ type }}" class="form-control report-input" value="{{ value or '' }}" placeholder="{{ placeholder }}">
+</div>
+{%- endmacro %}
+
+{% macro textarea_input(name, label, value='', placeholder='', rows=4) -%}
+<div>
+  <label class="report-label" for="{{ name }}">{{ label }}</label>
+  <textarea id="{{ name }}" name="{{ name }}" class="form-control report-input report-textarea" rows="{{ rows }}" placeholder="{{ placeholder }}">{{ value or '' }}</textarea>
+</div>
+{%- endmacro %}
+
+{% block content %}
+<style>
+  .report-shell { max-width: 1260px; }
+  .report-hero {
+    border-radius: 34px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top right, rgba(248, 113, 113, .16), transparent 28%),
+      linear-gradient(135deg, #0f172a 0%, #1f2a44 48%, #1d4f91 100%);
+    box-shadow: 0 26px 58px rgba(15, 23, 42, .16);
+  }
+  .report-hero h1, .report-hero p, .report-hero .hero-text { color: #f8fafc !important; }
+  .report-hero p { max-width: 760px; opacity: .85; }
+  .report-chip {
+    min-width: 220px;
+    border-radius: 22px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.1);
+    padding: 1rem 1.15rem;
+  }
+  .report-chip .small { color: rgba(255,255,255,.72); letter-spacing: .08em; }
+  .report-form {
+    border-radius: 30px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid rgba(226, 232, 240, .92);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, .08);
+  }
+  .report-form__header {
+    padding: 1.35rem 1.5rem;
+    background: linear-gradient(135deg, rgba(15, 23, 42, .98) 0%, rgba(30, 64, 175, .92) 100%);
+    color: #fff;
+  }
+  .report-form__header h2, .report-form__header p { color: #fff !important; }
+  .report-form__header p { opacity: .8; margin-bottom: 0; }
+  .report-form__body { padding: 1.5rem; }
+  .report-section {
+    border-radius: 26px;
+    border: 1px solid rgba(226, 232, 240, .9);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow: 0 14px 32px rgba(15, 23, 42, .05);
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+  }
+  .report-section__head {
+    padding: 1rem 1.25rem;
+    background: linear-gradient(90deg, rgba(239,246,255,.9), rgba(255,255,255,1));
+    border-bottom: 1px solid rgba(226, 232, 240, .78);
+  }
+  .report-section__title { font-size: 1.18rem; font-weight: 800; color: #0f172a; margin-bottom: .2rem; }
+  .report-section__subtitle { color: #64748b; margin-bottom: 0; }
+  .report-section__body { padding: 1.25rem; }
+  .report-label { display: block; font-size: .95rem; font-weight: 800; color: #0f172a; margin-bottom: .48rem; }
+  .report-input {
+    min-height: 52px;
+    border-radius: 16px;
+    border: 1px solid rgba(191, 219, 254, .95);
+    padding: .9rem 1rem;
+    font-size: 1rem;
+    color: #0f172a;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, .04);
+  }
+  .report-input:focus { border-color: rgba(59,130,246,.7); box-shadow: 0 0 0 .25rem rgba(59, 130, 246, .12); }
+  .report-textarea { min-height: 126px; resize: vertical; }
+  .report-note {
+    border-radius: 22px;
+    padding: 1rem 1.1rem;
+    background: linear-gradient(180deg, rgba(239,246,255,.92), rgba(248,250,252,.98));
+    border: 1px solid rgba(191, 219, 254, .9);
+    color: #334155;
+  }
+  .report-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .85rem;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1.5rem;
+  }
+  .report-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .65rem;
+    padding: .9rem 1.4rem;
+    border-radius: 999px;
+    font-weight: 800;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: transform .22s ease, box-shadow .22s ease;
+  }
+  .report-btn:hover { transform: translateY(-2px); }
+  .report-btn.primary {
+    color: #fff;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 14px 30px rgba(37,99,235,.22);
+  }
+  .report-btn.secondary { color: #0f172a; background: #fff; border: 1px solid rgba(148,163,184,.28); }
+  .report-status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .8rem; }
+  .report-status-option { position: relative; }
+  .report-status-option input { position: absolute; opacity: 0; pointer-events: none; }
+  .report-status-option label {
+    display: block;
+    border-radius: 18px;
+    border: 1px solid rgba(191,219,254,.9);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    padding: .95rem 1rem;
+    cursor: pointer;
+    transition: all .22s ease;
+    height: 100%;
+  }
+  .report-status-option input:checked + label {
+    border-color: rgba(37,99,235,.6);
+    box-shadow: 0 10px 24px rgba(37,99,235,.14);
+    transform: translateY(-1px);
+  }
+  .report-status-option .status-title { display: block; font-weight: 800; color: #0f172a; margin-bottom: .2rem; }
+  .report-status-option .status-copy { color: #64748b; font-size: .92rem; line-height: 1.55; }
+  @media (max-width: 767.98px) {
+    .report-form__body { padding: 1rem; }
+    .report-section__body, .report-section__head { padding: 1rem; }
+  }
+</style>
+
+<div class="container py-4 py-lg-5 report-shell">
+  <div class="report-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Квалитет</div>
+          <h1 class="display-6 fw-bold mb-3 hero-text">{{ tip_meta.title }}</h1>
+          <p class="mb-0 fs-5">
+            Формата подолу е составена според Excel шаблонот {{ tip_meta.source_file }} и ги покрива D1-D8 полињата за целосен 8D запис.
+          </p>
+        </div>
+        <div class="report-chip">
+          <div class="small text-uppercase mb-1">Шаблон</div>
+          <div class="fs-5 fw-bold">{{ tip_meta.source_file }}</div>
+          <div class="mt-2" style="color: rgba(255,255,255,.76);">{{ tip_meta.badge }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post" class="report-form">
+    <input type="hidden" name="tip" value="{{ active_tip }}">
+    <div class="report-form__header">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <h2 class="h3 fw-bold mb-2">Нова 8D форма</h2>
+          <p>Внеси основни информации, опис на проблемот, акциски точки и логика за затворање на извештајот.</p>
+        </div>
+        <a class="report-btn secondary" href="{{ url_for('kvalitet.kvalitet_izvestaj_problemi', tip=active_tip) }}"><i class="fas fa-arrow-left"></i>Назад кон листа</a>
+      </div>
+    </div>
+
+    <div class="report-form__body">
+      <div class="report-note mb-4">
+        <strong>Како работи:</strong> системот автоматски ќе генерира 8D број при зачувување, ќе креира PDF и веднаш ќе те однесе во деталниот преглед на записот.
+      </div>
+
+      <section class="report-section">
+        <div class="report-section__head">
+          <div class="report-section__title">Основни информации</div>
+          <p class="report-section__subtitle">Горниот дел од Excel шаблонот: субјект, наслов, производ, дел и клучни датуми.</p>
+        </div>
+        <div class="report-section__body">
+          <div class="row g-4">
+            <div class="col-lg-4">{{ text_input('datum_otvaranje', 'Датум на отворање', form_values.datum_otvaranje, type='date') }}</div>
+            <div class="col-lg-4">{{ text_input('predviden_kraen_datum', 'Предвиден краен датум', form_values.predviden_kraen_datum, type='date') }}</div>
+            <div class="col-lg-4">{{ text_input('datum_zatvaranje', 'Датум на затворање', form_values.datum_zatvaranje, type='date') }}</div>
+            <div class="col-lg-6">{{ text_input('glaven_subjekt', tip_meta.entity_label, form_values.glaven_subjekt, 'Задолжително поле') }}</div>
+            <div class="col-lg-6">{{ text_input('sekundaren_subjekt', tip_meta.secondary_label, form_values.sekundaren_subjekt, 'Дополнителна информација') }}</div>
+            <div class="col-lg-12">{{ text_input('naslov', tip_meta.title_label, form_values.naslov, tip_meta.title_placeholder) }}</div>
+            <div class="col-lg-6">{{ text_input('broj_i_opis_proizvod', 'Број и опис на производ', form_values.broj_i_opis_proizvod, 'Пр. артикл, модел, серија...') }}</div>
+            <div class="col-lg-6">{{ text_input('broj_i_opis_del', 'Број и опис на дел', form_values.broj_i_opis_del, 'Пр. part number, дел, компонента...') }}</div>
+            <div class="col-12">
+              <label class="report-label">Статус</label>
+              <div class="report-status-grid">
+                {% for key, meta in status_meta.items() %}
+                <div class="report-status-option">
+                  <input type="radio" id="status_{{ key }}" name="status" value="{{ key }}" {% if form_values.status == key %}checked{% endif %}>
+                  <label for="status_{{ key }}">
+                    <span class="status-title">{{ meta.label }}</span>
+                    <span class="status-copy">
+                      {% if key == 'OPEN' %}Записот е отворен и штотуку започнува обработката.
+                      {% elif key == 'IN_PROGRESS' %}Активно се работи на анализа, акциите и следните чекори.
+                      {% else %}8D текот е затворен и завршен.{% endif %}
+                    </span>
+                  </label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="report-section">
+        <div class="report-section__head"><div class="report-section__title">D1 Тим</div><p class="report-section__subtitle">Одговорен тим, шампион, лидер и членови кои ќе го водат случајот.</p></div>
+        <div class="report-section__body">
+          <div class="row g-4">
+            <div class="col-lg-6">{{ text_input('tim', 'Тим', form_values.tim, 'Пр. QC / Производство / Сервис') }}</div>
+            <div class="col-lg-6">{{ text_input('shampion', 'Шампион', form_values.shampion) }}</div>
+            <div class="col-lg-6">{{ text_input('lider_na_tim', 'Лидер на тим', form_values.lider_na_tim) }}</div>
+            <div class="col-lg-6">{{ textarea_input('clenovi_na_tim', 'Членови на тим', form_values.clenovi_na_tim, 'Внеси имиња, функции и одговорности', 3) }}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="report-section">
+        <div class="report-section__head"><div class="report-section__title">D2 Опис на проблемот</div><p class="report-section__subtitle">Основен опис и оперативна дефиниција плус IS / IS NOT / GET INFO ON структурата од Excel.</p></div>
+        <div class="report-section__body">
+          <div class="row g-4">
+            <div class="col-lg-12">{{ textarea_input('d2_opis_problema', 'D2 Опис на проблемот', form_values.d2_opis_problema, 'Опис на проблемот, симптоми, влијание и контекст...', 4) }}</div>
+            <div class="col-lg-12">{{ textarea_input('d2_operativna_definicija', 'Оперативна дефиниција', form_values.d2_operativna_definicija, 'Како точно се дефинира проблемот и како се препознава?', 4) }}</div>
+            <div class="col-lg-4">{{ textarea_input('d2_is', 'IS', form_values.d2_is, 'Што точно е проблемот?', 4) }}</div>
+            <div class="col-lg-4">{{ textarea_input('d2_is_not', 'IS NOT', form_values.d2_is_not, 'Што не е проблемот?', 4) }}</div>
+            <div class="col-lg-4">{{ textarea_input('d2_get_info_on', 'GET INFO ON', form_values.d2_get_info_on, 'Што дополнително треба да се истражи?', 4) }}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="report-section">
+        <div class="report-section__head"><div class="report-section__title">D3 Привремени акции и одлука</div><p class="report-section__subtitle">Контрола на штета, привремени акции и decision-making делот.</p></div>
+        <div class="report-section__body">
+          <div class="row g-4">
+            <div class="col-lg-12">{{ textarea_input('d3_privremeni_akcii', 'Привремени акции', form_values.d3_privremeni_akcii, 'Кои брзи/привремени акции се преземаат веднаш?', 4) }}</div>
+            <div class="col-lg-6">{{ text_input('d3_predviden_datum', 'D3 Предвиден датум', form_values.d3_predviden_datum, type='date') }}</div>
+            <div class="col-lg-6">{{ text_input('d3_aktuelen_datum', 'D3 Актуелен датум', form_values.d3_aktuelen_datum, type='date') }}</div>
+            <div class="col-lg-4">{{ textarea_input('decision_end_result', 'Decision - End result', form_values.decision_end_result, 'Кој е посакуваниот краен исход?', 4) }}</div>
+            <div class="col-lg-4">{{ textarea_input('decision_criteria', 'Decision - Criteria', form_values.decision_criteria, 'По кои критериуми се носи одлуката?', 4) }}</div>
+            <div class="col-lg-4">{{ textarea_input('decision_choices', 'Decision - Choices available', form_values.decision_choices, 'Кои избори/алтернативи се разгледуваат?', 4) }}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="report-section">
+        <div class="report-section__head"><div class="report-section__title">D4 Главни причини</div><p class="report-section__subtitle">Коренска анализа, deductions, можни причини и чекори за верификација.</p></div>
+        <div class="report-section__body">
+          <div class="row g-4">
+            <div class="col-lg-12">{{ textarea_input('d4_glavni_pricini', 'Главни причини', form_values.d4_glavni_pricini, 'Сумирај ја root cause анализата...', 4) }}</div>
+            <div class="col-lg-6">{{ text_input('d4_predviden_datum', 'D4 Предвиден датум', form_values.d4_predviden_datum, type='date') }}</div>
+            <div class="col-lg-6">{{ text_input('d4_aktuelen_datum', 'D4 Актуелен датум', form_values.d4_aktuelen_datum, type='date') }}</div>
+            <div class="col-lg-6">{{ textarea_input('d4_deductions', 'Deductions about facts', form_values.d4_deductions, 'Заклучоци од факти и информации...', 4) }}</div>
+            <div class="col-lg-6">{{ textarea_input('d4_possible_causes', 'Possible causes', form_values.d4_possible_causes, 'Можни причини...', 4) }}</div>
+            <div class="col-lg-6">{{ textarea_input('d4_test_causes', 'Testing possible causes', form_values.d4_test_causes, 'Како ќе се тестира веројатноста на причините?', 4) }}</div>
+            <div class="col-lg-6">{{ textarea_input('d4_verify_steps', 'Steps to verify root cause', form_values.d4_verify_steps, 'Чекори за верификација на главната причина...', 4) }}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="report-section">
+        <div class="report-section__head"><div class="report-section__title">D5 / D6 / D7 / D8</div><p class="report-section__subtitle">Корективни акции, мониторинг, превенција и финална евалуација.</p></div>
+        <div class="report-section__body">
+          <div class="row g-4">
+            <div class="col-lg-12">{{ textarea_input('d5_korektivni_akcii', 'D5 Корективни акции', form_values.d5_korektivni_akcii, 'Кои трајни акции ќе се имплементираат?', 4) }}</div>
+            <div class="col-lg-6">{{ text_input('d5_predviden_datum', 'D5 Предвиден датум', form_values.d5_predviden_datum, type='date') }}</div>
+            <div class="col-lg-6">{{ text_input('d5_aktuelen_datum', 'D5 Актуелен датум', form_values.d5_aktuelen_datum, type='date') }}</div>
+            <div class="col-lg-12">{{ textarea_input('d6_monitoring', 'D6 Мониторинг и валидација', form_values.d6_monitoring, 'Како ќе се следи и валидира ефектот од акциите?', 4) }}</div>
+            <div class="col-lg-6">{{ text_input('d6_predviden_datum', 'D6 Предвиден датум', form_values.d6_predviden_datum, type='date') }}</div>
+            <div class="col-lg-6">{{ text_input('d6_aktuelen_datum', 'D6 Актуелен датум', form_values.d6_aktuelen_datum, type='date') }}</div>
+            <div class="col-lg-6">{{ textarea_input('risk_analysis', 'Risk analysis', form_values.risk_analysis, 'Ризици во IF / THEN форма...', 4) }}</div>
+            <div class="col-lg-6">{{ textarea_input('prevention_objective', 'Objective of the plan', form_values.prevention_objective, 'Што е целта на планот?', 4) }}</div>
+            <div class="col-lg-12">{{ textarea_input('prevention_plan', 'Plan & Problem Prevention', form_values.prevention_plan, 'Клучни чекори, потенцијални проблеми, приоритет, превентивни/заштитни акции...', 5) }}</div>
+            <div class="col-lg-12">{{ textarea_input('d7_akcii_protiv_povtoruvanje', 'D7 Акции против повторување', form_values.d7_akcii_protiv_povtoruvanje, 'Како ќе спречиш повторување на проблемот?', 4) }}</div>
+            <div class="col-lg-6">{{ text_input('d7_predviden_datum', 'D7 Предвиден датум', form_values.d7_predviden_datum, type='date') }}</div>
+            <div class="col-lg-6">{{ text_input('d7_aktuelen_datum', 'D7 Актуелен датум', form_values.d7_aktuelen_datum, type='date') }}</div>
+            <div class="col-lg-6">{{ textarea_input('dokumenti_razgledani', 'Документи разгледани', form_values.dokumenti_razgledani, 'Дали се разгледани релевантните документи?', 4) }}</div>
+            <div class="col-lg-6">{{ textarea_input('aplikativni_dokumenti', 'Апликативни документи', form_values.aplikativni_dokumenti, 'Означи кои документи се апликативни', 4) }}</div>
+            <div class="col-lg-12">{{ textarea_input('d8_evaluacija', 'D8 Евалуација', form_values.d8_evaluacija, 'Финална оценка, научени лекции и заклучок...', 4) }}</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="report-actions">
+        <div class="text-muted"><i class="fas fa-circle-info me-2"></i>Задолжителни се датумот на отворање, субјектот, насловот и D2 описот на проблемот.</div>
+        <div class="d-flex flex-wrap gap-3">
+          <a class="report-btn secondary" href="{{ url_for('kvalitet.kvalitet_izvestaj_problemi', tip=active_tip) }}"><i class="fas fa-xmark"></i>Откажи</a>
+          <button type="submit" class="report-btn primary"><i class="fas fa-floppy-disk"></i>Зачувај и генерирај PDF</button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

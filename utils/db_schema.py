@@ -99,6 +99,30 @@ def apply_standard_migrations(cursor):
         """
     )
 
+    cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS kvalitet_problem_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tip TEXT NOT NULL,
+            broj TEXT DEFAULT '',
+            datum_otvaranje TEXT NOT NULL,
+            predviden_kraen_datum TEXT DEFAULT '',
+            datum_zatvaranje TEXT DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'OPEN',
+            glaven_subjekt TEXT DEFAULT '',
+            sekundaren_subjekt TEXT DEFAULT '',
+            naslov TEXT DEFAULT '',
+            broj_i_opis_proizvod TEXT DEFAULT '',
+            broj_i_opis_del TEXT DEFAULT '',
+            payload_json TEXT NOT NULL DEFAULT '{}',
+            pdf_file TEXT DEFAULT '',
+            created_by TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        """
+    )
+
     ensure_column(cursor, "parts", "slika", "slika TEXT", "slika во parts")
     ensure_column(cursor, "parts", "ime", "ime TEXT", "ime во parts")
     ensure_column(
@@ -317,6 +341,27 @@ def ensure_common_indexes(cursor):
             "idx_kvalitet_vlezna_status",
             "kvalitet_vlezna_kontrola",
             "status",
+        )
+    if table_exists(cursor, "kvalitet_problem_reports"):
+        ensure_index(
+            cursor,
+            "idx_kvalitet_problem_reports_tip_datum",
+            "kvalitet_problem_reports",
+            "tip, datum_otvaranje DESC, id DESC",
+        )
+        ensure_index(
+            cursor,
+            "idx_kvalitet_problem_reports_status",
+            "kvalitet_problem_reports",
+            "status",
+        )
+        ensure_index(
+            cursor,
+            "idx_kvalitet_problem_reports_broj",
+            "kvalitet_problem_reports",
+            "broj",
+            unique=True,
+            where="broj IS NOT NULL AND broj <> ''",
         )
     if table_exists(cursor, "kvalitet_vlezna_stavki"):
         ensure_index(

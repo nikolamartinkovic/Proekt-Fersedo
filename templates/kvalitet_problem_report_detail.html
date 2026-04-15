@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}{{ report.broj or ('Извештај #' ~ report.id) }}{% endblock %}
+
+{% block content %}
+<style>
+  .problem-view-shell { max-width: 1260px; }
+  .problem-view-hero {
+    border-radius: 34px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at top right, rgba(248, 113, 113, .16), transparent 28%),
+      linear-gradient(135deg, #0f172a 0%, #1f2a44 46%, #1d4f91 100%);
+    box-shadow: 0 26px 58px rgba(15, 23, 42, .16);
+  }
+  .problem-view-hero h1, .problem-view-hero p, .problem-view-hero .hero-title { color: #f8fafc !important; }
+  .problem-view-hero p { opacity: .85; max-width: 780px; }
+  .problem-view-chip {
+    min-width: 210px;
+    border-radius: 22px;
+    padding: 1rem 1.2rem;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.1);
+  }
+  .problem-view-chip .small { color: rgba(255,255,255,.72); letter-spacing: .08em; }
+  .problem-view-stat {
+    border-radius: 24px;
+    border: 1px solid rgba(226,232,240,.92);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 14px 32px rgba(15,23,42,.06);
+    padding: 1.15rem 1.25rem;
+    height: 100%;
+  }
+  .problem-view-stat .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    font-size: .76rem;
+    color: #64748b;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: .65rem;
+  }
+  .problem-view-stat .value {
+    color: #0f172a;
+    font-size: 1.15rem;
+    font-weight: 800;
+    line-height: 1.45;
+  }
+  .problem-view-panel {
+    border-radius: 30px;
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid rgba(226, 232, 240, .92);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, .08);
+  }
+  .problem-view-panel__head {
+    padding: 1.35rem 1.5rem;
+    background: linear-gradient(135deg, rgba(15, 23, 42, .98) 0%, rgba(30, 64, 175, .92) 100%);
+    color: #fff;
+  }
+  .problem-view-panel__head h2, .problem-view-panel__head p { color: #fff !important; }
+  .problem-view-panel__head p { margin-bottom: 0; opacity: .8; }
+  .problem-view-panel__body { padding: 1.5rem; }
+  .problem-view-section {
+    border-radius: 24px;
+    border: 1px solid rgba(226, 232, 240, .92);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow: 0 14px 32px rgba(15, 23, 42, .05);
+    padding: 1.25rem;
+    height: 100%;
+  }
+  .problem-view-section h3 {
+    color: #0f172a;
+    font-size: 1.14rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+  }
+  .problem-view-item {
+    padding: .8rem 0;
+    border-bottom: 1px solid rgba(226, 232, 240, .8);
+  }
+  .problem-view-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .problem-view-item .label {
+    display: block;
+    font-size: .78rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #64748b;
+    font-weight: 800;
+    margin-bottom: .3rem;
+  }
+  .problem-view-item .value {
+    color: #0f172a;
+    font-weight: 700;
+    white-space: pre-wrap;
+    line-height: 1.65;
+  }
+  .problem-view-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .8rem;
+    align-items: center;
+  }
+  .problem-view-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .65rem;
+    border-radius: 999px;
+    padding: .9rem 1.35rem;
+    font-weight: 800;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: transform .22s ease, box-shadow .22s ease;
+  }
+  .problem-view-btn:hover { transform: translateY(-2px); }
+  .problem-view-btn.primary {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #fff;
+    box-shadow: 0 14px 30px rgba(37,99,235,.22);
+  }
+  .problem-view-btn.secondary { background: #fff; color: #0f172a; border: 1px solid rgba(148,163,184,.28); }
+  .problem-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    border-radius: 999px;
+    padding: .5rem .88rem;
+    font-weight: 800;
+    font-size: .85rem;
+  }
+  .problem-status-pill.warning { background: rgba(245,158,11,.14); color: #b45309; }
+  .problem-status-pill.info { background: rgba(14,165,233,.14); color: #0369a1; }
+  .problem-status-pill.success { background: rgba(34,197,94,.14); color: #15803d; }
+</style>
+
+<div class="container py-4 py-lg-5 problem-view-shell">
+  <div class="problem-view-hero mb-4">
+    <div class="p-4 p-lg-5 text-white">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <div class="badge rounded-pill px-3 py-2 mb-3" style="background: rgba(255,255,255,.12);">Квалитет</div>
+          <h1 class="display-6 fw-bold mb-3 hero-title">{{ report.broj or ('Извештај #' ~ report.id) }}</h1>
+          <p class="mb-3 fs-5">{{ report.naslov or '-' }}</p>
+          {% set badge_class = status_meta[report.status].badge_class %}
+          <span class="problem-status-pill {{ badge_class }}"><i class="fas fa-circle"></i>{{ report.status_label }}</span>
+        </div>
+        <div class="problem-view-chip">
+          <div class="small text-uppercase mb-1">Тип</div>
+          <div class="fs-4 fw-bold">{{ tip_meta.title }}</div>
+          <div class="mt-2" style="color: rgba(255,255,255,.76);">{{ format_date(report.datum_otvaranje) }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-4">
+    <div class="col-md-6 col-xl-3"><div class="problem-view-stat"><div class="eyebrow"><i class="fas fa-building"></i>{{ tip_meta.entity_label }}</div><div class="value">{{ report.glaven_subjekt or '-' }}</div></div></div>
+    <div class="col-md-6 col-xl-3"><div class="problem-view-stat"><div class="eyebrow"><i class="fas fa-address-card"></i>{{ tip_meta.secondary_label }}</div><div class="value">{{ report.sekundaren_subjekt or '-' }}</div></div></div>
+    <div class="col-md-6 col-xl-3"><div class="problem-view-stat"><div class="eyebrow"><i class="fas fa-calendar-days"></i>Клучни датуми</div><div class="value">Отворен: {{ format_date(report.datum_otvaranje) }}<br>Краен: {{ format_date(report.predviden_kraen_datum) }}<br>Затворен: {{ format_date(report.datum_zatvaranje) }}</div></div></div>
+    <div class="col-md-6 col-xl-3"><div class="problem-view-stat"><div class="eyebrow"><i class="fas fa-cube"></i>Производ / дел</div><div class="value">{{ report.broj_i_opis_proizvod or '-' }}<br>{{ report.broj_i_opis_del or '-' }}</div></div></div>
+  </div>
+
+  <section class="problem-view-panel">
+    <div class="problem-view-panel__head">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+          <h2 class="h3 fw-bold mb-2">Детален преглед</h2>
+          <p>Целиот 8D запис е распореден по секции според шаблонот и е подготвен и за PDF печатење.</p>
+        </div>
+        <div class="problem-view-actions">
+          <a class="problem-view-btn secondary" href="{{ url_for('kvalitet.kvalitet_izvestaj_problemi', tip=report.tip) }}"><i class="fas fa-arrow-left"></i>Назад</a>
+          {% if report.pdf_url %}
+          <a class="problem-view-btn primary" href="{{ url_for('static', filename=report.pdf_url) }}" target="_blank"><i class="fas fa-file-pdf"></i>Отвори PDF</a>
+          {% endif %}
+          {% if session.get('is_admin') %}
+          <form method="post" action="{{ url_for('kvalitet.kvalitet_problem_report_delete', report_id=report.id) }}" onsubmit="return confirm('Дали си сигурен дека сакаш да го избришеш овој извештај?');">
+            <button type="submit" class="problem-view-btn secondary" style="color:#b91c1c;border-color:rgba(248,113,113,.45);"><i class="fas fa-trash"></i>Избриши</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="problem-view-panel__body">
+      <div class="row g-4">
+        {% for section in sections %}
+        <div class="col-xl-6">
+          <section class="problem-view-section">
+            <h3>{{ section.title }}</h3>
+            {% for item in section.items %}
+            <div class="problem-view-item">
+              <span class="label">{{ item.label }}</span>
+              <div class="value">{{ item.value or '-' }}</div>
+            </div>
+            {% endfor %}
+          </section>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

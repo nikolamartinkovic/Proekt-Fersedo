@@ -1,4 +1,5 @@
 import os
+import json
 import sqlite3
 import time
 from datetime import datetime
@@ -411,6 +412,367 @@ def _label_vlezna_status(value):
     return "Не е добар" if _normalize_vlezna_status(value) == "NE_DOBAR" else "Добар"
 
 
+PROBLEM_REPORT_STATUS_META = {
+    "OPEN": {"label": "Отворен", "badge_class": "warning"},
+    "IN_PROGRESS": {"label": "Во тек", "badge_class": "info"},
+    "CLOSED": {"label": "Затворен", "badge_class": "success"},
+}
+
+
+PROBLEM_REPORT_META = {
+    "vnatresen": {
+        "title": "Внатрешен извештај",
+        "subtitle": "8D тек за проблеми откриени внатре во производство, QC, монтажа или интерна проверка.",
+        "badge": "Внатрешен тек",
+        "icon": "fa-industry",
+        "accent": "internal",
+        "entity_label": "Засегнат оддел",
+        "secondary_label": "Менаџер на оддел",
+        "title_label": "Наслов на проблем",
+        "title_placeholder": "Краток опис на интерниот проблем...",
+        "source_file": "8Д МК- Интерен проблем.xlsx",
+        "pdf_title": "Внатрешен 8D извештај",
+    },
+    "nadvoresen": {
+        "title": "Надворешен извештај",
+        "subtitle": "8D тек за рекламации и надворешни проблеми пријавени од клиент, сервис или партнер.",
+        "badge": "Надворешен тек",
+        "icon": "fa-globe",
+        "accent": "external",
+        "entity_label": "Клиент",
+        "secondary_label": "Адреса",
+        "title_label": "Опис на рекламација",
+        "title_placeholder": "Краток опис на рекламацијата од клиент...",
+        "source_file": "8Д МК - Рекламација од клиент.xlsx",
+        "pdf_title": "Надворешен 8D извештај",
+    },
+}
+
+
+PROBLEM_REPORT_PAYLOAD_FIELDS = [
+    "tim",
+    "shampion",
+    "lider_na_tim",
+    "clenovi_na_tim",
+    "d2_opis_problema",
+    "d2_operativna_definicija",
+    "d2_is",
+    "d2_is_not",
+    "d2_get_info_on",
+    "d3_privremeni_akcii",
+    "d3_predviden_datum",
+    "d3_aktuelen_datum",
+    "decision_end_result",
+    "decision_criteria",
+    "decision_choices",
+    "d4_glavni_pricini",
+    "d4_predviden_datum",
+    "d4_aktuelen_datum",
+    "d4_deductions",
+    "d4_possible_causes",
+    "d4_test_causes",
+    "d4_verify_steps",
+    "d5_korektivni_akcii",
+    "d5_predviden_datum",
+    "d5_aktuelen_datum",
+    "d6_monitoring",
+    "d6_predviden_datum",
+    "d6_aktuelen_datum",
+    "risk_analysis",
+    "prevention_objective",
+    "prevention_plan",
+    "d7_akcii_protiv_povtoruvanje",
+    "d7_predviden_datum",
+    "d7_aktuelen_datum",
+    "dokumenti_razgledani",
+    "aplikativni_dokumenti",
+    "d8_evaluacija",
+]
+
+
+def _normalize_problem_report_tip(value):
+    return "nadvoresen" if str(value or "").strip().lower() == "nadvoresen" else "vnatresen"
+
+
+def _problem_report_meta(tip):
+    return PROBLEM_REPORT_META[_normalize_problem_report_tip(tip)]
+
+
+def _normalize_problem_report_status(value):
+    raw = str(value or "").strip().upper()
+    if raw not in PROBLEM_REPORT_STATUS_META:
+        return "OPEN"
+    return raw
+
+
+def _label_problem_report_status(value):
+    return PROBLEM_REPORT_STATUS_META[_normalize_problem_report_status(value)]["label"]
+
+
+def _problem_report_payload_defaults():
+    return {field: "" for field in PROBLEM_REPORT_PAYLOAD_FIELDS}
+
+
+def _collect_problem_report_payload(form_data):
+    payload = _problem_report_payload_defaults()
+    for field in PROBLEM_REPORT_PAYLOAD_FIELDS:
+        payload[field] = str(form_data.get(field, "") or "").strip()
+    return payload
+
+
+def _format_problem_report_number(report_id):
+    return f"8D-{int(report_id):05d}"
+
+
+def _problem_report_pdf_folder():
+    folder = os.path.join(STATIC_FOLDER, "kvalitet_problem_pdf")
+    os.makedirs(folder, exist_ok=True)
+    return folder
+
+
+def _problem_report_pdf_url(filename):
+    if not filename:
+        return ""
+    return f"kvalitet_problem_pdf/{filename}"
+
+
+def _build_problem_report_view(report_row):
+    report = dict(report_row or {})
+    payload = _problem_report_payload_defaults()
+    try:
+        payload.update(json.loads(report.get("payload_json") or "{}"))
+    except json.JSONDecodeError:
+        pass
+    report["payload"] = payload
+    report["tip"] = _normalize_problem_report_tip(report.get("tip"))
+    report["status"] = _normalize_problem_report_status(report.get("status"))
+    report["status_label"] = _label_problem_report_status(report["status"])
+    report["tip_meta"] = _problem_report_meta(report["tip"])
+    report["pdf_url"] = _problem_report_pdf_url(report.get("pdf_file"))
+    return report
+
+
+def _problem_report_sections(report):
+    payload = report.get("payload") or _problem_report_payload_defaults()
+    meta = report["tip_meta"]
+
+    return [
+        {
+            "title": "Основни информации",
+            "items": [
+                {"label": "8D број", "value": report.get("broj") or "-"},
+                {"label": "Датум на отворање", "value": _format_mk_date(report.get("datum_otvaranje"))},
+                {"label": "Предвиден краен датум", "value": _format_mk_date(report.get("predviden_kraen_datum"))},
+                {"label": "Датум на затворање", "value": _format_mk_date(report.get("datum_zatvaranje"))},
+                {"label": "Статус", "value": report.get("status_label") or "-"},
+                {"label": meta["entity_label"], "value": report.get("glaven_subjekt") or "-"},
+                {"label": meta["secondary_label"], "value": report.get("sekundaren_subjekt") or "-"},
+                {"label": meta["title_label"], "value": report.get("naslov") or "-"},
+                {"label": "Број и опис на производ", "value": report.get("broj_i_opis_proizvod") or "-"},
+                {"label": "Број и опис на дел", "value": report.get("broj_i_opis_del") or "-"},
+                {"label": "Внесено од", "value": report.get("created_by") or "-"},
+            ],
+        },
+        {
+            "title": "D1 Тим",
+            "items": [
+                {"label": "Тим", "value": payload.get("tim") or "-"},
+                {"label": "Шампион", "value": payload.get("shampion") or "-"},
+                {"label": "Лидер на тим", "value": payload.get("lider_na_tim") or "-"},
+                {"label": "Членови на тим", "value": payload.get("clenovi_na_tim") or "-"},
+            ],
+        },
+        {
+            "title": "D2 Опис на проблемот",
+            "items": [
+                {"label": "Опис на проблемот", "value": payload.get("d2_opis_problema") or "-"},
+                {"label": "Оперативна дефиниција", "value": payload.get("d2_operativna_definicija") or "-"},
+                {"label": "IS", "value": payload.get("d2_is") or "-"},
+                {"label": "IS NOT", "value": payload.get("d2_is_not") or "-"},
+                {"label": "GET INFO ON", "value": payload.get("d2_get_info_on") or "-"},
+            ],
+        },
+        {
+            "title": "D3 Привремени акции и одлука",
+            "items": [
+                {"label": "Привремени акции", "value": payload.get("d3_privremeni_akcii") or "-"},
+                {"label": "Предвиден датум", "value": _format_mk_date(payload.get("d3_predviden_datum"))},
+                {"label": "Актуелен датум", "value": _format_mk_date(payload.get("d3_aktuelen_datum"))},
+                {"label": "End result", "value": payload.get("decision_end_result") or "-"},
+                {"label": "Criteria", "value": payload.get("decision_criteria") or "-"},
+                {"label": "Choices available", "value": payload.get("decision_choices") or "-"},
+            ],
+        },
+        {
+            "title": "D4 Главни причини",
+            "items": [
+                {"label": "Главни причини", "value": payload.get("d4_glavni_pricini") or "-"},
+                {"label": "Предвиден датум", "value": _format_mk_date(payload.get("d4_predviden_datum"))},
+                {"label": "Актуелен датум", "value": _format_mk_date(payload.get("d4_aktuelen_datum"))},
+                {"label": "Deductions", "value": payload.get("d4_deductions") or "-"},
+                {"label": "Possible causes", "value": payload.get("d4_possible_causes") or "-"},
+                {"label": "Testing possible causes", "value": payload.get("d4_test_causes") or "-"},
+                {"label": "Steps to verify root cause", "value": payload.get("d4_verify_steps") or "-"},
+            ],
+        },
+        {
+            "title": "D5 Перманентни корективни акции",
+            "items": [
+                {"label": "Корективни акции", "value": payload.get("d5_korektivni_akcii") or "-"},
+                {"label": "Предвиден датум", "value": _format_mk_date(payload.get("d5_predviden_datum"))},
+                {"label": "Актуелен датум", "value": _format_mk_date(payload.get("d5_aktuelen_datum"))},
+            ],
+        },
+        {
+            "title": "D6 Мониторинг, валидација и превенција",
+            "items": [
+                {"label": "Мониторинг и валидација", "value": payload.get("d6_monitoring") or "-"},
+                {"label": "Предвиден датум", "value": _format_mk_date(payload.get("d6_predviden_datum"))},
+                {"label": "Актуелен датум", "value": _format_mk_date(payload.get("d6_aktuelen_datum"))},
+                {"label": "Risk analysis", "value": payload.get("risk_analysis") or "-"},
+                {"label": "Objective of the plan", "value": payload.get("prevention_objective") or "-"},
+                {"label": "Planning and problem prevention", "value": payload.get("prevention_plan") or "-"},
+            ],
+        },
+        {
+            "title": "D7 Акции против повторување",
+            "items": [
+                {"label": "Акции против повторување", "value": payload.get("d7_akcii_protiv_povtoruvanje") or "-"},
+                {"label": "Предвиден датум", "value": _format_mk_date(payload.get("d7_predviden_datum"))},
+                {"label": "Актуелен датум", "value": _format_mk_date(payload.get("d7_aktuelen_datum"))},
+                {"label": "Разгледани документи", "value": payload.get("dokumenti_razgledani") or "-"},
+                {"label": "Апликативни документи", "value": payload.get("aplikativni_dokumenti") or "-"},
+            ],
+        },
+        {
+            "title": "D8 Евалуација",
+            "items": [
+                {"label": "Евалуација", "value": payload.get("d8_evaluacija") or "-"},
+            ],
+        },
+    ]
+
+
+def generiraj_problem_report_pdf(report):
+    report = _build_problem_report_view(report)
+    sections = _problem_report_sections(report)
+    meta = report["tip_meta"]
+
+    filename = f"problem_{report['id']}_{int(time.time())}.pdf"
+    filepath = os.path.join(_problem_report_pdf_folder(), filename)
+
+    c = canvas.Canvas(filepath, pagesize=A4)
+    width, height = A4
+    regular_font = "Helvetica"
+    bold_font = "Helvetica-Bold"
+
+    try:
+        pdfmetrics.registerFont(TTFont("DejaVuSans", os.path.join(FONT_DIR, "DejaVuSans.ttf")))
+        pdfmetrics.registerFont(TTFont("DejaVuSans-Bold", os.path.join(FONT_DIR, "DejaVuSans-Bold.ttf")))
+        regular_font = "DejaVuSans"
+        bold_font = "DejaVuSans-Bold"
+    except Exception:
+        pass
+
+    logo_path = os.path.join(STATIC_FOLDER, "logo2.png")
+    left_margin = 42
+    right_margin = 42
+    bottom_margin = 44
+    content_width = width - left_margin - right_margin
+    y = height - 118
+
+    def wrap_text(text, font_name, font_size, max_width):
+        text = str(text or "").replace("\r\n", "\n")
+        lines = []
+        for paragraph in text.split("\n"):
+            if not paragraph.strip():
+                lines.append("")
+                continue
+            current = ""
+            for word in paragraph.split():
+                candidate = word if not current else f"{current} {word}"
+                if current and pdfmetrics.stringWidth(candidate, font_name, font_size) > max_width:
+                    lines.append(current)
+                    current = word
+                else:
+                    current = candidate
+            if current:
+                lines.append(current)
+        return lines or [""]
+
+    def start_page(continuation=False):
+        nonlocal y
+        c.setFillColorRGB(0.05, 0.35, 0.65)
+        c.rect(0, height - 96, width, 96, fill=1, stroke=0)
+        c.setFillColorRGB(1, 1, 1)
+        c.setFont(bold_font, 24 if not continuation else 18)
+        title = meta["pdf_title"] if not continuation else f"{meta['pdf_title']} (продолжение)"
+        c.drawCentredString(width / 2, height - 60, title)
+        if os.path.exists(logo_path):
+            try:
+                c.drawImage(
+                    logo_path,
+                    width - 195,
+                    height - 176,
+                    width=135,
+                    height=62,
+                    preserveAspectRatio=True,
+                    mask="auto",
+                )
+            except Exception:
+                pass
+        c.setFillColorRGB(0, 0, 0)
+        y = height - 132
+
+    def ensure_space(required_height):
+        nonlocal y
+        if y - required_height < bottom_margin:
+            c.showPage()
+            start_page(continuation=True)
+
+    start_page()
+
+    for section in sections:
+        valid_items = [item for item in section["items"] if str(item.get("value", "") or "").strip()]
+        valid_items = valid_items or section["items"][:1]
+        section_height = 30 + (len(valid_items) * 38)
+        ensure_space(section_height)
+
+        c.setFillColorRGB(0.08, 0.16, 0.34)
+        c.roundRect(left_margin, y - 22, content_width, 24, 8, fill=1, stroke=0)
+        c.setFillColorRGB(1, 1, 1)
+        c.setFont(bold_font, 12)
+        c.drawString(left_margin + 10, y - 7, section["title"])
+        c.setFillColorRGB(0, 0, 0)
+        y -= 36
+
+        for item in valid_items:
+            label = f"{item['label']}:"
+            value_lines = wrap_text(item.get("value") or "-", regular_font, 10.2, content_width - 16)
+            ensure_space((len(value_lines) * 14) + 22)
+            c.setFont(bold_font, 10.5)
+            c.drawString(left_margin, y, label)
+            y -= 14
+            c.setFont(regular_font, 10.2)
+            for line in value_lines:
+                c.drawString(left_margin + 12, y, line)
+                y -= 13
+            y -= 8
+
+        y -= 6
+
+    c.setFont(regular_font, 9)
+    c.setFillColorRGB(0.4, 0.4, 0.4)
+    c.drawString(
+        left_margin,
+        28,
+        f"Генерирано на {datetime.now().strftime('%d-%m-%Y %H:%M')} од {session.get('user', 'Корисник')}",
+    )
+    c.drawRightString(width - right_margin, 28, "Fersedo Production System")
+    c.save()
+    return filename
+
+
 def _vlezna_image_folder():
     folder = os.path.join(STATIC_FOLDER, "kvalitet_vlezna_sliki")
     os.makedirs(folder, exist_ok=True)
@@ -702,30 +1064,273 @@ def kvalitet():
 @login_required
 @module_required("kvalitet_izvestaj_problemi")
 def kvalitet_izvestaj_problemi():
-    active_tip = (request.args.get("tip") or "vnatresen").strip().lower()
-    if active_tip not in {"vnatresen", "nadvoresen"}:
-        active_tip = "vnatresen"
+    active_tip = _normalize_problem_report_tip(request.args.get("tip"))
+    active_meta = _problem_report_meta(active_tip)
 
-    tip_meta = {
-        "vnatresen": {
-            "title": "Внатрешен извештај",
-            "subtitle": "Евиденција за проблеми откриени внатре во производството, контролата или интерната проверка.",
-            "badge": "Внатрешен тек",
-            "icon": "fa-industry",
-        },
-        "nadvoresen": {
-            "title": "Надворешен извештај",
-            "subtitle": "Евиденција за проблеми пријавени од клиент, терен, сервис или надворешен партнер.",
-            "badge": "Надворешен тек",
-            "icon": "fa-globe",
-        },
+    conn = get_db()
+    cursor = conn.cursor()
+
+    reports = [
+        _build_problem_report_view(row)
+        for row in cursor.execute(
+            """
+            SELECT *
+            FROM kvalitet_problem_reports
+            WHERE tip = ?
+            ORDER BY date(datum_otvaranje) DESC, id DESC
+            LIMIT 40
+            """,
+            (active_tip,),
+        ).fetchall()
+    ]
+
+    summary_row = cursor.execute(
+        """
+        SELECT
+            COUNT(*) AS total_reports,
+            SUM(CASE WHEN status = 'OPEN' THEN 1 ELSE 0 END) AS open_reports,
+            SUM(CASE WHEN status = 'IN_PROGRESS' THEN 1 ELSE 0 END) AS in_progress_reports,
+            SUM(CASE WHEN status = 'CLOSED' THEN 1 ELSE 0 END) AS closed_reports
+        FROM kvalitet_problem_reports
+        WHERE tip = ?
+        """,
+        (active_tip,),
+    ).fetchone()
+    conn.close()
+
+    summary_counts = {
+        "total": int((summary_row or {}).get("total_reports") or 0),
+        "open": int((summary_row or {}).get("open_reports") or 0),
+        "in_progress": int((summary_row or {}).get("in_progress_reports") or 0),
+        "closed": int((summary_row or {}).get("closed_reports") or 0),
     }
 
     return render_template(
         "kvalitet_izvestaj_problemi.html",
         active_tip=active_tip,
-        tip_meta=tip_meta,
+        active_meta=active_meta,
+        tip_meta=PROBLEM_REPORT_META,
+        reports=reports,
+        summary_counts=summary_counts,
+        format_date=_format_mk_date,
+        status_meta=PROBLEM_REPORT_STATUS_META,
     )
+
+
+@kvalitet_bp.route("/izvestaj-problemi/novo", methods=["GET", "POST"])
+@login_required
+@module_required("kvalitet_izvestaj_problemi")
+def kvalitet_problem_report_new():
+    active_tip = _normalize_problem_report_tip(request.args.get("tip") or request.form.get("tip"))
+    tip_meta = _problem_report_meta(active_tip)
+
+    form_values = {
+        "datum_otvaranje": datetime.now().strftime("%Y-%m-%d"),
+        "predviden_kraen_datum": "",
+        "datum_zatvaranje": "",
+        "status": "OPEN",
+        "glaven_subjekt": "",
+        "sekundaren_subjekt": "",
+        "naslov": "",
+        "broj_i_opis_proizvod": "",
+        "broj_i_opis_del": "",
+        **_problem_report_payload_defaults(),
+    }
+
+    if request.method == "POST":
+        base_values = {
+            "datum_otvaranje": str(request.form.get("datum_otvaranje", "") or "").strip(),
+            "predviden_kraen_datum": str(request.form.get("predviden_kraen_datum", "") or "").strip(),
+            "datum_zatvaranje": str(request.form.get("datum_zatvaranje", "") or "").strip(),
+            "status": _normalize_problem_report_status(request.form.get("status")),
+            "glaven_subjekt": str(request.form.get("glaven_subjekt", "") or "").strip(),
+            "sekundaren_subjekt": str(request.form.get("sekundaren_subjekt", "") or "").strip(),
+            "naslov": str(request.form.get("naslov", "") or "").strip(),
+            "broj_i_opis_proizvod": str(request.form.get("broj_i_opis_proizvod", "") or "").strip(),
+            "broj_i_opis_del": str(request.form.get("broj_i_opis_del", "") or "").strip(),
+        }
+        payload = _collect_problem_report_payload(request.form)
+
+        form_values.update(base_values)
+        form_values.update(payload)
+
+        errors = []
+        if not base_values["datum_otvaranje"]:
+            errors.append("Полето „Датум на отворање“ е задолжително.")
+        if not base_values["glaven_subjekt"]:
+            errors.append(f"Полето „{tip_meta['entity_label']}“ е задолжително.")
+        if not base_values["naslov"]:
+            errors.append(f"Полето „{tip_meta['title_label']}“ е задолжително.")
+        if not payload["d2_opis_problema"]:
+            errors.append("Полето „D2 Опис на проблемот“ е задолжително.")
+
+        if base_values["status"] == "CLOSED" and not base_values["datum_zatvaranje"]:
+            base_values["datum_zatvaranje"] = datetime.now().strftime("%Y-%m-%d")
+            form_values["datum_zatvaranje"] = base_values["datum_zatvaranje"]
+
+        if errors:
+            for error in errors:
+                flash(error, "danger")
+        else:
+            conn = get_db()
+            cursor = conn.cursor()
+            payload_json = json.dumps(payload, ensure_ascii=False)
+
+            try:
+                cursor.execute(
+                    """
+                    INSERT INTO kvalitet_problem_reports (
+                        tip,
+                        datum_otvaranje,
+                        predviden_kraen_datum,
+                        datum_zatvaranje,
+                        status,
+                        glaven_subjekt,
+                        sekundaren_subjekt,
+                        naslov,
+                        broj_i_opis_proizvod,
+                        broj_i_opis_del,
+                        payload_json,
+                        created_by
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        active_tip,
+                        base_values["datum_otvaranje"],
+                        base_values["predviden_kraen_datum"],
+                        base_values["datum_zatvaranje"],
+                        base_values["status"],
+                        base_values["glaven_subjekt"],
+                        base_values["sekundaren_subjekt"],
+                        base_values["naslov"],
+                        base_values["broj_i_opis_proizvod"],
+                        base_values["broj_i_opis_del"],
+                        payload_json,
+                        session["user"],
+                    ),
+                )
+                report_id = cursor.lastrowid
+                generated_number = _format_problem_report_number(report_id)
+
+                report_row = {
+                    "id": report_id,
+                    "tip": active_tip,
+                    "broj": generated_number,
+                    "datum_otvaranje": base_values["datum_otvaranje"],
+                    "predviden_kraen_datum": base_values["predviden_kraen_datum"],
+                    "datum_zatvaranje": base_values["datum_zatvaranje"],
+                    "status": base_values["status"],
+                    "glaven_subjekt": base_values["glaven_subjekt"],
+                    "sekundaren_subjekt": base_values["sekundaren_subjekt"],
+                    "naslov": base_values["naslov"],
+                    "broj_i_opis_proizvod": base_values["broj_i_opis_proizvod"],
+                    "broj_i_opis_del": base_values["broj_i_opis_del"],
+                    "payload_json": payload_json,
+                    "created_by": session["user"],
+                }
+                pdf_filename = generiraj_problem_report_pdf(report_row)
+
+                cursor.execute(
+                    """
+                    UPDATE kvalitet_problem_reports
+                    SET broj = ?, pdf_file = ?, updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                    """,
+                    (generated_number, pdf_filename, report_id),
+                )
+                conn.commit()
+                flash(f"{tip_meta['title']} е успешно креиран.", "success")
+                return redirect(url_for("kvalitet.kvalitet_problem_report_detail", report_id=report_id))
+            except Exception as exc:
+                conn.rollback()
+                import traceback; traceback.print_exc()
+                flash(f"Грешка при зачувување: {exc}", "danger")
+            finally:
+                conn.close()
+
+    return render_template(
+        "kvalitet_problem_report_form.html",
+        active_tip=active_tip,
+        tip_meta=tip_meta,
+        form_values=form_values,
+        status_meta=PROBLEM_REPORT_STATUS_META,
+    )
+
+
+@kvalitet_bp.route("/izvestaj-problemi/<int:report_id>", methods=["GET"])
+@login_required
+@module_required("kvalitet_izvestaj_problemi")
+def kvalitet_problem_report_detail(report_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    report_row = cursor.execute(
+        """
+        SELECT *
+        FROM kvalitet_problem_reports
+        WHERE id = ?
+        """,
+        (report_id,),
+    ).fetchone()
+    conn.close()
+
+    if not report_row:
+        flash("Извештајот не постои.", "warning")
+        return redirect(url_for("kvalitet.kvalitet_izvestaj_problemi"))
+
+    report = _build_problem_report_view(report_row)
+    return render_template(
+        "kvalitet_problem_report_detail.html",
+        report=report,
+        tip_meta=report["tip_meta"],
+        sections=_problem_report_sections(report),
+        format_date=_format_mk_date,
+        status_meta=PROBLEM_REPORT_STATUS_META,
+    )
+
+
+@kvalitet_bp.route("/izvestaj-problemi/<int:report_id>/delete", methods=["POST"])
+@login_required
+@admin_required
+def kvalitet_problem_report_delete(report_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    report_row = cursor.execute(
+        """
+        SELECT id, tip, broj, pdf_file
+        FROM kvalitet_problem_reports
+        WHERE id = ?
+        """,
+        (report_id,),
+    ).fetchone()
+
+    if not report_row:
+        conn.close()
+        flash("Извештајот не постои.", "warning")
+        return redirect(url_for("kvalitet.kvalitet_izvestaj_problemi"))
+
+    pdf_file = str(report_row.get("pdf_file") or "").strip()
+
+    try:
+        cursor.execute("DELETE FROM kvalitet_problem_reports WHERE id = ?", (report_id,))
+        conn.commit()
+    except Exception as exc:
+        conn.rollback()
+        flash(f"Грешка при бришење: {exc}", "danger")
+        return redirect(url_for("kvalitet.kvalitet_problem_report_detail", report_id=report_id))
+    finally:
+        conn.close()
+
+    if pdf_file:
+        try:
+            pdf_path = os.path.join(_problem_report_pdf_folder(), pdf_file)
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
+        except Exception:
+            pass
+
+    flash(f"Извештајот {report_row.get('broj') or report_id} е избришан.", "success")
+    return redirect(url_for("kvalitet.kvalitet_izvestaj_problemi", tip=_normalize_problem_report_tip(report_row.get("tip"))))
 
 
 @kvalitet_bp.route("/vlezna", methods=["GET"])

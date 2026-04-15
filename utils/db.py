@@ -544,6 +544,28 @@ def init_db():
             FOREIGN KEY (kontrola_id) REFERENCES kvalitet_vlezna_kontrola(id) ON DELETE CASCADE
         )
     """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS kvalitet_problem_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tip TEXT NOT NULL,
+            broj TEXT DEFAULT '',
+            datum_otvaranje TEXT NOT NULL,
+            predviden_kraen_datum TEXT DEFAULT '',
+            datum_zatvaranje TEXT DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'OPEN',
+            glaven_subjekt TEXT DEFAULT '',
+            sekundaren_subjekt TEXT DEFAULT '',
+            naslov TEXT DEFAULT '',
+            broj_i_opis_proizvod TEXT DEFAULT '',
+            broj_i_opis_del TEXT DEFAULT '',
+            payload_json TEXT NOT NULL DEFAULT '{}',
+            pdf_file TEXT DEFAULT '',
+            created_by TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     cursor.execute("""CREATE TABLE IF NOT EXISTS chat_rooms (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     tip TEXT NOT NULL DEFAULT 'global',
@@ -738,7 +760,9 @@ def init_db():
                     "pregled_greski,admin_users,izvestaj,procesni_cekori,"
                     "odmori,baranje_odmor,odmori_vraboteni,odmori_kalendar,odmori_pregled_odmori,"
                     "odmori_manager_emails,zalihi,kvalitet,odrzuvanje,odrzuvanje_masini,"
-                    "odrzuvanje_nalozi,odrzuvanje_plan,odrzuvanje_istorija"
+                    "odrzuvanje_nalozi,odrzuvanje_plan,odrzuvanje_istorija,"
+                    "kvalitet_nova,kvalitet_vlezna,kvalitet_arhiva,kvalitet_greski_statistika,"
+                    "kvalitet_izvestaj_problemi,kvalitet_template"
                 ))
                 conn.commit()
                 print(f"[INIT] Креиран default admin: username='{default_username}', password='{default_password}'")
