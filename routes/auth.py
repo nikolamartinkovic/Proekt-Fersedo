@@ -11,6 +11,7 @@ from utils.audit import log_audit_event
 from utils.db import get_db
 from utils.decorators import admin_required, login_required, worker_required
 from utils.emailing import send_password_change_verification_email
+from utils.active_users import remove_active_user, touch_active_user
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -144,6 +145,13 @@ def login():
                 session["user_group"] = user.get("user_group") or ""
                 session["allowed_modules"] = user.get("allowed_modules") or ""
                 session["must_change_password"] = bool(user.get("must_change_password"))
+                touch_active_user(
+                    username=username,
+                    endpoint="auth.login",
+                    path=request.path,
+                    ip_address=request.headers.get("X-Forwarded-For", request.remote_addr or ""),
+                    user_agent=request.user_agent.string if request.user_agent else "",
+                )
                 log_audit_event(
                     "auth",
                     "login",
@@ -175,6 +183,7 @@ def login():
 def logout():
     username = session.get("user", "")
     if username:
+        remove_active_user(username)
         log_audit_event(
             "auth",
             "logout",

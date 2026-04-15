@@ -35,6 +35,7 @@ from utils.odmori_helpers import get_email_log
 from utils.runtime import read_app_log_entries
 from utils.stock_reports import isprati_zaliha_email
 from utils.emailing import send_new_user_credentials_email
+from utils.active_users import ACTIVE_WINDOW_SECONDS, get_active_users, get_active_usernames
 from io import BytesIO
 
 ph = PasswordHasher()
@@ -204,6 +205,18 @@ def admin_users():
         FROM users ORDER BY username
     """).fetchall()
     conn.close()
+    active_users = get_active_users()
+    active_usernames = get_active_usernames()
+    active_window_minutes = max(1, ACTIVE_WINDOW_SECONDS // 60)
+
+    for active_user in active_users:
+        active_path = str(active_user.get("path") or "").strip()
+        if active_path:
+            active_user["page_label"] = active_path
+        else:
+            endpoint_label = str(active_user.get("endpoint") or "").strip()
+            active_user["page_label"] = endpoint_label or "Непозната страница"
+
     modules = {
         "basic": [
             {"value": "select_kamin",      "label": "Нов запис"},
@@ -257,7 +270,10 @@ def admin_users():
     return render_template("admin_users.html",
                            users=users,
                            current_user=session["user"],
-                           modules=modules)
+                           modules=modules,
+                           active_users=active_users,
+                           active_usernames=active_usernames,
+                           active_window_minutes=active_window_minutes)
 
 
 # ─────────────────────────────────────────────────────────────

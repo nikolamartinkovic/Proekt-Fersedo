@@ -179,6 +179,62 @@
         border: 1px dashed #cbd5e1;
         background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
     }
+    .admin-live-card {
+        border-radius: 22px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+    }
+    .admin-live-stat {
+        border-radius: 20px;
+        border: 1px solid rgba(191, 219, 254, 0.85);
+        background: linear-gradient(135deg, #eff6ff 0%, #f8fbff 100%);
+        padding: 1rem 1.1rem;
+    }
+    .admin-live-stat strong {
+        display: block;
+        font-size: 2rem;
+        line-height: 1;
+        color: #0f172a;
+        margin-top: .4rem;
+    }
+    .admin-live-user {
+        border-radius: 20px;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        padding: 1rem 1.1rem;
+        height: 100%;
+    }
+    .admin-live-user__path {
+        font-size: .82rem;
+        color: #64748b;
+        word-break: break-word;
+    }
+    .admin-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .45rem;
+        padding: .45rem .8rem;
+        border-radius: 999px;
+        font-size: .82rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .admin-status-pill::before {
+        content: "";
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: currentColor;
+    }
+    .admin-status-pill--online {
+        background: #ecfdf5;
+        color: #047857;
+    }
+    .admin-status-pill--offline {
+        background: #f8fafc;
+        color: #64748b;
+    }
     .admin-modal-header {
         border-radius: 26px 26px 0 0;
         background: linear-gradient(135deg, #0f172a 0%, #172554 52%, #1e3a8a 100%);
@@ -215,6 +271,13 @@
                             <div class="fw-bold fs-5">{{ modules.values() | map("length") | sum }}</div>
                         </div>
                     </div>
+                    <div class="admin-summary-pill">
+                        <i class="fas fa-signal"></i>
+                        <div>
+                            <div class="small opacity-75">Активни сега</div>
+                            <div class="fw-bold fs-5">{{ active_users|length if active_users else 0 }}</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -235,6 +298,73 @@
         </div>
         {% endif %}
     {% endwith %}
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="admin-users-panel p-4 h-100">
+                <div class="admin-users-section-title">Активни корисници</div>
+                <div class="admin-users-muted small mb-4">
+                    За „активен во моментот“ се смета корисник што имал активност во последните {{ active_window_minutes }} минути.
+                </div>
+
+                <div class="d-grid gap-3">
+                    <div class="admin-live-stat">
+                        <span class="text-uppercase text-muted small fw-bold">Онлајн сега</span>
+                        <strong>{{ active_users|length if active_users else 0 }}</strong>
+                    </div>
+                    <div class="admin-live-stat">
+                        <span class="text-uppercase text-muted small fw-bold">Неактивни</span>
+                        <strong>{{ (users|length if users else 0) - (active_users|length if active_users else 0) }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="admin-users-panel p-4 h-100">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+                    <div>
+                        <div class="admin-users-section-title">Преглед во моментот</div>
+                        <div class="admin-users-muted small">Листа на профили што реално се активни во системот сега.</div>
+                    </div>
+                    <span class="badge rounded-pill bg-success px-3 py-2">{{ active_users|length if active_users else 0 }} онлајн</span>
+                </div>
+
+                {% if active_users %}
+                <div class="row g-3">
+                    {% for active_user in active_users %}
+                    <div class="col-md-6">
+                        <div class="admin-live-user">
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                <div>
+                                    <div class="fw-bold fs-5 text-dark">{{ active_user.username }}</div>
+                                    <div class="admin-live-user__path">{{ active_user.page_label }}</div>
+                                </div>
+                                <span class="admin-status-pill admin-status-pill--online">Онлајн</span>
+                            </div>
+                            <div class="small text-muted mb-1">
+                                <i class="fas fa-clock me-1"></i>Последна активност: {{ active_user.last_seen_relative }}
+                            </div>
+                            <div class="small text-muted mb-1">
+                                <i class="fas fa-calendar-alt me-1"></i>{{ active_user.last_seen_display }}
+                            </div>
+                            <div class="small text-muted">
+                                <i class="fas fa-network-wired me-1"></i>{{ active_user.ip_address or "IP не е достапна" }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="admin-empty-state text-center py-5 px-4">
+                    <i class="fas fa-user-clock fa-3x mb-3 text-info opacity-75"></i>
+                    <h5 class="fw-bold mb-2">Моментално нема активни корисници</h5>
+                    <p class="mb-0 admin-users-muted">Штом некој отвори страница во системот, овде автоматски ќе се прикаже.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 
     <div class="admin-users-panel p-4 p-lg-5 mb-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
@@ -336,6 +466,7 @@
                     <tr>
                         <th class="px-4">Корисник</th>
                         <th>Email</th>
+                        <th>Статус</th>
                         <th>Админ</th>
                         <th>Група</th>
                         <th>Модули</th>
@@ -354,6 +485,13 @@
                             </span>
                         </td>
                         <td>{{ user.email or "Нема" }}</td>
+                        <td>
+                            {% if user.username in active_usernames %}
+                            <span class="admin-status-pill admin-status-pill--online">Онлајн</span>
+                            {% else %}
+                            <span class="admin-status-pill admin-status-pill--offline">Неактивен</span>
+                            {% endif %}
+                        </td>
                         <td>
                             {% if user.is_admin %}
                             <span class="badge bg-success px-3 py-2 rounded-pill">Да</span>

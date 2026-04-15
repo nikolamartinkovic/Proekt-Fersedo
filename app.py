@@ -29,6 +29,7 @@ from utils.notifications import fetch_mobile_notifications
 from utils.parts import get_part_info
 from utils.runtime import configure_logging, register_healthcheck, resolve_bind_host
 from utils.scheduler_jobs import init_scheduler
+from utils.active_users import touch_active_user
 
 
 
@@ -110,6 +111,23 @@ def enforce_password_change():
         return None
 
     return redirect(url_for("auth.change_password"))
+
+
+@app.before_request
+def track_active_users():
+    username = (session.get("user") or "").strip()
+    endpoint = request.endpoint or ""
+    if not username or endpoint == "static" or endpoint.startswith("static"):
+        return None
+
+    touch_active_user(
+        username=username,
+        endpoint=endpoint,
+        path=request.path,
+        ip_address=request.headers.get("X-Forwarded-For", request.remote_addr or ""),
+        user_agent=request.user_agent.string if request.user_agent else "",
+    )
+    return None
 
 # ─────────────────────────────────────────────────────────────
 # FONT REGISTRATION
