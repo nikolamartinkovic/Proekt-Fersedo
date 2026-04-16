@@ -189,7 +189,7 @@
         <div class="col-xl-6">
           <section class="problem-view-section">
             <h3>{{ section.title }}</h3>
-            {% for item in section.items %}
+            {% for item in section["items"] %}
             <div class="problem-view-item">
               <span class="label">{{ item.label }}</span>
               <div class="value">{{ item.value or '-' }}</div>
